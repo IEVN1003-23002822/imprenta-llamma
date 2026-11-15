@@ -51,3 +51,5 @@ venv/
 env/
 *.sqlite3
 .env
+Flask_Llamma_API/instance/
+Flask_Llamma_API/uploads/

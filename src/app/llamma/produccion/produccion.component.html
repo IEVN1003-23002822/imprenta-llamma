@@ -1,4 +1,409 @@
-<section class="produccion">
-  <h1>Llamma | Producción</h1>
-  <p>Vista base pendiente de implementación.</p>
-</section>
+<div class="module-page produccion-page">
+  <div class="container">
+    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+      <div>
+        <span class="eyebrow">Taller y calidad</span>
+        <h1>Producción en tiempo real.</h1>
+        <p class="page-lead">
+          Tablero de etapas, responsables y control de calidad. Visualiza qué está en el taller y
+          qué necesita atención antes de la entrega.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="date-chip"><i class="bi bi-calendar3"></i> Hoy · 13 nov 2026</span>
+        <button class="btn btn-outline-ink" type="button">
+          <i class="bi bi-file-earmark-bar-graph"></i> Reporte de turno
+        </button>
+      </div>
+    </header>
+
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-xl-3">
+        <div class="prod-stat">
+          <span class="icon-tile icon-tile-cyan"><i class="bi bi-gear-wide-connected"></i></span>
+          <div><strong>18</strong><span>Órdenes activas</span></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="prod-stat">
+          <span class="icon-tile icon-tile-magenta"><i class="bi bi-printer"></i></span>
+          <div><strong>06</strong><span>En etapa de impresión</span></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="prod-stat">
+          <span class="icon-tile icon-tile-warning"><i class="bi bi-exclamation-triangle"></i></span>
+          <div><strong>02</strong><span>Órdenes con retraso</span></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="prod-stat">
+          <span class="icon-tile icon-tile-success"><i class="bi bi-box-seam"></i></span>
+          <div><strong>05</strong><span>Entregas de hoy</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kanban-head-bar">
+      <div>
+        <span class="panel-kicker">Flujo del taller</span>
+        <h2>Tablero de producción</h2>
+      </div>
+      <div class="kanban-legend">
+        <span><span class="kanban-dot dot-cyan"></span> Preprensa</span>
+        <span><span class="kanban-dot dot-magenta"></span> Impresión</span>
+        <span><span class="kanban-dot dot-yellow"></span> Acabado</span>
+        <span><span class="kanban-dot dot-ink"></span> Entrega</span>
+      </div>
+    </div>
+
+    <div class="kanban-board mb-4">
+      <section class="kanban-col">
+        <header class="kanban-col-head">
+          <span class="kanban-dot dot-cyan"></span>
+          <strong>Preprensa</strong>
+          <span class="kanban-count">2</span>
+        </header>
+
+        <article class="task-card">
+          <div class="task-top">
+            <span class="order-id">#LLM-1050</span>
+            <span class="badge badge-soft-muted">Normal</span>
+          </div>
+          <strong class="task-title">Lona Frontlit 3 × 1.5 m</strong>
+          <span class="task-client"><i class="bi bi-person"></i> Grupo Altura</span>
+          <div class="task-meta">
+            <span><i class="bi bi-clock"></i> Entrega 20 nov</span>
+            <span><i class="bi bi-vector-pen"></i> Diego Salas</span>
+          </div>
+          <div class="task-foot">
+            <span class="task-progress-track"><span style="width: 35%"></span></span>
+            <span>Revisión</span>
+          </div>
+        </article>
+
+        <article class="task-card">
+          <div class="task-top">
+            <span class="order-id">#LLM-1049</span>
+            <span class="badge badge-soft-warning">Aprobación</span>
+          </div>
+          <strong class="task-title">Tarjetas Couché 300g</strong>
+          <span class="task-client"><i class="bi bi-person"></i> Papelería Lumen</span>
+          <div class="task-meta">
+            <span><i class="bi bi-clock"></i> Entrega 19 nov</span>
+            <span><i class="bi bi-vector-pen"></i> Paola Méndez</span>
+          </div>
+          <div class="task-foot">
+            <span class="task-progress-track"><span style="width: 70%"></span></span>
+            <span>Sangrado</span>
+          </div>
+        </article>
+
+        <button class="kanban-more" type="button">
+          Ver 0 órdenes más <i class="bi bi-arrow-right"></i>
+        </button>
+      </section>
+
+      <section class="kanban-col">
+        <header class="kanban-col-head">
+          <span class="kanban-dot dot-magenta"></span>
+          <strong>Impresión</strong>
+          <span class="kanban-count">6</span>
+        </header>
+
+        <article class="task-card is-featured">
+          <div class="task-top">
+            <span class="order-id">#LLM-1048</span>
+            <span class="badge badge-soft-danger">Prioridad alta</span>
+          </div>
+          <strong class="task-title">Roll-up premium 85 × 200</strong>
+          <span class="task-client"><i class="bi bi-person"></i> Alma Creativa</span>
+          <div class="task-meta">
+            <span><i class="bi bi-clock"></i> Entrega 21 nov</span>
+            <span><i class="bi bi-printer"></i> Roland XR-640</span>
+          </div>
+          <div class="task-foot">
+            <span class="task-progress-track"><span style="width: 62%"></span></span>
+            <span>62%</span>
+          </div>
+        </article>
+
+        <article class="task-card">
+          <div class="task-top">
+            <span class="order-id">#LLM-1046</span>
+            <span class="badge badge-soft-muted">Normal</span>
+          </div>
+          <strong class="task-title">Tazas sublimadas · 60 pzas</strong>
+          <span class="task-client"><i class="bi bi-person"></i> Café Origen</span>
+          <div class="task-meta">
+            <span><i class="bi bi-clock"></i> Entrega 22 nov</span>
+            <span><i class="bi bi-printer"></i> Epson F570</span>
+          </div>
+          <div class="task-foot">
+            <span class="task-progress-track"><span style="width: 40%"></span></span>
+            <span>40%</span>
+          </div>
+        </article>
+
+        <article class="task-card">
+          <div class="task-top">
+            <span class="order-id">#LLM-1044</span>
+            <span class="badge badge-soft-warning">Reimpresión</span>
+          </div>
+          <strong class="task-title">Señalética para stand</strong>
+          <span class="task-client"><i class="bi bi-person"></i> Grupo Altura</span>
+          <div class="task-meta">
+            <span><i class="bi bi-clock"></i> Entrega 20 nov</span>
+            <span><i class="bi bi-printer"></i> Mimaki JV300</span>
+          </div>
+          <div class="task-foot">
+            <span class="task-progress-track"><span style="width: 25%"></span></span>
+            <span>Ajuste</span>
+          </div>
+        </article>
+
+        <button class="kanban-more" type="button">
+          Ver 3 órdenes más <i class="bi bi-arrow-right"></i>
+        </button>
+      </section>
+
+      <section class="kanban-col">
+        <header class="kanban-col-head">
+          <span class="kanban-dot dot-yellow"></span>
+          <strong>Acabado</strong>
+          <span class="kanban-count">5</span>
+        </header>
+
+        <article class="task-card">
+          <div class="task-top">
+            <span class="order-id">#LLM-1042</span>
+            <span class="badge badge-soft-muted">Normal</span>
+          </div>
+          <strong class="task-title">Tote bags DTF · 40 pzas</strong>
+          <span class="task-client"><i class="bi bi-person"></i> Estudio Nómada</span>
+          <div class="task-meta">
+            <span><i class="bi bi-clock"></i> Entrega 18 nov</span>
+            <span><i class="bi bi-scissors"></i> Plancha DTF</span>
+          </div>
+          <div class="task-foot">
+            <span class="task-progress-track"><span style="width: 80%"></span></span>
+            <span>80%</span>
+          </div>
+        </article>
+
+        <article class="task-card">
+          <div class="task-top">
+            <span class="order-id">#LLM-1041</span>
+            <span class="badge badge-soft-cyan">Listo</span>
+          </div>
+          <strong class="task-title">Stickers troquelados</strong>
+          <span class="task-client"><i class="bi bi-person"></i> Bistró Aurora</span>
+          <div class="task-meta">
+            <span><i class="bi bi-clock"></i> Entrega 17 nov</span>
+            <span><i class="bi bi-scissors"></i> Plotter GCC</span>
+          </div>
+          <div class="task-foot">
+            <span class="task-progress-track"><span style="width: 100%"></span></span>
+            <span>Listo</span>
+          </div>
+        </article>
+
+        <button class="kanban-more" type="button">
+          Ver 3 órdenes más <i class="bi bi-arrow-right"></i>
+        </button>
+      </section>
+
+      <section class="kanban-col">
+        <header class="kanban-col-head">
+          <span class="kanban-dot dot-ink"></span>
+          <strong>Entrega</strong>
+          <span class="kanban-count">3</span>
+        </header>
+
+        <article class="task-card">
+          <div class="task-top">
+            <span class="order-id">#LLM-1047</span>
+            <span class="badge badge-soft-success">Por entregar</span>
+          </div>
+          <strong class="task-title">Playeras DTF · 40 pzas</strong>
+          <span class="task-client"><i class="bi bi-person"></i> Estudio Nómada</span>
+          <div class="task-meta">
+            <span><i class="bi bi-clock"></i> Hoy · 14:00</span>
+            <span><i class="bi bi-truck"></i> Entrega en taller</span>
+          </div>
+          <div class="task-foot">
+            <span class="task-progress-track"><span style="width: 100%"></span></span>
+            <span>Validado</span>
+          </div>
+        </article>
+
+        <article class="task-card">
+          <div class="task-top">
+            <span class="order-id">#LLM-1040</span>
+            <span class="badge badge-soft-success">Por entregar</span>
+          </div>
+          <strong class="task-title">Papelería corporativa</strong>
+          <span class="task-client"><i class="bi bi-person"></i> Grupo Altura</span>
+          <div class="task-meta">
+            <span><i class="bi bi-clock"></i> Hoy · 16:30</span>
+            <span><i class="bi bi-truck"></i> Envío local</span>
+          </div>
+          <div class="task-foot">
+            <span class="task-progress-track"><span style="width: 100%"></span></span>
+            <span>Validado</span>
+          </div>
+        </article>
+
+        <button class="kanban-more" type="button">
+          Ver 1 orden más <i class="bi bi-arrow-right"></i>
+        </button>
+      </section>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-xl-7">
+        <section class="panel-card h-100">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Capacidad del taller</span>
+              <h2>Carga por máquina</h2>
+            </div>
+            <span class="badge badge-soft-success">Sin paros</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-llamma align-middle">
+              <thead>
+                <tr>
+                  <th>Equipo</th>
+                  <th>Trabajo actual</th>
+                  <th>Operador</th>
+                  <th>Avance</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="cell-main">Roland XR-640</div>
+                    <div class="cell-muted">Impresión gran formato</div>
+                  </td>
+                  <td>#LLM-1048 · Lona Frontlit</td>
+                  <td>Mariana Ruiz</td>
+                  <td>
+                    <div class="machine-progress">
+                      <span class="stage-meter"><span style="width: 62%"></span></span>
+                      <small>62%</small>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-cyan">Operando</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="cell-main">Mimaki JV300</div>
+                    <div class="cell-muted">Vinil y adhesivos</div>
+                  </td>
+                  <td>#LLM-1044 · Señalética</td>
+                  <td>Diego Salas</td>
+                  <td>
+                    <div class="machine-progress">
+                      <span class="stage-meter"><span style="width: 25%"></span></span>
+                      <small>25%</small>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-cyan">Operando</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="cell-main">Epson F570</div>
+                    <div class="cell-muted">Sublimación textil</div>
+                  </td>
+                  <td>#LLM-1046 · Tazas</td>
+                  <td>Paola Méndez</td>
+                  <td>
+                    <div class="machine-progress">
+                      <span class="stage-meter"><span style="width: 40%"></span></span>
+                      <small>40%</small>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-cyan">Operando</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="cell-main">Plotter GCC</div>
+                    <div class="cell-muted">Corte de precisión</div>
+                  </td>
+                  <td>#LLM-1041 · Stickers</td>
+                  <td>Iván Córdoba</td>
+                  <td>
+                    <div class="machine-progress">
+                      <span class="stage-meter"><span style="width: 100%"></span></span>
+                      <small>100%</small>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-success">Disponible</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-xl-5">
+        <section class="panel-card h-100">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Calidad</span>
+              <h2>Checklist de salida</h2>
+            </div>
+            <span class="badge badge-soft-warning">2 pendientes</span>
+          </div>
+
+          <div class="quality-list">
+            <div class="quality-row is-done">
+              <span class="quality-check"><i class="bi bi-check-lg"></i></span>
+              <div>
+                <strong>Color y perfil CMYK</strong>
+                <small>Verificado con espectrofotómetro · #LLM-1048</small>
+              </div>
+              <span class="badge badge-soft-success">OK</span>
+            </div>
+            <div class="quality-row is-done">
+              <span class="quality-check"><i class="bi bi-check-lg"></i></span>
+              <div>
+                <strong>Medidas y sangrado</strong>
+                <small>Dimensiones finales confirmadas · #LLM-1048</small>
+              </div>
+              <span class="badge badge-soft-success">OK</span>
+            </div>
+            <div class="quality-row">
+              <span class="quality-check"><i class="bi bi-hourglass-split"></i></span>
+              <div>
+                <strong>Colocación de ojillos</strong>
+                <small>Pendiente en acabado · #LLM-1048</small>
+              </div>
+              <span class="badge badge-soft-warning">Pendiente</span>
+            </div>
+            <div class="quality-row">
+              <span class="quality-check"><i class="bi bi-hourglass-split"></i></span>
+              <div>
+                <strong>Empaque y etiquetado</strong>
+                <small>Se realiza antes de la entrega · #LLM-1048</small>
+              </div>
+              <span class="badge badge-soft-warning">Pendiente</span>
+            </div>
+          </div>
+
+          <div class="quote-note">
+            <i class="bi bi-shield-check"></i>
+            <span>Ninguna orden sale del taller sin el checklist de calidad completo y firmado.</span>
+          </div>
+
+          <a class="btn btn-outline-ink w-100 mt-auto" routerLink="/detalle">
+            <i class="bi bi-receipt"></i> Ver detalle de la orden
+          </a>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

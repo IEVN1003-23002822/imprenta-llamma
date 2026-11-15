@@ -1,1 +1,171 @@
-/* Estilos del módulo abastecimiento. Pendiente de implementación. */
+/* Ajustes visuales del módulo de abastecimiento. */
+
+.supply-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.supply-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.supply-stat span:not(.icon-tile) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.supplier-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 10.5rem;
+}
+
+.abastecimiento-page .table-llamma tbody td:first-child {
+  white-space: nowrap;
+}
+
+.supplier-meta strong {
+  display: block;
+  font-size: 0.79rem;
+  font-weight: 600;
+}
+
+.supplier-meta small {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+}
+
+.supplier-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.supplier-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed var(--llamma-line);
+}
+
+.supplier-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.supplier-row strong {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.supplier-row small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
+}
+
+.supplier-score {
+  margin-left: auto;
+  text-align: right;
+}
+
+.supplier-score strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.86rem;
+}
+
+.supplier-score span {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.6rem;
+}
+
+.receipt-list {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.receipt-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  padding-bottom: 0.95rem;
+  border-bottom: 1px dashed var(--llamma-line);
+}
+
+.receipt-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.receipt-date {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.9rem;
+  height: 2.9rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.7rem;
+  background: #fbfaf7;
+}
+
+.receipt-date strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.98rem;
+  line-height: 1;
+}
+
+.receipt-date span {
+  color: var(--llamma-muted);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.receipt-item strong {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.receipt-item small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
+}
+
+.abastecimiento-page .purchase-item:last-of-type {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 575.98px) {
+  .supply-stat {
+    padding: 0.9rem;
+  }
+
+  .supplier-score {
+    margin-left: 0;
+    text-align: left;
+  }
+}

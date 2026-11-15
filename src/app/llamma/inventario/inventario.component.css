@@ -1,1 +1,37 @@
-/* Estilos del módulo inventario. Pendiente de implementación. */
+/* Ajustes específicos del inventario. */
+.inventory-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.inventory-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.inventory-stat span:not(.icon-tile) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.inventario-page .table-llamma thead th,
+.inventario-page .table-llamma tbody td {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.inventario-page .purchase-item:last-of-type {
+  margin-bottom: 1.2rem;
+}

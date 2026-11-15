@@ -1,1 +1,164 @@
-/* Estilos del módulo consultas. Pendiente de implementación. */
+/* Ajustes visuales del módulo de consultas. */
+
+.quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1.15rem;
+  border-top: 1px dashed var(--llamma-line);
+}
+
+.quick-filters > span {
+  margin-right: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filter-chip {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 999px;
+  background: #fbfaf7;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.filter-chip.is-active {
+  border-color: var(--llamma-carbon);
+  background: var(--llamma-carbon);
+  color: #fff;
+}
+
+.query-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.query-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.query-stat span:not(.icon-tile) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.distribution {
+  display: grid;
+  gap: 1rem;
+}
+
+.distribution-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.74rem;
+}
+
+.distribution-top span {
+  color: var(--llamma-muted);
+  font-weight: 500;
+}
+
+.distribution-top strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.78rem;
+}
+
+.distribution-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #efeee9;
+}
+
+.distribution-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.fill-cyan {
+  background: var(--llamma-cyan);
+}
+
+.fill-magenta {
+  background: var(--llamma-magenta);
+}
+
+.fill-yellow {
+  background: #e8da00;
+}
+
+.fill-ink {
+  background: var(--llamma-carbon);
+}
+
+.rank-list {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.rank-number {
+  width: 1.4rem;
+  color: #b6b4ac;
+  font-family: var(--llamma-font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.rank-item strong {
+  display: block;
+  font-size: 0.77rem;
+  font-weight: 600;
+}
+
+.rank-item small {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
+}
+
+.rank-amount {
+  white-space: nowrap;
+  font-family: var(--llamma-font-display);
+  font-size: 0.76rem !important;
+}
+
+@media (max-width: 575.98px) {
+  .quick-filters > span {
+    width: 100%;
+  }
+
+  .query-stat {
+    padding: 0.9rem;
+  }
+}

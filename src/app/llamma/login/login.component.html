@@ -1,4 +1,296 @@
-<section class="login">
-  <h1>Llamma | Iniciar sesión</h1>
-  <p>Vista base pendiente de implementación.</p>
-</section>
+<div class="module-page auth-page">
+  <div class="container">
+    <div class="auth-shell">
+      <section class="auth-brand">
+        <span class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">
+            <span class="brand-dot brand-dot-cyan"></span>
+            <span class="brand-dot brand-dot-magenta"></span>
+            <span class="brand-dot brand-dot-yellow"></span>
+            <span class="brand-dot brand-dot-carbon"></span>
+          </span>
+          <span class="brand-text">
+            <strong>LLAMMA</strong>
+            <small>Imprimimos tus ideas</small>
+          </span>
+        </span>
+
+        <div class="auth-copy">
+          <span class="eyebrow eyebrow-light">Acceso y roles</span>
+          <h1>Tu taller, bajo control.</h1>
+          <p>
+            Un solo lugar para ventas, producción, inventario y clientes. Accede con el rol que te
+            corresponde y continúa donde te quedaste.
+          </p>
+        </div>
+
+        <ul class="auth-points">
+          <li><i class="bi bi-shield-check"></i> Acceso seguro por rol y permisos</li>
+          <li><i class="bi bi-gear-wide-connected"></i> Producción y taller en tiempo real</li>
+          <li><i class="bi bi-graph-up-arrow"></i> Indicadores para decidir mejor</li>
+        </ul>
+
+        <div class="auth-colors">
+          <span class="auth-swatch swatch-cyan"></span>
+          <span class="auth-swatch swatch-magenta"></span>
+          <span class="auth-swatch swatch-yellow"></span>
+          <span class="auth-swatch swatch-ink"></span>
+          <small>CMYK · Color que transforma</small>
+        </div>
+      </section>
+
+      <section class="auth-card">
+        <span class="panel-kicker">Bienvenido de nuevo</span>
+        <h2>Iniciar sesión</h2>
+        <p class="auth-lead">Ingresa con tu cuenta corporativa para entrar al panel de Llamma.</p>
+
+        <form [formGroup]="form" (ngSubmit)="entrar()" novalidate>
+          @if (error()) {
+            <div class="auth-error" role="alert">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span>{{ error() }}</span>
+            </div>
+          }
+
+          <div class="mb-3">
+            <label class="form-label" for="authEmail">Correo corporativo</label>
+            <input
+              id="authEmail"
+              type="email"
+              class="form-control"
+              formControlName="correo"
+              placeholder="nombre&#64;llamma.mx"
+              autocomplete="username"
+              [class.is-invalid]="form.controls.correo.touched && form.controls.correo.invalid"
+            >
+            @if (form.controls.correo.touched && form.controls.correo.invalid) {
+              <span class="field-error">Ingresa un correo válido.</span>
+            }
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="authPassword">Contraseña</label>
+            <div class="auth-password">
+              <input
+                id="authPassword"
+                [type]="mostrarPassword() ? 'text' : 'password'"
+                class="form-control"
+                formControlName="password"
+                placeholder="Tu contraseña"
+                autocomplete="current-password"
+                [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid"
+              >
+              <button
+                class="btn btn-icon"
+                type="button"
+                (click)="alternarPassword()"
+                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <i class="bi" [class.bi-eye]="!mostrarPassword()" [class.bi-eye-slash]="mostrarPassword()"></i>
+              </button>
+            </div>
+            @if (form.controls.password.touched && form.controls.password.invalid) {
+              <span class="field-error">La contraseña es obligatoria.</span>
+            }
+          </div>
+
+          <div class="auth-row">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="authRemember" formControlName="recordarme">
+              <label class="form-check-label" for="authRemember">Recordarme</label>
+            </div>
+            <a class="auth-link" href="#">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          <button class="btn btn-brand w-100" type="submit" [disabled]="enviando()">
+            @if (enviando()) {
+              <i class="bi bi-hourglass-split"></i> Validando credenciales...
+            } @else {
+              <i class="bi bi-box-arrow-in-right"></i> Entrar al panel
+            }
+          </button>
+
+          <div class="auth-divider"><span>accesos de demostración</span></div>
+
+          <div class="demo-grid">
+            <button class="btn btn-outline-ink btn-sm" type="button" (click)="usarDemo('ana@llamma.mx')">
+              Admin
+            </button>
+            <button class="btn btn-outline-ink btn-sm" type="button" (click)="usarDemo('diego@llamma.mx')">
+              Ventas
+            </button>
+            <button class="btn btn-outline-ink btn-sm" type="button" (click)="usarDemo('mariana@llamma.mx')">
+              Producción
+            </button>
+            <button class="btn btn-outline-ink btn-sm" type="button" (click)="usarDemo('ivan@llamma.mx')">
+              Inventario
+            </button>
+          </div>
+
+          <div class="auth-divider"><span>o continúa con</span></div>
+
+          <button class="btn btn-outline-ink w-100" type="button">
+            <i class="bi bi-google"></i> Google Workspace
+          </button>
+        </form>
+
+        <p class="auth-note">
+          <i class="bi bi-lock"></i>
+          Acceso restringido al personal autorizado de Llamma. Toda actividad queda registrada.
+        </p>
+      </section>
+    </div>
+
+    <div class="row g-4 mt-1">
+      <div class="col-xl-7">
+        <section class="panel-card h-100">
+          <div class="panel-head flex-wrap">
+            <div>
+              <span class="panel-kicker">Control de acceso</span>
+              <h2>Matriz de roles y permisos</h2>
+            </div>
+            <span class="badge badge-soft-cyan">5 roles</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-llamma align-middle roles-table">
+              <thead>
+                <tr>
+                  <th>Rol</th>
+                  <th class="text-center">Ventas</th>
+                  <th class="text-center">Producción</th>
+                  <th class="text-center">Inventario</th>
+                  <th class="text-center">Clientes</th>
+                  <th class="text-center">Marketing</th>
+                  <th class="text-center">Config.</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="role-name">Administrador</span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                </tr>
+                <tr>
+                  <td><span class="role-name">Ventas</span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-read"><i class="bi bi-eye"></i></span></td>
+                  <td class="text-center"><span class="perm-read"><i class="bi bi-eye"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                </tr>
+                <tr>
+                  <td><span class="role-name">Producción</span></td>
+                  <td class="text-center"><span class="perm-read"><i class="bi bi-eye"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                </tr>
+                <tr>
+                  <td><span class="role-name">Inventario</span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                  <td class="text-center"><span class="perm-read"><i class="bi bi-eye"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                </tr>
+                <tr>
+                  <td><span class="role-name">Marketing</span></td>
+                  <td class="text-center"><span class="perm-read"><i class="bi bi-eye"></i></span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-yes"><i class="bi bi-check-lg"></i></span></td>
+                  <td class="text-center"><span class="perm-no">—</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="table-note">
+            <i class="bi bi-check2-circle"></i>
+            Acceso completo · <i class="bi bi-eye"></i> Solo lectura · — Sin acceso
+          </p>
+        </section>
+      </div>
+
+      <div class="col-xl-5">
+        <section class="panel-card h-100">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Seguridad</span>
+              <h2>Accesos recientes</h2>
+            </div>
+            <button class="btn btn-icon" type="button" aria-label="Actualizar">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+
+          <div class="session-list">
+            <div class="session-row">
+              <span class="avatar avatar-cyan">MR</span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Mariana Ruiz</strong>
+                <small>Producción · Chrome · CDMX</small>
+              </div>
+              <div class="session-state">
+                <span class="badge badge-soft-success">En línea</span>
+                <small>Hace 2 min</small>
+              </div>
+            </div>
+            <div class="session-row">
+              <span class="avatar avatar-magenta">DS</span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Diego Salas</strong>
+                <small>Ventas · Edge · CDMX</small>
+              </div>
+              <div class="session-state">
+                <span class="badge badge-soft-success">En línea</span>
+                <small>Hace 9 min</small>
+              </div>
+            </div>
+            <div class="session-row">
+              <span class="avatar avatar-yellow">PM</span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Paola Méndez</strong>
+                <small>Marketing · Safari · Guadalajara</small>
+              </div>
+              <div class="session-state">
+                <span class="badge badge-soft-muted">Inactiva</span>
+                <small>Ayer · 18:40</small>
+              </div>
+            </div>
+            <div class="session-row">
+              <span class="avatar avatar-ink">IC</span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Iván Córdoba</strong>
+                <small>Inventario · Chrome · CDMX</small>
+              </div>
+              <div class="session-state">
+                <span class="badge badge-soft-muted">Inactiva</span>
+                <small>Ayer · 17:05</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="quote-note">
+            <i class="bi bi-shield-lock"></i>
+            <span>Se solicita doble factor de autenticación para roles con acceso a configuración.</span>
+          </div>
+
+          <button class="btn btn-outline-ink w-100 mt-auto" type="button">
+            <i class="bi bi-person-gear"></i> Administrar usuarios
+          </button>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

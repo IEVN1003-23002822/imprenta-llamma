@@ -1,4 +1,387 @@
-<section class="abastecimiento">
-  <h1>Llamma | Abastecimiento</h1>
-  <p>Vista base pendiente de implementación.</p>
-</section>
+<div class="module-page abastecimiento-page">
+  <div class="container">
+    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+      <div>
+        <span class="eyebrow">Compras y reposición</span>
+        <h1>Abastecimiento.</h1>
+        <p class="page-lead">
+          Reglas de stock mínimo y máximo, órdenes de compra y seguimiento de proveedores para que
+          el taller nunca se detenga por falta de material.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-ink" type="button">
+          <i class="bi bi-download"></i> Exportar
+        </button>
+        <button class="btn btn-brand" type="button">
+          <i class="bi bi-cart-plus"></i> Nueva orden de compra
+        </button>
+      </div>
+    </header>
+
+    <div class="inventory-alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>
+        <strong>4 insumos requieren reposición inmediata.</strong> La tinta CMYK, la lona Frontlit,
+        el papel Couché y el laminado en frío están por debajo de su punto de reorden.
+      </span>
+      <a routerLink="/inventario">Revisar existencias <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-xl-3">
+        <div class="supply-stat">
+          <span class="icon-tile icon-tile-cyan"><i class="bi bi-file-earmark-text"></i></span>
+          <div><strong>06</strong><span>Órdenes de compra abiertas</span></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="supply-stat">
+          <span class="icon-tile icon-tile-magenta"><i class="bi bi-cash-coin"></i></span>
+          <div><strong>$86,400</strong><span>Monto comprometido</span></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="supply-stat">
+          <span class="icon-tile icon-tile-yellow"><i class="bi bi-truck"></i></span>
+          <div><strong>08</strong><span>Proveedores activos</span></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="supply-stat">
+          <span class="icon-tile icon-tile-success"><i class="bi bi-clock-history"></i></span>
+          <div><strong>4.2 días</strong><span>Tiempo promedio de entrega</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-xl-8">
+        <section class="panel-card h-100">
+          <div class="panel-head flex-wrap">
+            <div>
+              <span class="panel-kicker">Compras en curso</span>
+              <h2>Órdenes de compra abiertas</h2>
+            </div>
+            <span class="badge badge-soft-cyan">6 activas</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-llamma align-middle">
+              <thead>
+                <tr>
+                  <th>Folio</th>
+                  <th>Proveedor e insumo</th>
+                  <th>Entrega</th>
+                  <th class="text-end">Monto</th>
+                  <th>Estado</th>
+                  <th class="text-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="order-id">OC-2026-184</div>
+                    <div class="cell-muted">Emitida el 11 nov</div>
+                  </td>
+                  <td>
+                    <div class="supplier-meta">
+                      <span class="avatar avatar-cyan">GF</span>
+                      <div><strong>Gran Formato SA</strong><small>Lona Frontlit · 80 m²</small></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-main">18 nov 2026</div>
+                    <div class="cell-muted">En tránsito</div>
+                  </td>
+                  <td class="text-end cell-main">$14,800.00</td>
+                  <td><span class="badge badge-soft-cyan">En tránsito</span></td>
+                  <td class="text-end">
+                    <div class="d-inline-flex gap-1">
+                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="order-id">OC-2026-183</div>
+                    <div class="cell-muted">Emitida el 10 nov</div>
+                  </td>
+                  <td>
+                    <div class="supplier-meta">
+                      <span class="avatar avatar-magenta">CL</span>
+                      <div><strong>ColorLab MX</strong><small>Tinta Eco-solvente CMYK · 60 ml</small></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-main">16 nov 2026</div>
+                    <div class="cell-muted">Confirmada</div>
+                  </td>
+                  <td class="text-end cell-main">$57.00</td>
+                  <td><span class="badge badge-soft-warning">Confirmada</span></td>
+                  <td class="text-end">
+                    <div class="d-inline-flex gap-1">
+                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="order-id">OC-2026-182</div>
+                    <div class="cell-muted">Emitida el 09 nov</div>
+                  </td>
+                  <td>
+                    <div class="supplier-meta">
+                      <span class="avatar avatar-ink">PC</span>
+                      <div><strong>Papelera Central</strong><small>Papel Couché 300g · 500 hojas</small></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-main">15 nov 2026</div>
+                    <div class="cell-muted">En tránsito</div>
+                  </td>
+                  <td class="text-end cell-main">$2,250.00</td>
+                  <td><span class="badge badge-soft-cyan">En tránsito</span></td>
+                  <td class="text-end">
+                    <div class="d-inline-flex gap-1">
+                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="order-id">OC-2026-181</div>
+                    <div class="cell-muted">Emitida el 07 nov</div>
+                  </td>
+                  <td>
+                    <div class="supplier-meta">
+                      <span class="avatar avatar-yellow">AP</span>
+                      <div><strong>Acabados Pro</strong><small>Laminado en frío · 30 ml</small></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-main">14 nov 2026</div>
+                    <div class="cell-muted">Pendiente de confirmar</div>
+                  </td>
+                  <td class="text-end cell-main">$6,300.00</td>
+                  <td><span class="badge badge-soft-muted">Pendiente</span></td>
+                  <td class="text-end">
+                    <div class="d-inline-flex gap-1">
+                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="order-id">OC-2026-180</div>
+                    <div class="cell-muted">Emitida el 05 nov</div>
+                  </td>
+                  <td>
+                    <div class="supplier-meta">
+                      <span class="avatar avatar-cyan">EM</span>
+                      <div><strong>Estructuras MX</strong><small>Perfiles de aluminio · 120 piezas</small></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-main">13 nov 2026</div>
+                    <div class="cell-muted">Recibida parcial</div>
+                  </td>
+                  <td class="text-end cell-main">$11,400.00</td>
+                  <td><span class="badge badge-soft-success">Recibida</span></td>
+                  <td class="text-end">
+                    <div class="d-inline-flex gap-1">
+                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <span>Mostrando 5 de 6 órdenes abiertas</span>
+            <a class="panel-link mt-0" routerLink="/consultas">Ver historial completo <i class="bi bi-arrow-right"></i></a>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-xl-4">
+        <section class="panel-card h-100 d-flex flex-column">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Reposición sugerida</span>
+              <h2>Compras recomendadas</h2>
+            </div>
+            <span class="badge badge-soft-danger">4 insumos</span>
+          </div>
+
+          <div>
+            <div class="purchase-item">
+              <span class="icon-tile icon-tile-sm icon-tile-danger"><i class="bi bi-layers"></i></span>
+              <div>
+                <strong>Lona Frontlit</strong>
+                <small>Reponer 120 m² · Gran Formato SA</small>
+              </div>
+              <span class="badge badge-soft-danger">Urgente</span>
+            </div>
+            <div class="purchase-item">
+              <span class="icon-tile icon-tile-sm icon-tile-danger"><i class="bi bi-droplet-half"></i></span>
+              <div>
+                <strong>Tinta Eco-solvente CMYK</strong>
+                <small>Reponer 80 ml · ColorLab MX</small>
+              </div>
+              <span class="badge badge-soft-danger">Urgente</span>
+            </div>
+            <div class="purchase-item">
+              <span class="icon-tile icon-tile-sm icon-tile-warning"><i class="bi bi-file-earmark-text"></i></span>
+              <div>
+                <strong>Papel Couché 300g</strong>
+                <small>Reponer 500 hojas · Papelera Central</small>
+              </div>
+              <span class="badge badge-soft-warning">Esta semana</span>
+            </div>
+            <div class="purchase-item">
+              <span class="icon-tile icon-tile-sm icon-tile-warning"><i class="bi bi-arrow-repeat"></i></span>
+              <div>
+                <strong>Laminado en frío</strong>
+                <small>Reponer 20 ml · Acabados Pro</small>
+              </div>
+              <span class="badge badge-soft-warning">Esta semana</span>
+            </div>
+          </div>
+
+          <div class="quote-note">
+            <i class="bi bi-calculator"></i>
+            <span>La sugerencia considera el consumo promedio de los últimos 90 días y el stock mínimo.</span>
+          </div>
+
+          <button class="btn btn-ink w-100 mt-auto" type="button">
+            <i class="bi bi-file-earmark-plus"></i> Generar orden consolidada
+          </button>
+        </section>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <section class="panel-card h-100">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Directorio</span>
+              <h2>Proveedores estratégicos</h2>
+            </div>
+            <a class="panel-link mt-0" routerLink="/inventario">Ver insumos <i class="bi bi-arrow-right"></i></a>
+          </div>
+
+          <div class="supplier-list">
+            <div class="supplier-row">
+              <span class="avatar avatar-cyan">GF</span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Gran Formato SA</strong>
+                <small>Lonas, viniles y microperforado</small>
+              </div>
+              <div class="supplier-score">
+                <strong>96%</strong>
+                <span>Cumplimiento</span>
+              </div>
+              <span class="badge badge-soft-success">Activo</span>
+            </div>
+            <div class="supplier-row">
+              <span class="avatar avatar-magenta">CL</span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>ColorLab MX</strong>
+                <small>Tintas CMYK y perfiles ICC</small>
+              </div>
+              <div class="supplier-score">
+                <strong>92%</strong>
+                <span>Cumplimiento</span>
+              </div>
+              <span class="badge badge-soft-success">Activo</span>
+            </div>
+            <div class="supplier-row">
+              <span class="avatar avatar-ink">PC</span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Papelera Central</strong>
+                <small>Papel Couché, opalina y bond</small>
+              </div>
+              <div class="supplier-score">
+                <strong>88%</strong>
+                <span>Cumplimiento</span>
+              </div>
+              <span class="badge badge-soft-warning">Revisión</span>
+            </div>
+            <div class="supplier-row">
+              <span class="avatar avatar-yellow">AP</span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Acabados Pro</strong>
+                <small>Laminados, adhesivos y protectores</small>
+              </div>
+              <div class="supplier-score">
+                <strong>94%</strong>
+                <span>Cumplimiento</span>
+              </div>
+              <span class="badge badge-soft-success">Activo</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-lg-6">
+        <section class="panel-card h-100">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Calendario</span>
+              <h2>Recepciones programadas</h2>
+            </div>
+            <span class="badge badge-soft-muted">Próximos 7 días</span>
+          </div>
+
+          <div class="receipt-list">
+            <div class="receipt-item">
+              <span class="receipt-date"><strong>14</strong><span>NOV</span></span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Laminado en frío · Acabados Pro</strong>
+                <small>OC-2026-181 · 30 ml · Andén 2</small>
+              </div>
+              <span class="badge badge-soft-warning">Por confirmar</span>
+            </div>
+            <div class="receipt-item">
+              <span class="receipt-date"><strong>15</strong><span>NOV</span></span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Papel Couché 300g · Papelera Central</strong>
+                <small>OC-2026-182 · 500 hojas · Andén 1</small>
+              </div>
+              <span class="badge badge-soft-cyan">En tránsito</span>
+            </div>
+            <div class="receipt-item">
+              <span class="receipt-date"><strong>16</strong><span>NOV</span></span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Tinta Eco-solvente CMYK · ColorLab MX</strong>
+                <small>OC-2026-183 · 60 ml · Recepción directa</small>
+              </div>
+              <span class="badge badge-soft-cyan">En tránsito</span>
+            </div>
+            <div class="receipt-item">
+              <span class="receipt-date"><strong>18</strong><span>NOV</span></span>
+              <div class="flex-grow-1 min-w-0">
+                <strong>Lona Frontlit · Gran Formato SA</strong>
+                <small>OC-2026-184 · 80 m² · Andén 2</small>
+              </div>
+              <span class="badge badge-soft-cyan">En tránsito</span>
+            </div>
+          </div>
+
+          <p class="table-note">
+            <i class="bi bi-upc-scan"></i>
+            Al recibir, valida cantidades y calidad antes de actualizar el inventario.
+          </p>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

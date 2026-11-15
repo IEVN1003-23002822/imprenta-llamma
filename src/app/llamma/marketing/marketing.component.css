@@ -1,1 +1,254 @@
-/* Estilos del módulo marketing. Pendiente de implementación. */
+/* Ajustes visuales del módulo de marketing. */
+
+.mkt-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.mkt-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.mkt-stat span:not(.icon-tile) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.campaign-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 13rem;
+}
+
+.campaign-cell strong {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.campaign-cell small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
+}
+
+.channel-list {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.channel-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.38rem;
+  font-size: 0.72rem;
+}
+
+.channel-top > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--llamma-muted);
+}
+
+.channel-top strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.75rem;
+}
+
+.channel-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.dot-muted {
+  background: #cfcdc6;
+}
+
+.channel-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #efeee9;
+}
+
+.channel-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.fill-cyan {
+  background: var(--llamma-cyan);
+}
+
+.fill-magenta {
+  background: var(--llamma-magenta);
+}
+
+.fill-yellow {
+  background: #e8da00;
+}
+
+.fill-ink {
+  background: var(--llamma-carbon);
+}
+
+.fill-muted {
+  background: #adaba4;
+}
+
+.calendar-list {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.calendar-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  padding-bottom: 0.95rem;
+  border-bottom: 1px dashed var(--llamma-line);
+}
+
+.calendar-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.calendar-date {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.9rem;
+  height: 2.9rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.7rem;
+  background: #fbfaf7;
+}
+
+.calendar-date strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.98rem;
+  line-height: 1;
+}
+
+.calendar-date span {
+  color: var(--llamma-muted);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.calendar-item strong {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.calendar-item small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
+}
+
+.calendar-item .badge {
+  margin-left: auto;
+}
+
+.budget-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.budget-summary span {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.budget-summary strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--llamma-font-display);
+  font-size: 0.92rem;
+}
+
+.budget-track {
+  height: 9px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  background: #efeee9;
+}
+
+.budget-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--llamma-cyan), var(--llamma-magenta));
+}
+
+.budget-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.budget-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+}
+
+.budget-row span:nth-child(2) {
+  color: var(--llamma-muted);
+}
+
+.budget-row strong {
+  margin-left: auto;
+  font-family: var(--llamma-font-display);
+  font-size: 0.72rem;
+}
+
+.budget-dot {
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+@media (max-width: 575.98px) {
+  .mkt-stat {
+    padding: 0.9rem;
+  }
+
+  .budget-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}

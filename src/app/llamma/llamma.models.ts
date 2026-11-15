@@ -213,8 +213,11 @@ export interface Usuario {
   id: Identificador;
   nombre: string;
   correo: string;
+  telefono?: string;
   rol: RolUsuario;
+  permisos?: string[];
   activo: boolean;
+  ultimoAcceso?: string | null;
 }
 
 export interface ActividadMarketing {
@@ -238,4 +241,168 @@ export interface ResumenDashboard {
   ordenesEnProduccion: number;
   materiasPrimasBajoStock: number;
   clientesActivos: number;
+  solicitudesNuevas?: number;
+  solicitudesEnRevision?: number;
 }
+
+/* ---------------------------------------------------------------------------
+ * Portal público: solicitudes de cotización
+ * ------------------------------------------------------------------------- */
+
+export type EstadoSolicitud = 'nueva' | 'en-revision' | 'cotizada' | 'convertida' | 'descartada';
+
+export type MetodoEntrega = 'taller' | 'domicilio' | 'paqueteria' | 'instalacion';
+
+export type OrigenSolicitud = 'web' | 'whatsapp' | 'mostrador' | 'referido';
+
+export type EstadoCotizacion =
+  | 'borrador'
+  | 'enviada'
+  | 'aprobada'
+  | 'rechazada'
+  | 'vencida'
+  | 'convertida';
+
+export type TipoPago = 'anticipo' | 'saldo' | 'abono';
+
+export interface ItemSolicitud {
+  id?: number;
+  productoId?: number | null;
+  nombreProducto: string;
+  especificaciones?: string;
+  cantidad: number;
+  precioEstimado?: number | null;
+}
+
+export interface ArchivoAdjunto {
+  id: number;
+  nombreOriginal: string;
+  nombreGuardado?: string;
+  mimeType?: string;
+  tamanoBytes: number;
+  url: string;
+}
+
+export interface SolicitudCotizacion {
+  id: number;
+  folio: string;
+  nombreCliente: string;
+  empresa?: string | null;
+  correo: string;
+  telefono?: string | null;
+  segmento: SegmentoCliente;
+  mensaje?: string | null;
+  fechaDeseada?: string | null;
+  metodoEntrega: MetodoEntrega;
+  estado: EstadoSolicitud;
+  origen: string;
+  fechaCreacion: string;
+  totalItems?: number;
+  totalArchivos?: number;
+  itemsSolicitados?: ItemSolicitud[];
+  archivosAdjuntos?: ArchivoAdjunto[];
+  cotizacionId?: number | null;
+}
+
+export interface ResumenSolicitudes {
+  total: number;
+  porEstado: Record<EstadoSolicitud, number>;
+  nuevas: number;
+  enRevision: number;
+}
+
+export interface ArchivoSeguimiento {
+  nombre: string;
+  tamanoBytes: number;
+}
+
+export interface SeguimientoSolicitud {
+  folio: string;
+  estado: EstadoSolicitud;
+  fechaCreacion: string;
+  fechaDeseada?: string | null;
+  nombreCliente: string;
+  empresa?: string | null;
+  mensaje?: string | null;
+  items: ItemSolicitud[];
+  archivos: ArchivoSeguimiento[];
+  cotizacion: { folio: string; estado: EstadoCotizacion; total: number } | null;
+  actualizadoEn: string;
+}
+
+export interface RespuestaPaginada<T> {
+  items: T[];
+  total: number;
+  pagina: number;
+  porPagina: number;
+  paginas: number;
+}
+
+export interface RespuestaLogin {
+  token: string;
+  tokenType: string;
+  expiraEn: string;
+  usuario: Usuario;
+  permisos: string[];
+}
+
+export interface AuthSession {
+  usuario: Usuario;
+  token: string;
+  permisos: string[];
+  expiraEn?: string;
+}
+
+export interface ProductoPublico {
+  id: number;
+  nombre: string;
+  descripcion?: string | null;
+  categoria: CategoriaProducto;
+  lineaProduccion: LineaProduccion;
+  precioBase: number;
+  unidadVenta: UnidadMedida;
+  icono?: string;
+}
+
+export interface ItemCotizacion {
+  productoId?: number | null;
+  descripcion: string;
+  especificaciones?: string;
+  cantidad: number;
+  precioUnitario: number;
+  importe: number;
+}
+
+export interface Cotizacion {
+  id: number;
+  folio: string;
+  solicitudId?: number | null;
+  clienteId: number;
+  cliente?: string;
+  usuario?: string;
+  estado: EstadoCotizacion;
+  fechaEmision: string;
+  vigenciaDias: number;
+  subtotal: number;
+  impuestos: number;
+  total: number;
+  anticipo: number;
+  saldo: number;
+  notas?: string | null;
+  creadoEn: string;
+  items?: ItemCotizacion[];
+}
+
+export interface NuevaSolicitudPayload {
+  nombreCliente: string;
+  empresa?: string;
+  correo: string;
+  telefono?: string;
+  segmento: SegmentoCliente;
+  mensaje?: string;
+  fechaDeseada?: string | null;
+  metodoEntrega: MetodoEntrega;
+  items: ItemSolicitud[];
+  archivos?: File[];
+}
+

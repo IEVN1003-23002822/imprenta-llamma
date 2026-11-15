@@ -1,4 +1,115 @@
-<section class="productos">
-  <h1>Llamma | Productos</h1>
-  <p>Vista base pendiente de implementación.</p>
-</section>
+<div class="module-page productos-page">
+  <div class="container">
+    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+      <div>
+        <span class="eyebrow">Catálogo público</span>
+        <h1>Productos que podemos transformar.</h1>
+        <p class="page-lead">
+          Gran formato, textil, promocionales y papelería creativa. Explora el catálogo, elige tus
+          piezas y solicita una cotización a tu medida. Los precios son referenciales y se confirman
+          al revisar medidas, materiales y archivo de diseño.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-brand" routerLink="/cotizar">
+          <i class="bi bi-send"></i> Solicitar cotización
+        </a>
+        <a class="btn btn-soft" routerLink="/login">
+          <i class="bi bi-shield-lock"></i> Acceso equipo
+        </a>
+      </div>
+    </header>
+
+    <section class="panel-card mb-4">
+      <div class="catalog-toolbar">
+        <div class="catalog-tabs" role="tablist" aria-label="Filtrar por línea de producción">
+          @for (opcion of lineas; track opcion.clave) {
+            <button
+              class="filter-chip"
+              type="button"
+              [class.is-active]="linea() === opcion.clave"
+              (click)="filtrarPor(opcion.clave)"
+            >
+              {{ opcion.etiqueta }}
+            </button>
+          }
+        </div>
+
+        <div class="catalog-search">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            type="search"
+            class="form-control"
+            placeholder="Buscar producto..."
+            [value]="busqueda()"
+            (input)="actualizarBusqueda($event)"
+          >
+        </div>
+      </div>
+    </section>
+
+    @if (error()) {
+      <div class="catalog-error mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    @if (cargando()) {
+      <div class="panel-card catalog-empty">
+        <i class="bi bi-arrow-repeat"></i>
+        <p>Cargando catálogo...</p>
+      </div>
+    } @else if (!filtrados().length) {
+      <div class="panel-card catalog-empty">
+        <i class="bi bi-search"></i>
+        <p>No encontramos productos con ese filtro. Prueba con otra línea o palabra.</p>
+      </div>
+    } @else {
+      <div class="catalog-grid">
+        @for (producto of filtrados(); track producto.id) {
+          <article class="product-card">
+            <div class="product-card-head">
+              <span class="icon-tile icon-tile-cyan">
+                <i class="bi {{ producto.icono || 'bi-box-seam' }}"></i>
+              </span>
+              <span class="badge badge-soft-muted">{{ etiquetaLinea(producto.lineaProduccion) }}</span>
+            </div>
+
+            <h2>{{ producto.nombre }}</h2>
+            <p>{{ producto.descripcion || 'Producto personalizable según tu proyecto.' }}</p>
+
+            <div class="product-card-footer">
+              <div class="product-price">
+                <span>Desde</span>
+                <strong>{{ moneda(producto.precioBase) }}</strong>
+                <small>por {{ unidad(producto.unidadVenta) }}</small>
+              </div>
+              <a
+                class="btn btn-sm btn-brand"
+                routerLink="/cotizar"
+                [queryParams]="{ producto: producto.id }"
+              >
+                <i class="bi bi-plus-lg"></i> Cotizar
+              </a>
+            </div>
+          </article>
+        }
+      </div>
+    }
+
+    <section class="catalog-help">
+      <div class="catalog-help-text">
+        <span class="eyebrow">¿No encuentras tu producto?</span>
+        <h2>Lo desarrollamos contigo.</h2>
+        <p>
+          Cuéntanos qué necesitas y armamos una propuesta con materiales, acabados y tiempos de
+          producción para tu proyecto.
+        </p>
+      </div>
+      <a class="btn btn-yellow" routerLink="/cotizar">
+        <i class="bi bi-chat-square-text"></i> Describir mi proyecto
+      </a>
+    </section>
+  </div>
+</div>

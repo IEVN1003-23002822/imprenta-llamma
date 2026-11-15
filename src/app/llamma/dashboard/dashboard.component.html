@@ -1,4 +1,357 @@
-<section class="dashboard">
-  <h1>Llamma | Dashboard</h1>
-  <p>Vista base pendiente de implementación.</p>
-</section>
+<div class="module-page dashboard-page">
+  <div class="container">
+    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+      <div>
+        <span class="eyebrow">Panel ejecutivo</span>
+        <h1>Buenos días, equipo Llamma.</h1>
+        <p class="page-lead">
+          Una lectura rápida del taller: ventas, carga de producción y materiales que necesitan
+          atención esta semana.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="date-chip"><i class="bi bi-calendar3"></i> Noviembre 2026</span>
+        <button class="btn btn-outline-ink" type="button">
+          <i class="bi bi-download"></i> Exportar
+        </button>
+      </div>
+    </header>
+
+    <div class="row g-4 mb-4">
+      <div class="col-sm-6 col-xl-3">
+        <article class="kpi-card h-100">
+          <div class="d-flex align-items-start justify-content-between gap-2">
+            <span class="icon-tile icon-tile-cyan"><i class="bi bi-currency-dollar"></i></span>
+            <span class="trend trend-up"><i class="bi bi-arrow-up-right"></i> 12.4%</span>
+          </div>
+          <p class="kpi-label">Ventas del periodo</p>
+          <h2 class="kpi-value">$248,650</h2>
+          <div class="kpi-foot">
+            <i class="bi bi-graph-up-arrow text-cyan"></i>
+            <span>vs. mes anterior</span>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <article class="kpi-card h-100">
+          <div class="d-flex align-items-start justify-content-between gap-2">
+            <span class="icon-tile icon-tile-magenta"><i class="bi bi-receipt-cutoff"></i></span>
+            <span class="trend trend-up"><i class="bi bi-arrow-up-right"></i> 6.8%</span>
+          </div>
+          <p class="kpi-label">Ticket promedio</p>
+          <h2 class="kpi-value">$1,842</h2>
+          <div class="kpi-foot">
+            <i class="bi bi-bag-check text-magenta"></i>
+            <span>135 pedidos cerrados</span>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <article class="kpi-card h-100">
+          <div class="d-flex align-items-start justify-content-between gap-2">
+            <span class="icon-tile icon-tile-yellow"><i class="bi bi-gear-wide-connected"></i></span>
+            <span class="trend trend-flat"><i class="bi bi-dot"></i> +4 hoy</span>
+          </div>
+          <p class="kpi-label">Órdenes en producción</p>
+          <h2 class="kpi-value">18</h2>
+          <div class="kpi-foot">
+            <i class="bi bi-printer text-yellow"></i>
+            <span>6 en etapa de impresión</span>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <article class="kpi-card h-100">
+          <div class="d-flex align-items-start justify-content-between gap-2">
+            <span class="icon-tile icon-tile-danger"><i class="bi bi-exclamation-triangle"></i></span>
+            <span class="trend trend-down"><i class="bi bi-arrow-down-right"></i> 3 críticas</span>
+          </div>
+          <p class="kpi-label">Alertas de inventario</p>
+          <h2 class="kpi-value">03</h2>
+          <div class="kpi-foot">
+            <i class="bi bi-droplet-half text-magenta"></i>
+            <span>Tinta CMYK y lona Frontlit</span>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-xl-8">
+        <article class="panel-card h-100">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Rendimiento</span>
+              <h2>Ventas por línea de negocio</h2>
+            </div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Rango de la gráfica">
+              <button type="button" class="btn btn-soft">3M</button>
+              <button type="button" class="btn btn-soft active">6M</button>
+              <button type="button" class="btn btn-soft">12M</button>
+            </div>
+          </div>
+
+          <div class="chart-summary">
+            <strong>$248,650</strong>
+            <span>últimos 6 meses</span>
+            <span class="trend trend-up ms-auto"><i class="bi bi-arrow-up-right"></i> 12.4%</span>
+          </div>
+
+          <div class="bar-chart" role="img" aria-label="Gráfica de ventas por línea de negocio de junio a noviembre">
+            <div class="bar-group">
+              <div class="bar-set">
+                <span class="bar bar-cyan" style="--bar: 58%"></span>
+                <span class="bar bar-magenta" style="--bar: 36%"></span>
+                <span class="bar bar-yellow" style="--bar: 22%"></span>
+              </div>
+              <span class="bar-label">Jun</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar-set">
+                <span class="bar bar-cyan" style="--bar: 64%"></span>
+                <span class="bar bar-magenta" style="--bar: 42%"></span>
+                <span class="bar bar-yellow" style="--bar: 28%"></span>
+              </div>
+              <span class="bar-label">Jul</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar-set">
+                <span class="bar bar-cyan" style="--bar: 72%"></span>
+                <span class="bar bar-magenta" style="--bar: 48%"></span>
+                <span class="bar bar-yellow" style="--bar: 32%"></span>
+              </div>
+              <span class="bar-label">Ago</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar-set">
+                <span class="bar bar-cyan" style="--bar: 61%"></span>
+                <span class="bar bar-magenta" style="--bar: 39%"></span>
+                <span class="bar bar-yellow" style="--bar: 25%"></span>
+              </div>
+              <span class="bar-label">Sep</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar-set">
+                <span class="bar bar-cyan" style="--bar: 78%"></span>
+                <span class="bar bar-magenta" style="--bar: 54%"></span>
+                <span class="bar bar-yellow" style="--bar: 38%"></span>
+              </div>
+              <span class="bar-label">Oct</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar-set">
+                <span class="bar bar-cyan" style="--bar: 86%"></span>
+                <span class="bar bar-magenta" style="--bar: 62%"></span>
+                <span class="bar bar-yellow" style="--bar: 44%"></span>
+              </div>
+              <span class="bar-label">Nov</span>
+            </div>
+          </div>
+
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="--legend-color: var(--llamma-cyan)"></span> Gran formato</span>
+            <span class="legend-item"><span class="legend-dot" style="--legend-color: var(--llamma-magenta)"></span> Textil</span>
+            <span class="legend-item"><span class="legend-dot" style="--legend-color: var(--llamma-yellow)"></span> Promocionales</span>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-xl-4">
+        <article class="panel-card h-100 d-flex flex-column">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Taller</span>
+              <h2>Estado de producción</h2>
+            </div>
+            <span class="badge badge-soft-warning">18 activas</span>
+          </div>
+
+          <div class="production-donut">
+            <div class="donut-center">
+              <strong>18</strong>
+              <span>órdenes</span>
+            </div>
+          </div>
+
+          <div class="stage-list">
+            <div class="stage-row">
+              <span class="stage-dot dot-cyan"></span>
+              <span>Impresión</span>
+              <div class="stage-meter"><span style="width: 78%"></span></div>
+              <strong>6</strong>
+            </div>
+            <div class="stage-row">
+              <span class="stage-dot dot-magenta"></span>
+              <span>Acabado</span>
+              <div class="stage-meter"><span style="width: 62%"></span></div>
+              <strong>5</strong>
+            </div>
+            <div class="stage-row">
+              <span class="stage-dot dot-yellow"></span>
+              <span>Corte</span>
+              <div class="stage-meter"><span style="width: 48%"></span></div>
+              <strong>4</strong>
+            </div>
+            <div class="stage-row">
+              <span class="stage-dot dot-muted"></span>
+              <span>Entrega</span>
+              <div class="stage-meter"><span style="width: 34%"></span></div>
+              <strong>3</strong>
+            </div>
+          </div>
+
+          <a class="panel-link mt-auto" routerLink="/produccion">
+            Ver tablero de producción <i class="bi bi-arrow-right"></i>
+          </a>
+        </article>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-xl-7">
+        <article class="panel-card h-100">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Últimos movimientos</span>
+              <h2>Órdenes recientes</h2>
+            </div>
+            <a class="panel-link mt-0" routerLink="/detalle">Ver todas <i class="bi bi-arrow-right"></i></a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-llamma align-middle">
+              <thead>
+                <tr>
+                  <th>Orden</th>
+                  <th>Cliente</th>
+                  <th>Producto</th>
+                  <th>Estado</th>
+                  <th class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="order-id">#LLM-1048</div>
+                    <div class="cell-muted">Hoy, 09:24</div>
+                  </td>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-cyan">AC</span>
+                      <div><strong>Alma Creativa</strong><small>Corporativo</small></div>
+                    </div>
+                  </td>
+                  <td>Roll-up 85 × 200</td>
+                  <td><span class="badge badge-soft-cyan">En producción</span></td>
+                  <td class="text-end cell-main">$4,850</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="order-id">#LLM-1047</div>
+                    <div class="cell-muted">Hoy, 08:10</div>
+                  </td>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-magenta">EN</span>
+                      <div><strong>Estudio Nómada</strong><small>Pyme</small></div>
+                    </div>
+                  </td>
+                  <td>Playeras DTF · 40 pzas</td>
+                  <td><span class="badge badge-soft-success">Listo</span></td>
+                  <td class="text-end cell-main">$6,200</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="order-id">#LLM-1046</div>
+                    <div class="cell-muted">Ayer, 16:45</div>
+                  </td>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-yellow">CO</span>
+                      <div><strong>Café Origen</strong><small>Eventos</small></div>
+                    </div>
+                  </td>
+                  <td>Tazas sublimadas · 60</td>
+                  <td><span class="badge badge-soft-cyan">En producción</span></td>
+                  <td class="text-end cell-main">$8,700</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="order-id">#LLM-1045</div>
+                    <div class="cell-muted">Ayer, 12:30</div>
+                  </td>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-ink">GA</span>
+                      <div><strong>Grupo Altura</strong><small>Corporativo</small></div>
+                    </div>
+                  </td>
+                  <td>Señalética para stand</td>
+                  <td><span class="badge badge-soft-warning">Confirmado</span></td>
+                  <td class="text-end cell-main">$12,400</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-xl-5">
+        <article class="panel-card h-100 d-flex flex-column">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Atención inmediata</span>
+              <h2>Alertas de inventario</h2>
+            </div>
+            <span class="badge badge-soft-danger">3 críticas</span>
+          </div>
+
+          <div class="alert-list">
+            <div class="alert-row">
+              <span class="icon-tile icon-tile-danger"><i class="bi bi-droplet-half"></i></span>
+              <div class="flex-grow-1 min-w-0">
+                <div class="d-flex align-items-center justify-content-between gap-2">
+                  <strong>Tinta Eco-solvente CMYK</strong>
+                  <span class="stock-text text-danger">8 / 30 ml</span>
+                </div>
+                <div class="stock-track mt-2"><span class="stock-fill bg-danger" style="width: 27%"></span></div>
+                <small>Reponer antes del viernes</small>
+              </div>
+            </div>
+
+            <div class="alert-row">
+              <span class="icon-tile icon-tile-danger"><i class="bi bi-layers"></i></span>
+              <div class="flex-grow-1 min-w-0">
+                <div class="d-flex align-items-center justify-content-between gap-2">
+                  <strong>Lona Frontlit</strong>
+                  <span class="stock-text text-danger">12 / 40 m²</span>
+                </div>
+                <div class="stock-track mt-2"><span class="stock-fill bg-danger" style="width: 30%"></span></div>
+                <small>Pedido pendiente con proveedor</small>
+              </div>
+            </div>
+
+            <div class="alert-row">
+              <span class="icon-tile icon-tile-warning"><i class="bi bi-disc"></i></span>
+              <div class="flex-grow-1 min-w-0">
+                <div class="d-flex align-items-center justify-content-between gap-2">
+                  <strong>Ojillos metálicos</strong>
+                  <span class="stock-text text-warning">150 / 500 pzas</span>
+                </div>
+                <div class="stock-track mt-2"><span class="stock-fill bg-warning" style="width: 30%"></span></div>
+                <small>Suficiente para 2 pedidos más</small>
+              </div>
+            </div>
+          </div>
+
+          <a class="panel-link mt-auto" routerLink="/abastecimiento">
+            Generar orden de compra <i class="bi bi-arrow-right"></i>
+          </a>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,349 @@
-<section class="clientes">
-  <h1>Llamma | Clientes</h1>
-  <p>Vista base pendiente de implementación.</p>
-</section>
+<div class="module-page clientes-page">
+  <div class="container">
+    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+      <div>
+        <span class="eyebrow">Relación y seguimiento</span>
+        <h1>Directorio de clientes.</h1>
+        <p class="page-lead">
+          Segmentación, datos fiscales, historial de compras y notas de seguimiento para cada
+          cuenta. Todo el contexto comercial en un solo lugar.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-ink" type="button">
+          <i class="bi bi-download"></i> Exportar
+        </button>
+        <button class="btn btn-brand" type="button">
+          <i class="bi bi-person-plus"></i> Nuevo cliente
+        </button>
+      </div>
+    </header>
+
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-xl-3">
+        <div class="client-stat">
+          <span class="icon-tile icon-tile-cyan"><i class="bi bi-people"></i></span>
+          <div><strong>142</strong><span>Clientes activos</span></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="client-stat">
+          <span class="icon-tile icon-tile-magenta"><i class="bi bi-person-plus"></i></span>
+          <div><strong>12</strong><span>Nuevos este mes</span></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="client-stat">
+          <span class="icon-tile icon-tile-yellow"><i class="bi bi-receipt-cutoff"></i></span>
+          <div><strong>$1,842</strong><span>Ticket promedio</span></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="client-stat">
+          <span class="icon-tile icon-tile-success"><i class="bi bi-arrow-repeat"></i></span>
+          <div><strong>68%</strong><span>Tasa de recompra</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-xl-8">
+        <section class="panel-card h-100">
+          <div class="panel-head flex-wrap">
+            <div>
+              <span class="panel-kicker">Base comercial</span>
+              <h2>Clientes registrados</h2>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge badge-soft-success">142 cuentas</span>
+              <button class="btn btn-icon" type="button" aria-label="Vista de lista">
+                <i class="bi bi-list-ul"></i>
+              </button>
+              <button class="btn btn-icon" type="button" aria-label="Vista de cuadrícula">
+                <i class="bi bi-grid-3x3-gap"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-lg-6">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Buscar cliente, empresa o RFC..."
+                  aria-label="Buscar cliente"
+                >
+              </div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <select class="form-select" aria-label="Filtrar por segmento">
+                <option selected>Todos los segmentos</option>
+                <option>Corporativo</option>
+                <option>Pyme</option>
+                <option>Eventos</option>
+                <option>Escolar</option>
+                <option>Particular</option>
+              </select>
+            </div>
+            <div class="col-6 col-lg-3">
+              <select class="form-select" aria-label="Filtrar por estado">
+                <option selected>Todo estado</option>
+                <option>Activo</option>
+                <option>Por reactivar</option>
+                <option>Inactivo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-llamma align-middle">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Segmento</th>
+                  <th>Contacto</th>
+                  <th class="text-center">Pedidos</th>
+                  <th>Última compra</th>
+                  <th class="text-end">Total</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-cyan">AC</span>
+                      <div><strong>Alma Creativa</strong><small>RFC · ACM220114H23</small></div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-cyan">Corporativo</span></td>
+                  <td>
+                    <div class="cell-main">Ana Torres</div>
+                    <div class="cell-muted">55 1234 5678</div>
+                  </td>
+                  <td class="text-center">24</td>
+                  <td>12 nov 2026</td>
+                  <td class="text-end cell-main">$184,300</td>
+                  <td><span class="badge badge-soft-success">Activo</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-magenta">EN</span>
+                      <div><strong>Estudio Nómada</strong><small>RFC · ENO240118P45</small></div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-magenta">Pyme</span></td>
+                  <td>
+                    <div class="cell-main">Luis Barrera</div>
+                    <div class="cell-muted">55 2345 6789</div>
+                  </td>
+                  <td class="text-center">18</td>
+                  <td>12 nov 2026</td>
+                  <td class="text-end cell-main">$96,750</td>
+                  <td><span class="badge badge-soft-success">Activo</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-yellow">CO</span>
+                      <div><strong>Café Origen</strong><small>RFC · COR210503M12</small></div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-yellow">Eventos</span></td>
+                  <td>
+                    <div class="cell-main">Renata Solís</div>
+                    <div class="cell-muted">55 3456 7890</div>
+                  </td>
+                  <td class="text-center">15</td>
+                  <td>11 nov 2026</td>
+                  <td class="text-end cell-main">$78,420</td>
+                  <td><span class="badge badge-soft-success">Activo</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-ink">GA</span>
+                      <div><strong>Grupo Altura</strong><small>RFC · GAL190822K78</small></div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-cyan">Corporativo</span></td>
+                  <td>
+                    <div class="cell-main">Sergio Nava</div>
+                    <div class="cell-muted">55 4567 8901</div>
+                  </td>
+                  <td class="text-center">11</td>
+                  <td>11 nov 2026</td>
+                  <td class="text-end cell-main">$142,800</td>
+                  <td><span class="badge badge-soft-success">Activo</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-cyan">PL</span>
+                      <div><strong>Papelería Lumen</strong><small>RFC · PLU200317Q34</small></div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-muted">Escolar</span></td>
+                  <td>
+                    <div class="cell-main">Carla Domínguez</div>
+                    <div class="cell-muted">55 5678 9012</div>
+                  </td>
+                  <td class="text-center">9</td>
+                  <td>10 nov 2026</td>
+                  <td class="text-end cell-main">$38,900</td>
+                  <td><span class="badge badge-soft-warning">Por reactivar</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar avatar-magenta">BA</span>
+                      <div><strong>Bistró Aurora</strong><small>RFC · BAU220506L90</small></div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-soft-yellow">Eventos</span></td>
+                  <td>
+                    <div class="cell-main">Mario Esquivel</div>
+                    <div class="cell-muted">55 6789 0123</div>
+                  </td>
+                  <td class="text-center">7</td>
+                  <td>09 nov 2026</td>
+                  <td class="text-end cell-main">$26,740</td>
+                  <td><span class="badge badge-soft-success">Activo</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <span>Mostrando 1–6 de 142 clientes</span>
+            <nav aria-label="Paginación de clientes">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Anterior"><i class="bi bi-chevron-left"></i></a>
+                </li>
+                <li class="page-item active" aria-current="page"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item"><a class="page-link" href="#">24</a></li>
+                <li class="page-item">
+                  <a class="page-link" href="#" aria-label="Siguiente"><i class="bi bi-chevron-right"></i></a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-xl-4">
+        <section class="client-profile mb-4">
+          <div class="profile-head">
+            <span class="profile-avatar">AC</span>
+            <div>
+              <span class="panel-kicker">Cliente destacado</span>
+              <h2>Alma Creativa</h2>
+              <span class="badge badge-soft-cyan">Corporativo</span>
+            </div>
+          </div>
+
+          <ul class="profile-contact">
+            <li><i class="bi bi-person"></i> Ana Torres · Dirección creativa</li>
+            <li><i class="bi bi-envelope"></i> ana&#64;almacreativa.mx</li>
+            <li><i class="bi bi-telephone"></i> 55 1234 5678</li>
+            <li><i class="bi bi-geo-alt"></i> Roma Norte, CDMX</li>
+          </ul>
+
+          <div class="profile-stats">
+            <div><strong>24</strong><span>Pedidos</span></div>
+            <div><strong>$184.3k</strong><span>Facturado</span></div>
+            <div><strong>$7.6k</strong><span>Ticket</span></div>
+          </div>
+
+          <div class="client-tags">
+            <span>Gran formato</span>
+            <span>Papelería</span>
+            <span>Recurrente</span>
+          </div>
+
+          <button class="btn btn-brand w-100" type="button">
+            <i class="bi bi-person-lines-fill"></i> Abrir ficha completa
+          </button>
+          <button class="btn btn-outline-ink w-100 mt-2" type="button">
+            <i class="bi bi-journal-plus"></i> Agregar nota
+          </button>
+        </section>
+
+        <section class="panel-card mb-4">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Seguimiento</span>
+              <h2>Notas recientes</h2>
+            </div>
+            <span class="badge badge-soft-muted">3</span>
+          </div>
+
+          <div class="note-list">
+            <div class="note-item">
+              <span class="note-dot dot-magenta"></span>
+              <div>
+                <strong>Confirmó pedido de fin de año</strong>
+                <p>Requiere entrega antes del 27 de noviembre. Validar anticipo.</p>
+                <small>Hoy · Mariana Ruiz</small>
+              </div>
+            </div>
+            <div class="note-item">
+              <span class="note-dot dot-cyan"></span>
+              <div>
+                <strong>Solicitó muestra de laminado mate</strong>
+                <p>Enviar kit de acabados con la próxima entrega.</p>
+                <small>11 nov · Paola Méndez</small>
+              </div>
+            </div>
+            <div class="note-item">
+              <span class="note-dot dot-yellow"></span>
+              <div>
+                <strong>Interés en línea textil</strong>
+                <p>Cotizar 40 playeras DTF para evento corporativo.</p>
+                <small>07 nov · Diego Salas</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Composición</span>
+              <h2>Segmentos de clientes</h2>
+            </div>
+          </div>
+
+          <div class="segment-list">
+            <div class="segment-row">
+              <div class="segment-top"><span>Corporativo</span><strong>48</strong></div>
+              <div class="segment-track"><span style="width: 68%"></span></div>
+            </div>
+            <div class="segment-row">
+              <div class="segment-top"><span>Pyme</span><strong>39</strong></div>
+              <div class="segment-track"><span style="width: 55%"></span></div>
+            </div>
+            <div class="segment-row">
+              <div class="segment-top"><span>Eventos</span><strong>28</strong></div>
+              <div class="segment-track"><span style="width: 40%"></span></div>
+            </div>
+            <div class="segment-row">
+              <div class="segment-top"><span>Escolar</span><strong>17</strong></div>
+              <div class="segment-track"><span style="width: 24%"></span></div>
+            </div>
+            <div class="segment-row">
+              <div class="segment-top"><span>Particular</span><strong>10</strong></div>
+              <div class="segment-track"><span style="width: 14%"></span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,3 +1,162 @@
-<main class="app-shell">
+<div class="ink-strip" aria-hidden="true"></div>
+
+<nav class="navbar navbar-expand-lg navbar-dark navbar-llamma sticky-top">
+  <div class="container">
+    <a class="navbar-brand brand-lockup" routerLink="/" aria-label="Llamma, ir al inicio">
+      <span class="brand-mark" aria-hidden="true">
+        <span class="brand-dot brand-dot-cyan"></span>
+        <span class="brand-dot brand-dot-magenta"></span>
+        <span class="brand-dot brand-dot-yellow"></span>
+        <span class="brand-dot brand-dot-carbon"></span>
+      </span>
+      <span class="brand-text">
+        <strong>LLAMMA</strong>
+        <small>Imprimimos tus ideas</small>
+      </span>
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#llammaNav"
+      aria-controls="llammaNav"
+      aria-expanded="false"
+      aria-label="Abrir menú de navegación"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="llammaNav">
+      <ul class="navbar-nav mx-auto mb-3 mb-lg-0">
+        @if (!auth.autenticado()) {
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              routerLink="/"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }"
+              >Inicio</a
+            >
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/productos" routerLinkActive="active">Catálogo</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/cotizar" routerLinkActive="active"
+              >Solicitar cotización</a
+            >
+          </li>
+        } @else {
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-link-badge" routerLink="/solicitudes" routerLinkActive="active">
+              Solicitudes
+              @if (store.resumen().nuevas > 0) {
+                <span class="nav-count" [attr.aria-label]="store.resumen().nuevas + ' solicitudes nuevas'">
+                  {{ store.resumen().nuevas }}
+                </span>
+              }
+            </a>
+          </li>
+          @if (auth.tieneRol('admin', 'ventas')) {
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/captura" routerLinkActive="active">Cotizador</a>
+            </li>
+          }
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              Módulos
+            </a>
+            <ul class="dropdown-menu dropdown-menu-llamma">
+              @if (auth.tieneRol('admin', 'ventas', 'produccion')) {
+                <li>
+                  <a class="dropdown-item" routerLink="/detalle"
+                    ><i class="bi bi-receipt"></i> Detalle de órdenes</a
+                  >
+                </li>
+              }
+              <li>
+                <a class="dropdown-item" routerLink="/consultas"
+                  ><i class="bi bi-funnel"></i> Consultas</a
+                >
+              </li>
+              @if (auth.tieneRol('admin', 'inventario', 'produccion')) {
+                <li>
+                  <a class="dropdown-item" routerLink="/inventario"
+                    ><i class="bi bi-box-seam"></i> Inventario</a
+                  >
+                </li>
+              }
+              @if (auth.tieneRol('admin', 'inventario')) {
+                <li>
+                  <a class="dropdown-item" routerLink="/abastecimiento"
+                    ><i class="bi bi-cart-plus"></i> Abastecimiento</a
+                  >
+                </li>
+              }
+              @if (auth.tieneRol('admin', 'produccion')) {
+                <li>
+                  <a class="dropdown-item" routerLink="/produccion"
+                    ><i class="bi bi-gear-wide-connected"></i> Producción</a
+                  >
+                </li>
+              }
+              @if (auth.tieneRol('admin', 'ventas', 'marketing')) {
+                <li>
+                  <a class="dropdown-item" routerLink="/clientes"
+                    ><i class="bi bi-people"></i> Clientes</a
+                  >
+                </li>
+              }
+              @if (auth.tieneRol('admin', 'marketing')) {
+                <li>
+                  <a class="dropdown-item" routerLink="/marketing"
+                    ><i class="bi bi-megaphone"></i> Marketing</a
+                  >
+                </li>
+              }
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <a class="dropdown-item" routerLink="/" target="_self"
+                  ><i class="bi bi-globe2"></i> Ver sitio público</a
+                >
+              </li>
+            </ul>
+          </li>
+        }
+      </ul>
+
+      <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-lg-center gap-2">
+        @if (!auth.autenticado()) {
+          <a class="btn btn-sm btn-outline-light-soft" routerLink="/login">
+            <i class="bi bi-shield-lock"></i> Acceso equipo
+          </a>
+        } @else {
+          <div class="user-chip">
+            <span class="user-avatar">{{ iniciales }}</span>
+            <span class="user-meta">
+              <strong>{{ auth.nombre() }}</strong>
+              <small>{{ auth.rol() }}</small>
+            </span>
+          </div>
+          <button class="btn btn-sm btn-outline-light-soft" type="button" (click)="cerrarSesion()">
+            <i class="bi bi-box-arrow-right"></i> Salir
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="app-main">
   <router-outlet />
 </main>
