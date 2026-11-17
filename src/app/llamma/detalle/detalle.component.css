@@ -209,8 +209,6 @@
 }
 
 .order-summary {
-  position: sticky;
-  top: 6.5rem;
   padding: 1.5rem;
   border: 1px solid var(--llamma-line);
   border-radius: var(--llamma-radius);
@@ -296,12 +294,6 @@
   display: block;
   color: var(--llamma-muted);
   font-size: 0.66rem;
-}
-
-@media (max-width: 1199.98px) {
-  .order-summary {
-    position: static;
-  }
 }
 
 @media (max-width: 575.98px) {

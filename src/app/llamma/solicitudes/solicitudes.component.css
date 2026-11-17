@@ -36,6 +36,19 @@
   background: rgba(var(--llamma-cyan-rgb), 0.05);
 }
 
+/* --------------------------- Layout de dos paneles ------------------------- */
+
+.solicitudes-page .row > [class*='col-'] {
+  min-width: 0;
+}
+
+.inbox-panel,
+.detail-panel {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* ---------------------------------- Filtros -------------------------------- */
 
 .filter-row {
@@ -139,7 +152,9 @@
 
 .request-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.55rem;
+  min-width: 0;
   margin-top: 1rem;
 }
 
@@ -148,6 +163,8 @@
   align-items: flex-start;
   gap: 0.8rem;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 0.85rem 0.9rem;
   border: 1px solid var(--llamma-line);
   border-radius: 0.85rem;
@@ -180,19 +197,24 @@
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .request-top strong {
   font-size: 0.85rem;
+  overflow-wrap: anywhere;
 }
 
 .request-company {
   color: var(--llamma-muted);
   font-size: 0.68rem;
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .request-preview {
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   margin-top: 0.1rem;
   color: #4a4a4a;
@@ -206,6 +228,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
+  min-width: 0;
   margin-top: 0.25rem;
   color: var(--llamma-muted);
   font-size: 0.62rem;
@@ -246,6 +269,11 @@
   overflow-y: auto;
 }
 
+/* Solo se muestra en el modo hoja inferior (< 1200px). */
+.detail-backdrop {
+  display: none;
+}
+
 .detail-head {
   display: flex;
   align-items: flex-start;
@@ -253,9 +281,14 @@
   gap: 0.75rem;
 }
 
+.detail-head > div {
+  min-width: 0;
+}
+
 .detail-head h2 {
   margin: 0.2rem 0 0;
   font-size: 1.2rem;
+  overflow-wrap: anywhere;
 }
 
 .detail-state {
@@ -280,6 +313,7 @@
   border-radius: 0.7rem;
   background: #fbfaf7;
   font-size: 0.72rem;
+  overflow-wrap: anywhere;
 }
 
 .detail-contact i {
@@ -312,6 +346,7 @@
 }
 
 .detail-grid > div {
+  min-width: 0;
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--llamma-line);
   border-radius: 0.6rem;
@@ -330,6 +365,7 @@
   display: block;
   margin-top: 0.15rem;
   font-size: 0.72rem;
+  overflow-wrap: anywhere;
   text-transform: capitalize;
 }
 
@@ -477,6 +513,7 @@
 
 .conversion-head > div {
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .conversion-head strong {
@@ -522,6 +559,7 @@
 
 .conversion-locked > div {
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .conversion-locked strong {
@@ -579,15 +617,89 @@
 /* -------------------------------- Responsive ------------------------------- */
 
 @media (max-width: 1199.98px) {
-  .detail-panel {
-    position: static;
-    max-height: none;
+  /* Al apilar las columnas el detalle quedaría debajo de toda la lista, así que
+     se presenta como una hoja inferior fija sobre la bandeja. */
+  .detail-placeholder {
+    display: none;
+  }
+
+  .detail-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1070;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(20, 20, 20, 0.48);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+  }
+
+  .detail-panel-open {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1080;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(88vh, 48rem);
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    border-radius: 1.25rem 1.25rem 0 0;
+    box-shadow: 0 -20px 48px rgba(20, 20, 20, 0.24);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation: detail-sheet-in 0.22s ease-out;
+  }
+}
+
+@keyframes detail-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* En tablet la hoja se centra y limita su ancho para no parecer una página
+   completa; en móvil ocupa todo el ancho disponible. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .detail-panel-open {
+    right: auto;
+    left: 50%;
+    width: min(42rem, calc(100% - 2rem));
+    max-height: min(84vh, 48rem);
+    margin-bottom: 1.25rem;
+    border-radius: 1.25rem;
+    translate: -50% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-panel-open {
+    animation: none;
   }
 }
 
 @media (max-width: 575.98px) {
   .inbox-search {
+    flex: 1 1 100%;
     max-width: none;
+    flex-wrap: wrap;
+  }
+
+  .inbox-search .input-group {
+    flex: 1 1 100%;
+  }
+
+  .inbox-search .btn {
+    flex: 1 1 auto;
   }
 
   .inbox-tabs {

@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   OnInit,
   computed,
   inject,
@@ -40,11 +41,17 @@ const OPCIONES_ESTADO: OpcionEstado[] = [
   styleUrl: './solicitudes.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SolicitudesComponent implements OnInit {
+export class SolicitudesComponent implements OnInit, OnDestroy {
   private readonly service = inject(LlammaService);
   private readonly store = inject(SolicitudesStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private scrollBloqueado = false;
+  private readonly alRedimensionar = (): void => {
+    if (!window.matchMedia('(max-width: 1199.98px)').matches) {
+      this.liberarScroll();
+    }
+  };
 
   readonly opciones = OPCIONES_ESTADO;
 
@@ -73,6 +80,7 @@ export class SolicitudesComponent implements OnInit {
   readonly nuevoConteo = computed(() => this.store.resumen().nuevas);
 
   ngOnInit(): void {
+    window.addEventListener('resize', this.alRedimensionar);
     this.cargar();
     this.store.cargarResumen();
 
@@ -140,13 +148,17 @@ export class SolicitudesComponent implements OnInit {
     this.detalleCargando.set(true);
     this.errorAccion.set(null);
     this.cotizacionCreada.set(null);
+    this.bloquearScroll();
 
     this.service
       .detalleSolicitud(id)
       .pipe(finalize(() => this.detalleCargando.set(false)))
       .subscribe({
         next: (solicitud) => this.seleccionada.set(solicitud),
-        error: () => this.errorAccion.set('No pudimos abrir el detalle de la solicitud.'),
+        error: () => {
+          this.errorAccion.set('No pudimos abrir el detalle de la solicitud.');
+          this.liberarScroll();
+        },
       });
   }
 
@@ -156,10 +168,29 @@ export class SolicitudesComponent implements OnInit {
     this.errorAccion.set(null);
     this.cotizacionCreada.set(null);
     this.correoCopiado.set(false);
+    this.liberarScroll();
 
     if (this.route.snapshot.queryParamMap.has('solicitud')) {
       this.router.navigate([], { queryParams: {}, replaceUrl: true });
     }
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.alRedimensionar);
+    this.liberarScroll();
+  }
+
+  private bloquearScroll(): void {
+    if (this.scrollBloqueado) return;
+    if (!window.matchMedia('(max-width: 1199.98px)').matches) return;
+    document.body.style.overflow = 'hidden';
+    this.scrollBloqueado = true;
+  }
+
+  private liberarScroll(): void {
+    if (!this.scrollBloqueado) return;
+    document.body.style.overflow = '';
+    this.scrollBloqueado = false;
   }
 
   copiarCorreo(correo: string): void {

@@ -214,6 +214,13 @@
   background: linear-gradient(90deg, var(--llamma-cyan), var(--llamma-magenta));
 }
 
+/* La tabla tiene siete columnas: compactamos el espaciado para que quepa
+   completa en escritorio sin recortar la columna de estado. */
+.clientes-page .table-llamma > :not(caption) > * > * {
+  padding-right: 0.7rem;
+  padding-left: 0.7rem;
+}
+
 @media (max-width: 575.98px) {
   .client-stat {
     padding: 0.9rem;

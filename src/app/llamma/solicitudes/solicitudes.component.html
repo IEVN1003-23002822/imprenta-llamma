@@ -188,15 +188,24 @@
       </div>
 
       <div class="col-xl-5">
+        @if (detalleCargando() || seleccionada()) {
+          <button
+            class="detail-backdrop"
+            type="button"
+            aria-label="Cerrar detalle de la solicitud"
+            (click)="cerrarDetalle()"
+          ></button>
+        }
+
         @if (detalleCargando()) {
-          <aside class="panel-card detail-panel">
+          <aside class="panel-card detail-panel detail-panel-open" role="region" aria-label="Detalle de la solicitud">
             <div class="inbox-loading">
               <i class="bi bi-arrow-repeat"></i>
               <span>Abriendo solicitud...</span>
             </div>
           </aside>
         } @else if (seleccionada(); as solicitud) {
-          <aside class="panel-card detail-panel">
+          <aside class="panel-card detail-panel detail-panel-open" role="region" aria-label="Detalle de la solicitud">
             <div class="detail-head">
               <div>
                 <span class="panel-kicker">Solicitud {{ solicitud.folio }}</span>
