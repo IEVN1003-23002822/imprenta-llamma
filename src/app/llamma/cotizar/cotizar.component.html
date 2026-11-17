@@ -572,6 +572,106 @@
             </div>
           }
         </div>
+
+        <div class="chat-panel">
+          <div class="chat-head">
+            <div>
+              <span class="panel-kicker">Chat de la solicitud</span>
+              <h4>Conversación con el equipo de Llamma</h4>
+            </div>
+            <button class="btn btn-sm btn-outline-ink" type="button" (click)="refrescarChat()">
+              <i class="bi bi-arrow-clockwise"></i> Actualizar
+            </button>
+          </div>
+
+          <div #hiloChat class="chat-thread" role="log" aria-live="polite">
+            @for (mensaje of mensajes(); track mensaje.id) {
+              <div class="chat-bubble" [class.chat-bubble-propio]="mensaje.remitenteTipo === 'cliente'">
+                <div class="chat-meta">
+                  <strong>{{ mensaje.remitenteTipo === 'cliente' ? 'Tú' : mensaje.autor }}</strong>
+                  <time>{{ fechaHoraChat(mensaje.creadoEn) }}</time>
+                </div>
+                @if (mensaje.mensaje) {
+                  <p>{{ mensaje.mensaje }}</p>
+                }
+                @if (mensaje.adjunto) {
+                  <button
+                    class="chat-file"
+                    type="button"
+                    [disabled]="descargandoAdjunto() === mensaje.id"
+                    (click)="descargarAdjuntoChat(mensaje)"
+                  >
+                    <i class="bi bi-paperclip"></i>
+                    <span class="chat-file-name">{{ mensaje.adjunto.nombre }}</span>
+                    <small>{{ tamanoChat(mensaje.adjunto.tamanoBytes) }}</small>
+                    <i class="bi bi-download"></i>
+                  </button>
+                }
+              </div>
+            } @empty {
+              <p class="chat-empty">
+                <i class="bi bi-chat-dots"></i>
+                Aún no hay mensajes. Escríbenos si necesitas aclarar algo de tu solicitud.
+              </p>
+            }
+          </div>
+
+          @if (errorChat()) {
+            <div class="request-error" role="alert">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span>{{ errorChat() }}</span>
+            </div>
+          }
+
+          <div class="chat-compose">
+            <label class="visually-hidden" for="chatPublicoMensaje">Mensaje para el equipo de Llamma</label>
+            <textarea
+              id="chatPublicoMensaje"
+              class="form-control"
+              rows="2"
+              maxlength="4000"
+              placeholder="Escribe tu mensaje..."
+              [value]="borrador()"
+              (input)="actualizarBorrador($event)"
+            ></textarea>
+            <div class="chat-compose-actions">
+              <div class="chat-adjunto">
+                <label class="btn btn-sm btn-outline-ink mb-0">
+                  <i class="bi bi-paperclip"></i> Adjuntar
+                  <input
+                    type="file"
+                    hidden
+                    accept=".pdf,.ai,.psd,.png,.jpg,.jpeg,.svg,.zip"
+                    (change)="seleccionarAdjunto($event)"
+                  >
+                </label>
+                @if (adjuntoChat(); as archivo) {
+                  <span class="chat-adjunto-chip">
+                    {{ archivo.name }}
+                    <button type="button" aria-label="Quitar adjunto" (click)="quitarAdjuntoChat()">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </span>
+                }
+              </div>
+              <button
+                class="btn btn-ink btn-sm"
+                type="button"
+                [disabled]="enviandoMensaje()"
+                (click)="enviarMensaje()"
+              >
+                @if (enviandoMensaje()) {
+                  <i class="bi bi-hourglass-split"></i> Enviando...
+                } @else {
+                  <i class="bi bi-send"></i> Enviar
+                }
+              </button>
+            </div>
+            <small class="chat-hint">
+              Adjuntos permitidos: PDF, AI, PSD, PNG, JPG, SVG o ZIP (máx. 25 MB).
+            </small>
+          </div>
+        </div>
       }
     </section>
   </div>

@@ -8,6 +8,7 @@ import {
   ConsultaPedidosApi,
   Cotizacion,
   MateriaPrimaApi,
+  MensajeChat,
   MovimientoApi,
   NuevaSolicitudPayload,
   OrdenCompraApi,
@@ -79,6 +80,41 @@ export class LlammaService {
     );
   }
 
+  listarMensajesPublicos(
+    folio: string,
+    correo: string,
+  ): Observable<{ items: MensajeChat[]; total: number }> {
+    const params = new HttpParams().set('correo', correo);
+    return this.http.get<{ items: MensajeChat[]; total: number }>(
+      `${this.apiUrl}/public/solicitudes/${encodeURIComponent(folio.trim().toUpperCase())}/mensajes`,
+      { params },
+    );
+  }
+
+  enviarMensajePublico(
+    folio: string,
+    correo: string,
+    mensaje: string,
+    archivo?: File | null,
+  ): Observable<{ mensaje: string; mensajeChat: MensajeChat }> {
+    const form = new FormData();
+    form.append('correo', correo);
+    if (mensaje.trim()) form.append('mensaje', mensaje.trim());
+    if (archivo) form.append('archivo', archivo);
+    return this.http.post<{ mensaje: string; mensajeChat: MensajeChat }>(
+      `${this.apiUrl}/public/solicitudes/${encodeURIComponent(folio.trim().toUpperCase())}/mensajes`,
+      form,
+    );
+  }
+
+  descargarAdjuntoPublico(folio: string, correo: string, mensajeId: number): Observable<Blob> {
+    const params = new HttpParams().set('correo', correo);
+    return this.http.get(
+      `${this.apiUrl}/public/solicitudes/${encodeURIComponent(folio.trim().toUpperCase())}/mensajes/${mensajeId}/archivo`,
+      { params, responseType: 'blob' },
+    );
+  }
+
   /* ----------------------------- Solicitudes --------------------------- */
 
   resumenSolicitudes(): Observable<ResumenSolicitudes> {
@@ -103,6 +139,32 @@ export class LlammaService {
 
   detalleSolicitud(id: number): Observable<SolicitudCotizacion> {
     return this.http.get<SolicitudCotizacion>(`${this.apiUrl}/solicitudes/${id}`);
+  }
+
+  listarMensajesSolicitud(id: number): Observable<{ items: MensajeChat[]; total: number }> {
+    return this.http.get<{ items: MensajeChat[]; total: number }>(
+      `${this.apiUrl}/solicitudes/${id}/mensajes`,
+    );
+  }
+
+  enviarMensajeInterno(
+    id: number,
+    mensaje: string,
+    archivo?: File | null,
+  ): Observable<{ mensaje: string; mensajeChat: MensajeChat }> {
+    const form = new FormData();
+    if (mensaje.trim()) form.append('mensaje', mensaje.trim());
+    if (archivo) form.append('archivo', archivo);
+    return this.http.post<{ mensaje: string; mensajeChat: MensajeChat }>(
+      `${this.apiUrl}/solicitudes/${id}/mensajes`,
+      form,
+    );
+  }
+
+  descargarAdjuntoMensaje(mensajeId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/mensajes/${mensajeId}/archivo`, {
+      responseType: 'blob',
+    });
   }
 
   cambiarEstadoSolicitud(

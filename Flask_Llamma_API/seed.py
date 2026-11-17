@@ -20,6 +20,7 @@ from models import (
     Cotizacion,
     CotizacionItem,
     MateriaPrima,
+    MensajeChat,
     MovimientoInventario,
     OrdenCompra,
     OrdenCompraItem,
@@ -450,6 +451,34 @@ def seed_database() -> None:
             mime_type="application/pdf",
             tamano_bytes=os.path.getsize(ruta),
         )
+    )
+
+    # Conversación de ejemplo para el chat público por folio y correo.
+    solicitudes["SOL-2026-001"].mensajes.extend(
+        [
+            MensajeChat(
+                remitente_tipo="cliente",
+                mensaje=(
+                    "Hola, ¿el precio incluye la playera y el estampado? "
+                    "Quisiéramos confirmar antes de aprobar."
+                ),
+                creado_en=utcnow() - timedelta(hours=7),
+            ),
+            MensajeChat(
+                remitente_tipo="interno",
+                usuario_id=usuarios["diego@llamma.mx"].id,
+                mensaje=(
+                    "¡Claro! El precio incluye playera de algodón y estampado DTF "
+                    "a todo color. También podemos ajustar tallas si lo necesitas."
+                ),
+                creado_en=utcnow() - timedelta(hours=5),
+            ),
+            MensajeChat(
+                remitente_tipo="cliente",
+                mensaje="Perfecto, gracias. ¿Podemos agregar 5 piezas talla XL?",
+                creado_en=utcnow() - timedelta(hours=3),
+            ),
+        ]
     )
 
     # --- Cotizaciones ----------------------------------------------------

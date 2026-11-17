@@ -9,6 +9,8 @@ from flask import jsonify, request
 
 _CORREO_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+MAX_MENSAJE_CHAT = 4000
+
 
 def payload() -> dict:
     """Devuelve JSON o form-data como diccionario."""

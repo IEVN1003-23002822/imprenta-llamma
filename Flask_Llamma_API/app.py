@@ -101,7 +101,7 @@ def _registrar_errores(app: Flask) -> None:
 def _registrar_comandos(app: Flask) -> None:
     @app.cli.command("init-db")
     def init_db():
-        """Crea las 26 tablas del esquema."""
+        """Crea las 27 tablas del esquema."""
         from models import TABLAS
 
         db.create_all()

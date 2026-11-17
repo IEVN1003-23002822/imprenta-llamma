@@ -1,4 +1,4 @@
-"""Modelos SQLAlchemy de Llamma (26 tablas).
+"""Modelos SQLAlchemy de Llamma (27 tablas).
 
 El esquema cubre seguridad/RBAC, clientes, catálogo y recetas, abastecimiento,
 solicitudes públicas, cotizaciones, pedidos, producción y marketing.
@@ -502,9 +502,15 @@ class SolicitudCotizacion(TimestampMixin, db.Model):
     archivos = db.relationship(
         "SolicitudArchivo", back_populates="solicitud", cascade="all, delete-orphan"
     )
+    mensajes = db.relationship(
+        "MensajeChat",
+        back_populates="solicitud",
+        cascade="all, delete-orphan",
+        order_by=lambda: (MensajeChat.creado_en, MensajeChat.id),
+    )
     cotizaciones = db.relationship("Cotizacion", back_populates="solicitud")
 
-    def to_dict(self, incluir_detalle: bool = True) -> dict:
+    def to_dict(self, incluir_detalle: bool = True, incluir_mensajes: bool = False) -> dict:
         data = {
             "id": self.id,
             "folio": self.folio,
@@ -526,6 +532,8 @@ class SolicitudCotizacion(TimestampMixin, db.Model):
             data["itemsSolicitados"] = [item.to_dict() for item in self.items]
             data["archivosAdjuntos"] = [archivo.to_dict() for archivo in self.archivos]
             data["cotizacionId"] = self.cotizaciones[0].id if self.cotizaciones else None
+        if incluir_mensajes:
+            data["mensajes"] = [mensaje.to_dict() for mensaje in self.mensajes]
         return data
 
 
@@ -585,8 +593,58 @@ class SolicitudArchivo(db.Model):
             "nombreGuardado": self.nombre_guardado,
             "mimeType": self.mime_type,
             "tamanoBytes": self.tamano_bytes,
-            "nombreGuardado": self.nombre_guardado,
             "url": f"/api/archivos/{self.id}",
+        }
+
+
+class MensajeChat(db.Model):
+    """Mensaje del hilo público entre un cliente y el equipo de Llamma."""
+
+    __tablename__ = "mensajes_chat"
+
+    id = db.Column(db.Integer, primary_key=True)
+    solicitud_id = db.Column(
+        db.Integer,
+        db.ForeignKey("solicitudes_cotizacion.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    remitente_tipo = db.Column(db.String(20), nullable=False, default="cliente")
+    usuario_id = db.Column(
+        db.Integer, db.ForeignKey("usuarios.id", ondelete="SET NULL"), nullable=True
+    )
+    mensaje = db.Column(db.Text)
+    adjunto_nombre = db.Column(db.String(200))
+    adjunto_guardado = db.Column(db.String(200))
+    adjunto_mime = db.Column(db.String(120))
+    adjunto_tamano = db.Column(db.Integer, default=0, nullable=False)
+    creado_en = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+    solicitud = db.relationship("SolicitudCotizacion", back_populates="mensajes")
+    usuario = db.relationship("Usuario")
+
+    def to_dict(self, publico: bool = False) -> dict:
+        autor = "Cliente"
+        if self.remitente_tipo == "interno":
+            autor = self.usuario.nombre if self.usuario else "Equipo Llamma"
+
+        adjunto = None
+        if self.adjunto_guardado:
+            adjunto = {
+                "nombre": self.adjunto_nombre,
+                "mimeType": self.adjunto_mime,
+                "tamanoBytes": self.adjunto_tamano or 0,
+            }
+
+        return {
+            "id": self.id,
+            "solicitudId": self.solicitud_id,
+            "remitenteTipo": self.remitente_tipo,
+            "usuarioId": None if publico else self.usuario_id,
+            "autor": autor,
+            "mensaje": self.mensaje or "",
+            "adjunto": adjunto,
+            "creadoEn": iso(self.creado_en),
         }
 
 
@@ -963,6 +1021,7 @@ TABLAS = [
     SolicitudCotizacion,
     SolicitudItem,
     SolicitudArchivo,
+    MensajeChat,
     Cotizacion,
     CotizacionItem,
     Pedido,
@@ -974,4 +1033,4 @@ TABLAS = [
     ActividadMarketing,
 ]
 
-assert len(TABLAS) == 26, "El esquema de Llamma debe contener 26 tablas"
+assert len(TABLAS) == 27, "El esquema de Llamma debe contener 27 tablas"

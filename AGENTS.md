@@ -30,7 +30,7 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - MySQL de Laragon por defecto: `mysql+pymysql://root:@127.0.0.1:3306/llamma_db?charset=utf8mb4`
   (root sin contraseña). `DATABASE_URL` lo sobreescribe; SQLite es solo para pruebas.
 - No hay `python-dotenv`: un `.env` **no** se carga. Exporta las variables en la shell.
-- `flask --app app init-db` crea las 26 tablas sin borrar nada; `seed-db` carga los datos demo y
+- `flask --app app init-db` crea las 27 tablas sin borrar nada; `seed-db` carga los datos demo y
   **se omite si ya existe algún usuario**. Para reiniciar datos, borra la BD o reimporta el dump.
 - `llamma_laragon.sql` es un dump `--databases` con `DROP TABLE`: importarlo **reemplaza**
   `llamma_db`. Regenerarlo con
@@ -48,6 +48,11 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   TS más mapas de etiqueta/badge en los componentes. Actualiza todas las copias.
 - Los listados devuelven `{ items, total }`. `GET /api/pedidos` omite `items`: usa
   `GET /api/pedidos/<id>` para el detalle (producción lo carga aparte y lo cachea por pedido).
+- El chat por solicitud vive en `mensajes_chat` y se serializa como `mensajes`. El cliente entra
+  solo con folio + correo exactos (`/api/public/solicitudes/<folio>/mensajes`); el interno exige
+  rol `admin` o `ventas` (`/api/solicitudes/<id>/mensajes`). `GET /api/solicitudes/<id>` ya incluye
+  `mensajes`, y los adjuntos se descargan con token en `/api/mensajes/<id>/archivo` (en público,
+  `/api/public/solicitudes/<folio>/mensajes/<id>/archivo?correo=...`).
 - `PATCH /api/produccion/ordenes/<id>` ignora `observaciones: null` o `""`; no se puede limpiar
   desde la API (se hizo por SQL cuando fue necesario).
 - Permisos: `@token_required` y `@role_required(...)` de `Flask_Llamma_API/auth.py`; roles `admin`,

@@ -2,10 +2,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   OnInit,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -15,6 +17,7 @@ import { LlammaService } from '../llamma.service';
 import {
   EstadoSolicitud,
   ItemSolicitud,
+  MensajeChat,
   MetodoEntrega,
   ProductoPublico,
   SeguimientoSolicitud,
@@ -54,6 +57,14 @@ export class CotizarComponent implements OnInit {
   readonly seguimiento = signal<SeguimientoSolicitud | null>(null);
   readonly buscando = signal(false);
   readonly errorSeguimiento = signal<string | null>(null);
+
+  readonly mensajes = signal<MensajeChat[]>([]);
+  readonly borrador = signal('');
+  readonly adjuntoChat = signal<File | null>(null);
+  readonly enviandoMensaje = signal(false);
+  readonly errorChat = signal<string | null>(null);
+  readonly descargandoAdjunto = signal<number | null>(null);
+  private readonly hiloChat = viewChild<ElementRef<HTMLDivElement>>('hiloChat');
 
   readonly hoy = new Date().toISOString().slice(0, 10);
 
@@ -338,12 +349,20 @@ export class CotizarComponent implements OnInit {
     this.buscando.set(true);
     this.errorSeguimiento.set(null);
     this.seguimiento.set(null);
+    this.mensajes.set([]);
+    this.borrador.set('');
+    this.adjuntoChat.set(null);
+    this.errorChat.set(null);
 
     this.service
       .consultarSolicitud(folio.trim(), correo.trim().toLowerCase())
       .pipe(finalize(() => this.buscando.set(false)))
       .subscribe({
-        next: (respuesta) => this.seguimiento.set(respuesta),
+        next: (respuesta) => {
+          this.seguimiento.set(respuesta);
+          this.mensajes.set(respuesta.mensajes ?? []);
+          this.desplazarHilo();
+        },
         error: (respuesta: HttpErrorResponse) => {
           this.errorSeguimiento.set(
             respuesta.status === 404
@@ -352,6 +371,129 @@ export class CotizarComponent implements OnInit {
           );
         },
       });
+  }
+
+  actualizarBorrador(evento: Event): void {
+    this.borrador.set((evento.target as HTMLTextAreaElement).value);
+  }
+
+  seleccionarAdjunto(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    const archivo = input.files?.[0] ?? null;
+    input.value = '';
+
+    if (!archivo) return;
+    const extension = archivo.name.split('.').pop()?.toLowerCase() ?? '';
+    if (!EXTENSIONES.includes(extension)) {
+      this.errorChat.set(`"${archivo.name}" no tiene un formato permitido.`);
+      return;
+    }
+    if (archivo.size > MAX_BYTES) {
+      this.errorChat.set(`"${archivo.name}" supera el límite de 25 MB.`);
+      return;
+    }
+    this.adjuntoChat.set(archivo);
+    this.errorChat.set(null);
+  }
+
+  quitarAdjuntoChat(): void {
+    this.adjuntoChat.set(null);
+  }
+
+  enviarMensaje(): void {
+    const solicitud = this.seguimiento();
+    if (!solicitud || this.enviandoMensaje()) return;
+
+    const mensaje = this.borrador().trim();
+    const archivo = this.adjuntoChat();
+    if (!mensaje && !archivo) {
+      this.errorChat.set('Escribe un mensaje o adjunta un archivo de referencia.');
+      return;
+    }
+
+    const { correo } = this.seguimientoForm.getRawValue();
+    this.enviandoMensaje.set(true);
+    this.errorChat.set(null);
+
+    this.service
+      .enviarMensajePublico(solicitud.folio, correo.trim().toLowerCase(), mensaje, archivo)
+      .pipe(finalize(() => this.enviandoMensaje.set(false)))
+      .subscribe({
+        next: (respuesta) => {
+          this.mensajes.update((actuales) => [...actuales, respuesta.mensajeChat]);
+          this.borrador.set('');
+          this.adjuntoChat.set(null);
+          this.desplazarHilo();
+        },
+        error: (respuesta: HttpErrorResponse) => {
+          this.errorChat.set(
+            respuesta.status === 404
+              ? 'Tu folio y correo ya no coinciden. Vuelve a consultar la solicitud.'
+              : respuesta.error?.error || 'No pudimos enviar tu mensaje. Intenta de nuevo.',
+          );
+        },
+      });
+  }
+
+  refrescarChat(): void {
+    const solicitud = this.seguimiento();
+    if (!solicitud) return;
+    const { correo } = this.seguimientoForm.getRawValue();
+
+    this.service.listarMensajesPublicos(solicitud.folio, correo.trim().toLowerCase()).subscribe({
+      next: (respuesta) => {
+        this.mensajes.set(respuesta.items);
+        this.desplazarHilo();
+      },
+      error: () => this.errorChat.set('No pudimos actualizar la conversación.'),
+    });
+  }
+
+  descargarAdjuntoChat(mensaje: MensajeChat): void {
+    const solicitud = this.seguimiento();
+    if (!solicitud || !mensaje.adjunto) return;
+
+    const { correo } = this.seguimientoForm.getRawValue();
+    this.descargandoAdjunto.set(mensaje.id);
+    this.service
+      .descargarAdjuntoPublico(solicitud.folio, correo.trim().toLowerCase(), mensaje.id)
+      .pipe(finalize(() => this.descargandoAdjunto.set(null)))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const enlace = document.createElement('a');
+          enlace.href = url;
+          enlace.download = mensaje.adjunto?.nombre || 'adjunto';
+          enlace.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => this.errorChat.set('No pudimos descargar el archivo adjunto.'),
+      });
+  }
+
+  fechaHoraChat(valor: string | null | undefined): string {
+    if (!valor) return '';
+    const fecha = new Date(valor);
+    if (Number.isNaN(fecha.getTime())) return valor;
+    return fecha.toLocaleString('es-MX', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  tamanoChat(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  private desplazarHilo(): void {
+    setTimeout(() => {
+      const contenedor = this.hiloChat()?.nativeElement;
+      if (contenedor) contenedor.scrollTop = contenedor.scrollHeight;
+    });
   }
 
   moneda(valor: number): string {

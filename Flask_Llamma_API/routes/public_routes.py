@@ -2,23 +2,41 @@
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request, send_from_directory
 
 from extensions import db
 from models import (
     Cliente,
+    MensajeChat,
     Producto,
     SolicitudArchivo,
     SolicitudCotizacion,
     SolicitudItem,
     utcnow,
 )
-from routes.helpers import campo, correo_valido, error, lista_items, no_encontrado, payload
+from routes.helpers import (
+    MAX_MENSAJE_CHAT,
+    campo,
+    correo_valido,
+    error,
+    lista_items,
+    no_encontrado,
+    payload,
+)
 from utils import generar_folio, guardar_archivo, parse_decimal, parse_fecha
 
 public_bp = Blueprint("public", __name__)
+
+
+def _solicitud_por_credenciales(folio: str, correo: str) -> SolicitudCotizacion | None:
+    """Busca una solicitud solo si folio y correo coinciden."""
+    solicitud = SolicitudCotizacion.query.filter_by(folio=folio.strip().upper()).first()
+    if not solicitud or solicitud.correo.lower() != correo.strip().lower():
+        return None
+    return solicitud
 
 
 @public_bp.get("/health")
@@ -215,8 +233,8 @@ def consultar_solicitud(folio: str):
     if not correo:
         return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")
 
-    solicitud = SolicitudCotizacion.query.filter_by(folio=folio.strip().upper()).first()
-    if not solicitud or solicitud.correo.lower() != correo:
+    solicitud = _solicitud_por_credenciales(folio, correo)
+    if not solicitud:
         return no_encontrado("Solicitud")
 
     cotizacion = solicitud.cotizaciones[0] if solicitud.cotizaciones else None
@@ -234,6 +252,7 @@ def consultar_solicitud(folio: str):
                 {"nombre": a.nombre_original, "tamanoBytes": a.tamano_bytes}
                 for a in solicitud.archivos
             ],
+            "mensajes": [mensaje.to_dict(publico=True) for mensaje in solicitud.mensajes],
             "cotizacion": (
                 {
                     "folio": cotizacion.folio,
@@ -245,4 +264,102 @@ def consultar_solicitud(folio: str):
             ),
             "actualizadoEn": solicitud.actualizado_en.isoformat(timespec="seconds"),
         }
+    )
+
+
+@public_bp.get("/public/solicitudes/<folio>/mensajes")
+def listar_mensajes_solicitud(folio: str):
+    correo = (request.args.get("correo") or "").strip().lower()
+    if not correo:
+        return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")
+
+    solicitud = _solicitud_por_credenciales(folio, correo)
+    if not solicitud:
+        return no_encontrado("Solicitud")
+
+    mensajes = solicitud.mensajes
+    return jsonify(
+        {
+            "items": [mensaje.to_dict(publico=True) for mensaje in mensajes],
+            "total": len(mensajes),
+        }
+    )
+
+
+@public_bp.post("/public/solicitudes/<folio>/mensajes")
+def enviar_mensaje_solicitud(folio: str):
+    data = payload()
+    correo = str(campo(data, "correo", "email", default="")).strip().lower()
+    if not correo:
+        return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")
+
+    solicitud = _solicitud_por_credenciales(folio, correo)
+    if not solicitud:
+        return no_encontrado("Solicitud")
+
+    mensaje = str(campo(data, "mensaje", "contenido", default="")).strip()
+    if len(mensaje) > MAX_MENSAJE_CHAT:
+        return error(f"El mensaje no puede exceder {MAX_MENSAJE_CHAT} caracteres")
+
+    storage = request.files.get("archivo")
+    if not mensaje and not (storage and storage.filename):
+        return error("Escribe un mensaje o adjunta un archivo de referencia")
+
+    nuevo = MensajeChat(
+        solicitud_id=solicitud.id,
+        remitente_tipo="cliente",
+        mensaje=mensaje or None,
+    )
+
+    if storage and storage.filename:
+        guardado = guardar_archivo(storage)
+        if not guardado:
+            return error(
+                "Formato de archivo no permitido. Usa PDF, AI, PSD, PNG, JPG, SVG o ZIP",
+                415,
+                "archivo_invalido",
+            )
+        original, nombre_guardado, tamano = guardado
+        nuevo.adjunto_nombre = original[:200]
+        nuevo.adjunto_guardado = nombre_guardado
+        nuevo.adjunto_mime = storage.mimetype
+        nuevo.adjunto_tamano = tamano
+
+    db.session.add(nuevo)
+    db.session.commit()
+
+    return (
+        jsonify(
+            {
+                "mensaje": "Mensaje enviado. El equipo de Llamma te responderá por este medio.",
+                "mensajeChat": nuevo.to_dict(publico=True),
+            }
+        ),
+        201,
+    )
+
+
+@public_bp.get("/public/solicitudes/<folio>/mensajes/<int:mensaje_id>/archivo")
+def descargar_adjunto_mensaje(folio: str, mensaje_id: int):
+    correo = (request.args.get("correo") or "").strip().lower()
+    if not correo:
+        return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")
+
+    solicitud = _solicitud_por_credenciales(folio, correo)
+    if not solicitud:
+        return no_encontrado("Solicitud")
+
+    mensaje = next((item for item in solicitud.mensajes if item.id == mensaje_id), None)
+    if not mensaje or not mensaje.adjunto_guardado:
+        return no_encontrado("Archivo")
+
+    carpeta = current_app.config["UPLOAD_FOLDER"]
+    if not os.path.exists(os.path.join(carpeta, mensaje.adjunto_guardado)):
+        return no_encontrado("Archivo en disco")
+
+    return send_from_directory(
+        carpeta,
+        mensaje.adjunto_guardado,
+        as_attachment=True,
+        download_name=mensaje.adjunto_nombre or mensaje.adjunto_guardado,
     )

@@ -17,6 +17,7 @@ from models import (
     Cotizacion,
     CotizacionItem,
     MateriaPrima,
+    MensajeChat,
     MovimientoInventario,
     OrdenCompra,
     OrdenCompraItem,
@@ -35,8 +36,16 @@ from models import (
     Usuario,
     utcnow,
 )
-from routes.helpers import campo, correo_valido, error, lista_items, no_encontrado, payload
-from utils import generar_folio, paginar, parse_decimal, parse_fecha, parse_int
+from routes.helpers import (
+    MAX_MENSAJE_CHAT,
+    campo,
+    correo_valido,
+    error,
+    lista_items,
+    no_encontrado,
+    payload,
+)
+from utils import generar_folio, guardar_archivo, paginar, parse_decimal, parse_fecha, parse_int
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -320,7 +329,92 @@ def detalle_solicitud(solicitud_id: int):
     solicitud = SolicitudCotizacion.query.get(solicitud_id)
     if not solicitud:
         return no_encontrado("Solicitud")
-    return jsonify(solicitud.to_dict())
+    return jsonify(solicitud.to_dict(incluir_mensajes=True))
+
+
+@admin_bp.get("/solicitudes/<int:solicitud_id>/mensajes")
+@token_required
+def listar_mensajes_solicitud(solicitud_id: int):
+    solicitud = SolicitudCotizacion.query.get(solicitud_id)
+    if not solicitud:
+        return no_encontrado("Solicitud")
+    mensajes = solicitud.mensajes
+    return jsonify(
+        {
+            "items": [mensaje.to_dict() for mensaje in mensajes],
+            "total": len(mensajes),
+        }
+    )
+
+
+@admin_bp.post("/solicitudes/<int:solicitud_id>/mensajes")
+@role_required("admin", "ventas")
+def enviar_mensaje_solicitud(solicitud_id: int):
+    solicitud = SolicitudCotizacion.query.get(solicitud_id)
+    if not solicitud:
+        return no_encontrado("Solicitud")
+
+    data = payload()
+    mensaje = str(campo(data, "mensaje", "contenido", default="")).strip()
+    if len(mensaje) > MAX_MENSAJE_CHAT:
+        return error(f"El mensaje no puede exceder {MAX_MENSAJE_CHAT} caracteres")
+
+    storage = request.files.get("archivo")
+    if not mensaje and not (storage and storage.filename):
+        return error("Escribe un mensaje o adjunta un archivo de referencia")
+
+    nuevo = MensajeChat(
+        solicitud_id=solicitud.id,
+        remitente_tipo="interno",
+        usuario_id=g.usuario.id,
+        mensaje=mensaje or None,
+    )
+
+    if storage and storage.filename:
+        guardado = guardar_archivo(storage)
+        if not guardado:
+            return error(
+                "Formato de archivo no permitido. Usa PDF, AI, PSD, PNG, JPG, SVG o ZIP",
+                415,
+                "archivo_invalido",
+            )
+        original, nombre_guardado, tamano = guardado
+        nuevo.adjunto_nombre = original[:200]
+        nuevo.adjunto_guardado = nombre_guardado
+        nuevo.adjunto_mime = storage.mimetype
+        nuevo.adjunto_tamano = tamano
+
+    db.session.add(nuevo)
+    db.session.commit()
+
+    return (
+        jsonify(
+            {
+                "mensaje": "Respuesta enviada al cliente.",
+                "mensajeChat": nuevo.to_dict(),
+            }
+        ),
+        201,
+    )
+
+
+@admin_bp.get("/mensajes/<int:mensaje_id>/archivo")
+@token_required
+def descargar_adjunto_mensaje(mensaje_id: int):
+    mensaje = MensajeChat.query.get(mensaje_id)
+    if not mensaje or not mensaje.adjunto_guardado:
+        return no_encontrado("Archivo")
+
+    carpeta = current_app.config["UPLOAD_FOLDER"]
+    if not os.path.exists(os.path.join(carpeta, mensaje.adjunto_guardado)):
+        return no_encontrado("Archivo en disco")
+
+    return send_from_directory(
+        carpeta,
+        mensaje.adjunto_guardado,
+        as_attachment=True,
+        download_name=mensaje.adjunto_nombre or mensaje.adjunto_guardado,
+    )
 
 
 @admin_bp.patch("/solicitudes/<int:solicitud_id>/estado")

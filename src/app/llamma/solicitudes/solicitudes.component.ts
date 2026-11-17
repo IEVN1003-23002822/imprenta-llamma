@@ -2,11 +2,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   OnDestroy,
   OnInit,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -17,6 +19,7 @@ import {
   ArchivoAdjunto,
   Cotizacion,
   EstadoSolicitud,
+  MensajeChat,
   SolicitudCotizacion,
 } from '../llamma.models';
 
@@ -33,6 +36,9 @@ const OPCIONES_ESTADO: OpcionEstado[] = [
   { clave: 'convertida', etiqueta: 'Convertidas' },
   { clave: 'descartada', etiqueta: 'Descartadas' },
 ];
+
+const EXTENSIONES = ['pdf', 'ai', 'psd', 'png', 'jpg', 'jpeg', 'svg', 'zip'];
+const MAX_BYTES = 25 * 1024 * 1024;
 
 @Component({
   selector: 'app-solicitudes',
@@ -72,6 +78,14 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   readonly errorAccion = signal<string | null>(null);
   readonly cotizacionCreada = signal<Cotizacion | null>(null);
   readonly correoCopiado = signal(false);
+
+  readonly mensajes = signal<MensajeChat[]>([]);
+  readonly borradorChat = signal('');
+  readonly adjuntoChat = signal<File | null>(null);
+  readonly enviandoChat = signal(false);
+  readonly errorChat = signal<string | null>(null);
+  readonly descargandoAdjunto = signal<number | null>(null);
+  private readonly hiloChat = viewChild<ElementRef<HTMLDivElement>>('hiloChat');
 
   readonly hayFiltros = computed(
     () => this.estadoFiltro() !== '' || this.texto().trim() !== '',
@@ -148,13 +162,20 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
     this.detalleCargando.set(true);
     this.errorAccion.set(null);
     this.cotizacionCreada.set(null);
+    this.errorChat.set(null);
+    this.borradorChat.set('');
+    this.adjuntoChat.set(null);
     this.bloquearScroll();
 
     this.service
       .detalleSolicitud(id)
       .pipe(finalize(() => this.detalleCargando.set(false)))
       .subscribe({
-        next: (solicitud) => this.seleccionada.set(solicitud),
+        next: (solicitud) => {
+          this.seleccionada.set(solicitud);
+          this.mensajes.set(solicitud.mensajes ?? []);
+          this.desplazarHilo();
+        },
         error: () => {
           this.errorAccion.set('No pudimos abrir el detalle de la solicitud.');
           this.liberarScroll();
@@ -168,6 +189,10 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
     this.errorAccion.set(null);
     this.cotizacionCreada.set(null);
     this.correoCopiado.set(false);
+    this.mensajes.set([]);
+    this.borradorChat.set('');
+    this.adjuntoChat.set(null);
+    this.errorChat.set(null);
     this.liberarScroll();
 
     if (this.route.snapshot.queryParamMap.has('solicitud')) {
@@ -293,6 +318,107 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
         },
         error: () => this.errorAccion.set('No pudimos descargar el archivo adjunto.'),
       });
+  }
+
+  actualizarBorradorChat(evento: Event): void {
+    this.borradorChat.set((evento.target as HTMLTextAreaElement).value);
+  }
+
+  seleccionarAdjuntoChat(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    const archivo = input.files?.[0] ?? null;
+    input.value = '';
+
+    if (!archivo) return;
+    const extension = archivo.name.split('.').pop()?.toLowerCase() ?? '';
+    if (!EXTENSIONES.includes(extension)) {
+      this.errorChat.set(`"${archivo.name}" no tiene un formato permitido.`);
+      return;
+    }
+    if (archivo.size > MAX_BYTES) {
+      this.errorChat.set(`"${archivo.name}" supera el límite de 25 MB.`);
+      return;
+    }
+    this.adjuntoChat.set(archivo);
+    this.errorChat.set(null);
+  }
+
+  quitarAdjuntoChat(): void {
+    this.adjuntoChat.set(null);
+  }
+
+  enviarRespuesta(): void {
+    const solicitud = this.seleccionada();
+    if (!solicitud || this.enviandoChat()) return;
+
+    const mensaje = this.borradorChat().trim();
+    const archivo = this.adjuntoChat();
+    if (!mensaje && !archivo) {
+      this.errorChat.set('Escribe una respuesta o adjunta un archivo.');
+      return;
+    }
+
+    this.enviandoChat.set(true);
+    this.errorChat.set(null);
+
+    this.service
+      .enviarMensajeInterno(solicitud.id, mensaje, archivo)
+      .pipe(finalize(() => this.enviandoChat.set(false)))
+      .subscribe({
+        next: (respuesta) => {
+          this.mensajes.update((actuales) => [...actuales, respuesta.mensajeChat]);
+          this.borradorChat.set('');
+          this.adjuntoChat.set(null);
+          this.desplazarHilo();
+        },
+        error: (respuesta: HttpErrorResponse) => {
+          this.errorChat.set(
+            respuesta.status === 403
+              ? 'No tienes permisos para responder desde este buzón.'
+              : respuesta.error?.error || 'No pudimos enviar la respuesta al cliente.',
+          );
+        },
+      });
+  }
+
+  refrescarChat(): void {
+    const solicitud = this.seleccionada();
+    if (!solicitud) return;
+
+    this.service.listarMensajesSolicitud(solicitud.id).subscribe({
+      next: (respuesta) => {
+        this.mensajes.set(respuesta.items);
+        this.desplazarHilo();
+      },
+      error: () => this.errorChat.set('No pudimos actualizar la conversación.'),
+    });
+  }
+
+  descargarAdjuntoChat(mensaje: MensajeChat): void {
+    if (!mensaje.adjunto) return;
+
+    this.descargandoAdjunto.set(mensaje.id);
+    this.service
+      .descargarAdjuntoMensaje(mensaje.id)
+      .pipe(finalize(() => this.descargandoAdjunto.set(null)))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const enlace = document.createElement('a');
+          enlace.href = url;
+          enlace.download = mensaje.adjunto?.nombre || 'adjunto';
+          enlace.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => this.errorChat.set('No pudimos descargar el archivo adjunto.'),
+      });
+  }
+
+  private desplazarHilo(): void {
+    setTimeout(() => {
+      const contenedor = this.hiloChat()?.nativeElement;
+      if (contenedor) contenedor.scrollTop = contenedor.scrollHeight;
+    });
   }
 
   whatsapp(telefono: string | null | undefined): string {

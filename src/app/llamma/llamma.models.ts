@@ -301,6 +301,7 @@ export interface SolicitudCotizacion {
   totalArchivos?: number;
   itemsSolicitados?: ItemSolicitud[];
   archivosAdjuntos?: ArchivoAdjunto[];
+  mensajes?: MensajeChat[];
   cotizacionId?: number | null;
 }
 
@@ -316,6 +317,25 @@ export interface ArchivoSeguimiento {
   tamanoBytes: number;
 }
 
+export type RemitenteChat = 'cliente' | 'interno';
+
+export interface AdjuntoChat {
+  nombre: string;
+  mimeType?: string | null;
+  tamanoBytes: number;
+}
+
+export interface MensajeChat {
+  id: number;
+  solicitudId: number;
+  remitenteTipo: RemitenteChat;
+  usuarioId?: number | null;
+  autor: string;
+  mensaje: string;
+  adjunto?: AdjuntoChat | null;
+  creadoEn: string;
+}
+
 export interface SeguimientoSolicitud {
   folio: string;
   estado: EstadoSolicitud;
@@ -326,6 +346,7 @@ export interface SeguimientoSolicitud {
   mensaje?: string | null;
   items: ItemSolicitud[];
   archivos: ArchivoSeguimiento[];
+  mensajes: MensajeChat[];
   cotizacion: { folio: string; estado: EstadoCotizacion; total: number } | null;
   actualizadoEn: string;
 }

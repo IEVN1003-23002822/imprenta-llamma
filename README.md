@@ -38,6 +38,8 @@ dividida en dos experiencias segmentadas:
 
 El seguimiento de una solicitud se consulta en `/cotizar#seguimiento` con folio + correo. Al enviar
 el formulario se muestra el folio `SOL-YYYY-NNN`, se puede copiar y descargar el comprobante.
+Dentro del seguimiento, el cliente puede chatear con el equipo de Llamma: el historial, el envío de
+mensajes y los adjuntos quedan ligados a la solicitud sin necesidad de crear una cuenta.
 
 ### ERP interno
 
@@ -48,7 +50,7 @@ Todas las rutas internas están protegidas con `authGuard` y, cuando aplica, `ro
 
 La barra interna muestra un contador de solicitudes nuevas. La bandeja `/solicitudes` permite
 filtrar por estado, revisar el detalle, copiar correo, abrir WhatsApp, descargar adjuntos, cambiar
-estado y convertir el lead en cotización.
+estado, responder el chat del cliente y convertir el lead en cotización.
 
 ### Endpoints principales
 
@@ -56,16 +58,21 @@ Públicos:
 
 - `GET /api/public/productos`
 - `POST /api/public/solicitudes` (JSON o multipart con `archivos`)
-- `GET /api/public/solicitudes/<folio>?correo=...`
+- `GET /api/public/solicitudes/<folio>?correo=...` (incluye el hilo del chat)
+- `GET /api/public/solicitudes/<folio>/mensajes?correo=...`
+- `POST /api/public/solicitudes/<folio>/mensajes` (JSON o multipart con `archivo`)
+- `GET /api/public/solicitudes/<folio>/mensajes/<id>/archivo?correo=...`
 
 Internos (Bearer token):
 
 - `POST /api/auth/login`
 - `GET /api/solicitudes`
-- `GET /api/solicitudes/<id>`
+- `GET /api/solicitudes/<id>` (incluye `mensajes`)
 - `PATCH /api/solicitudes/<id>/estado`
 - `POST /api/solicitudes/<id>/convertir-cotizacion`
 - `GET /api/solicitudes/resumen`
+- `GET|POST /api/solicitudes/<id>/mensajes`
+- `GET /api/mensajes/<id>/archivo`
 - `GET|POST /api/cotizaciones`
 - `GET|POST /api/pedidos`
 - Resto de módulos operativos del ERP.
@@ -169,7 +176,7 @@ La API se ejecuta en `http://127.0.0.1:5000`. Para MySQL, define `DATABASE_URL` 
 
 ### Base de datos MySQL en Laragon
 
-El archivo `llamma_laragon.sql` de la raíz contiene el esquema completo y los datos demo: 26 tablas,
+El archivo `llamma_laragon.sql` de la raíz contiene el esquema completo y los datos demo: 27 tablas,
 llaves foráneas, índices, cotejamiento `utf8mb4_unicode_ci` y seeds.
 
 1. Arranca MySQL 8 desde Laragon (`localhost:3306`, usuario `root` sin contraseña).
@@ -196,7 +203,7 @@ Contraseña para todos: `llamma2026`.
 
 ## Estado
 
-- Backend funcional con 26 tablas, autenticación por token, roles y permisos.
+- Backend funcional con 27 tablas, autenticación por token, roles y permisos.
 - Portal público con catálogo, solicitud de cotización, adjuntos y seguimiento.
 - ERP interno con bandeja de solicitudes, conversión a cotización y pedido.
 - Inventario, producción, clientes y marketing conectados a la API.

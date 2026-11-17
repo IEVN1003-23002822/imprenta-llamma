@@ -321,6 +321,106 @@
               </div>
             }
 
+            <div class="chat-panel">
+              <div class="chat-head">
+                <div>
+                  <span class="panel-kicker">Chat con el cliente</span>
+                  <h3>Conversación de la solicitud</h3>
+                </div>
+                <button class="btn btn-sm btn-outline-ink" type="button" (click)="refrescarChat()">
+                  <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+              </div>
+
+              <div #hiloChat class="chat-thread" role="log" aria-live="polite">
+                @for (mensaje of mensajes(); track mensaje.id) {
+                  <div class="chat-bubble" [class.chat-bubble-propio]="mensaje.remitenteTipo === 'interno'">
+                    <div class="chat-meta">
+                      <strong>{{ mensaje.remitenteTipo === 'interno' ? mensaje.autor : 'Cliente' }}</strong>
+                      <time>{{ fechaHora(mensaje.creadoEn) }}</time>
+                    </div>
+                    @if (mensaje.mensaje) {
+                      <p>{{ mensaje.mensaje }}</p>
+                    }
+                    @if (mensaje.adjunto) {
+                      <button
+                        class="chat-file"
+                        type="button"
+                        [disabled]="descargandoAdjunto() === mensaje.id"
+                        (click)="descargarAdjuntoChat(mensaje)"
+                      >
+                        <i class="bi bi-paperclip"></i>
+                        <span class="chat-file-name">{{ mensaje.adjunto.nombre }}</span>
+                        <small>{{ tamano(mensaje.adjunto.tamanoBytes) }}</small>
+                        <i class="bi bi-download"></i>
+                      </button>
+                    }
+                  </div>
+                } @empty {
+                  <p class="chat-empty">
+                    <i class="bi bi-chat-dots"></i>
+                    Todavía no hay mensajes con este cliente. Envía la primera respuesta.
+                  </p>
+                }
+              </div>
+
+              @if (errorChat()) {
+                <div class="inbox-alert" role="alert">
+                  <i class="bi bi-exclamation-triangle-fill"></i>
+                  <span>{{ errorChat() }}</span>
+                </div>
+              }
+
+              <div class="chat-compose">
+                <label class="visually-hidden" for="chatInternoMensaje">Respuesta para el cliente</label>
+                <textarea
+                  id="chatInternoMensaje"
+                  class="form-control"
+                  rows="2"
+                  maxlength="4000"
+                  placeholder="Escribe la respuesta al cliente..."
+                  [value]="borradorChat()"
+                  (input)="actualizarBorradorChat($event)"
+                ></textarea>
+                <div class="chat-compose-actions">
+                  <div class="chat-adjunto">
+                    <label class="btn btn-sm btn-outline-ink mb-0">
+                      <i class="bi bi-paperclip"></i> Adjuntar
+                      <input
+                        type="file"
+                        hidden
+                        accept=".pdf,.ai,.psd,.png,.jpg,.jpeg,.svg,.zip"
+                        (change)="seleccionarAdjuntoChat($event)"
+                      >
+                    </label>
+                    @if (adjuntoChat(); as archivo) {
+                      <span class="chat-adjunto-chip">
+                        {{ archivo.name }}
+                        <button type="button" aria-label="Quitar adjunto" (click)="quitarAdjuntoChat()">
+                          <i class="bi bi-x"></i>
+                        </button>
+                      </span>
+                    }
+                  </div>
+                  <button
+                    class="btn btn-sm btn-ink"
+                    type="button"
+                    [disabled]="enviandoChat()"
+                    (click)="enviarRespuesta()"
+                  >
+                    @if (enviandoChat()) {
+                      <i class="bi bi-hourglass-split"></i> Enviando...
+                    } @else {
+                      <i class="bi bi-send"></i> Responder
+                    }
+                  </button>
+                </div>
+                <small class="chat-hint">
+                  El cliente verá la respuesta al consultar su folio y correo en el portal.
+                </small>
+              </div>
+            </div>
+
             @if (aviso()) {
               <div class="inbox-success" role="status">
                 <i class="bi bi-check2-circle"></i>
