@@ -282,18 +282,228 @@
   margin-bottom: 1rem;
 }
 
+.kanban-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.45rem;
+  scrollbar-width: thin;
+}
+
+.kanban-board {
+  grid-template-columns: repeat(8, 12.5rem);
+  min-width: max-content;
+}
+
+.kanban-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 1.4rem 0.5rem;
+  border: 1px dashed rgba(26, 26, 26, 0.12);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--llamma-muted);
+  font-size: 0.64rem;
+  text-align: center;
+}
+
+.kanban-empty i {
+  font-size: 1rem;
+}
+
+.task-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 193, 7, 0.14);
+  color: #8a5a00;
+  font-size: 0.63rem;
+  line-height: 1.35;
+}
+
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--llamma-line);
+}
+
+.btn-icon-xs {
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  font-size: 0.7rem;
+}
+
+.stage-load {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.stage-load-row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr) 1.6rem;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.72rem;
+}
+
+.stage-load-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--llamma-carbon);
+  font-weight: 600;
+}
+
+.stage-load-name i {
+  color: var(--llamma-muted);
+}
+
+.stage-load-row strong {
+  text-align: right;
+  font-family: var(--llamma-font-display);
+}
+
+.order-brief {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: linear-gradient(90deg, #fbfaf7, #fff);
+}
+
+.order-brief-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.7rem;
+  background: rgba(0, 174, 239, 0.12);
+  color: var(--llamma-cyan);
+  font-size: 1rem;
+}
+
+.order-brief strong {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.order-brief span:not(.order-brief-icon) {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+}
+
+.stage-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.stage-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.65rem;
+  background: #fff;
+}
+
+.stage-list-dot {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: #f2f1ec;
+  color: var(--llamma-muted);
+  font-size: 0.72rem;
+}
+
+.stage-list-item.is-active {
+  border-color: rgba(0, 174, 239, 0.35);
+  background: rgba(0, 174, 239, 0.05);
+}
+
+.stage-list-item.is-active .stage-list-dot {
+  background: rgba(0, 174, 239, 0.16);
+  color: var(--llamma-cyan);
+}
+
+.stage-list-item.is-done .stage-list-dot {
+  background: #e7f6ee;
+  color: #18794e;
+}
+
+.stage-list-item strong {
+  display: block;
+  font-size: 0.73rem;
+  font-weight: 600;
+}
+
+.stage-list-item small {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.63rem;
+}
+
+.stage-list-item .badge {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 0.55rem;
+}
+
+.quality-form {
+  margin-top: 1.1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px dashed var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fbfaf7;
+}
+
 @media (max-width: 1199.98px) {
   .kanban-board {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(8, 11.5rem);
   }
 }
 
 @media (max-width: 767.98px) {
   .kanban-board {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(8, 10.5rem);
   }
 
   .kanban-col {
     padding: 0.7rem;
   }
+
+  .stage-load-row {
+    grid-template-columns: 6.5rem minmax(0, 1fr) 1.4rem;
+    font-size: 0.68rem;
+  }
+}
+
+.kanban-hint {
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+
+.kanban-hint i {
+  color: var(--llamma-cyan-deep);
 }

@@ -230,3 +230,11 @@
     padding: 1.2rem;
   }
 }
+
+.clientes-page tbody tr[role='button'] {
+  cursor: pointer;
+}
+
+.clientes-page tbody tr.table-active > * {
+  --bs-table-bg-state: rgba(var(--llamma-cyan-rgb), 0.1);
+}

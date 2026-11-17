@@ -587,6 +587,139 @@ def detalle_pedido(pedido_id: int):
     return jsonify(pedido.to_dict())
 
 
+@admin_bp.get("/consultas/pedidos")
+@token_required
+def consultar_pedidos():
+    """Búsqueda avanzada de pedidos con filtros y agregados del periodo."""
+    query = Pedido.query.join(Cliente)
+    busqueda = (request.args.get("q") or "").strip()
+    if busqueda:
+        patron = f"%{busqueda}%"
+        query = query.outerjoin(PedidoItem).filter(
+            or_(
+                Pedido.folio.ilike(patron),
+                Cliente.nombre.ilike(patron),
+                Cliente.empresa.ilike(patron),
+                PedidoItem.descripcion.ilike(patron),
+            )
+        ).distinct()
+
+    estado = (request.args.get("estado") or "").strip()
+    if estado:
+        query = query.filter(Pedido.estado == estado)
+
+    cliente_id = parse_int(request.args.get("clienteId"))
+    if cliente_id:
+        query = query.filter(Pedido.cliente_id == cliente_id)
+
+    desde = parse_fecha(request.args.get("desde"))
+    if desde:
+        query = query.filter(Pedido.fecha_pedido >= desde)
+    hasta = parse_fecha(request.args.get("hasta"))
+    if hasta:
+        query = query.filter(Pedido.fecha_pedido <= hasta)
+
+    linea = (request.args.get("linea") or "").strip()
+    if linea:
+        query = query.filter(
+            Pedido.id.in_(
+                db.session.query(PedidoItem.pedido_id)
+                .join(Producto, Producto.id == PedidoItem.producto_id)
+                .filter(Producto.linea_produccion == linea)
+            )
+        )
+
+    ids = [fila[0] for fila in query.with_entities(Pedido.id).all()]
+    page = parse_int(request.args.get("page"), 1) or 1
+    per_page = parse_int(request.args.get("perPage"), 20) or 20
+
+    def serializar(pedido: Pedido) -> dict:
+        data = pedido.to_dict(incluir_detalle=False)
+        lineas = {
+            item.producto.linea_produccion
+            for item in pedido.items
+            if item.producto and item.producto.linea_produccion
+        }
+        data["lineas"] = sorted(lineas)
+        data["partidas"] = len(pedido.items)
+        return data
+
+    paginado = (
+        Pedido.query.filter(Pedido.id.in_(ids))
+        .order_by(Pedido.fecha_pedido.desc(), Pedido.id.desc())
+        .paginate(page=max(page, 1), per_page=min(max(per_page, 1), 100), error_out=False)
+    )
+
+    resumen = (
+        db.session.query(
+            func.count(Pedido.id),
+            func.coalesce(func.sum(Pedido.total), 0),
+        )
+        .filter(Pedido.id.in_(ids))
+        .one()
+    )
+    entregados = Pedido.query.filter(
+        Pedido.id.in_(ids), Pedido.estado == "entregado"
+    ).count()
+    total_monto = float(resumen[1] or 0)
+    total_pedidos = int(resumen[0] or 0)
+
+    lineas = (
+        db.session.query(
+            Producto.linea_produccion,
+            func.coalesce(func.sum(PedidoItem.importe), 0),
+        )
+        .join(Pedido, Pedido.id == PedidoItem.pedido_id)
+        .filter(Pedido.id.in_(ids))
+        .group_by(Producto.linea_produccion)
+        .order_by(func.sum(PedidoItem.importe).desc())
+        .all()
+    )
+
+    clientes = (
+        db.session.query(
+            Cliente.id,
+            Cliente.nombre,
+            func.count(Pedido.id),
+            func.coalesce(func.sum(Pedido.total), 0),
+        )
+        .join(Pedido, Pedido.cliente_id == Cliente.id)
+        .filter(Pedido.id.in_(ids))
+        .group_by(Cliente.id, Cliente.nombre)
+        .order_by(func.sum(Pedido.total).desc())
+        .limit(5)
+        .all()
+    )
+
+    return jsonify(
+        {
+            "items": [serializar(pedido) for pedido in paginado.items],
+            "total": paginado.total,
+            "pagina": paginado.page,
+            "porPagina": paginado.per_page,
+            "paginas": paginado.pages,
+            "resumen": {
+                "pedidos": total_pedidos,
+                "monto": round(total_monto, 2),
+                "ticket": round(total_monto / total_pedidos, 2) if total_pedidos else 0,
+                "entregados": entregados,
+            },
+            "ventasPorLinea": [
+                {"linea": fila[0] or "otro", "total": float(fila[1] or 0)} for fila in lineas
+            ],
+            "topClientes": [
+                {
+                    "id": fila[0],
+                    "nombre": fila[1],
+                    "pedidos": int(fila[2] or 0),
+                    "total": float(fila[3] or 0),
+                }
+                for fila in clientes
+            ],
+        }
+    )
+
+
 @admin_bp.post("/pedidos")
 @role_required("admin", "ventas")
 def crear_pedido():
@@ -649,6 +782,49 @@ def cambiar_estado_pedido(pedido_id: int):
     return jsonify(pedido.to_dict(incluir_detalle=False))
 
 
+@admin_bp.post("/pedidos/<int:pedido_id>/pagos")
+@role_required("admin", "ventas")
+def registrar_pago(pedido_id: int):
+    """Registra un anticipo, abono o liquidación y recalcula el saldo."""
+    pedido = Pedido.query.get(pedido_id)
+    if not pedido:
+        return no_encontrado("Pedido")
+
+    data = payload()
+    tipo = str(campo(data, "tipo", default="abono"))
+    if tipo not in {"anticipo", "saldo", "abono"}:
+        return error("Tipo de pago inválido. Usa anticipo, saldo o abono")
+
+    monto = parse_decimal(campo(data, "monto"), 0)
+    if monto <= 0:
+        return error("El monto del pago debe ser mayor a cero")
+
+    pagado = sum(float(p.monto or 0) for p in pedido.pagos if p.confirmado)
+    if monto > round(float(pedido.total or 0) - pagado, 2) + 0.01:
+        return error("El pago excede el saldo pendiente del pedido")
+
+    pago = Pago(
+        pedido_id=pedido.id,
+        tipo=tipo,
+        metodo=str(campo(data, "metodo", default="transferencia"))[:30],
+        monto=round(monto, 2),
+        referencia=str(campo(data, "referencia", default="") or "")[:120] or None,
+        confirmado=bool(campo(data, "confirmado", default=True)),
+        registrado_por=g.usuario.id,
+    )
+    db.session.add(pago)
+    db.session.flush()
+
+    pagado = sum(float(p.monto or 0) for p in pedido.pagos if p.confirmado)
+    pedido.saldo = round(max(float(pedido.total or 0) - pagado, 0), 2)
+    if pedido.saldo <= 0 and pedido.estado == "confirmado":
+        pedido.estado = "en-produccion"
+
+    db.session.commit()
+    return jsonify({"pago": pago.to_dict(), "pedido": pedido.to_dict()}), 201
+
+
+
 # ---------------------------------------------------------------------------
 # Clientes
 # ---------------------------------------------------------------------------
@@ -662,6 +838,8 @@ def listar_clientes():
         query = query.filter(Cliente.segmento == request.args["segmento"])
     if request.args.get("activo") in {"0", "false"}:
         query = query.filter(Cliente.activo.is_(False))
+    elif request.args.get("activo") in {"1", "true"}:
+        query = query.filter(Cliente.activo.is_(True))
     busqueda = (request.args.get("q") or "").strip()
     if busqueda:
         patron = f"%{busqueda}%"
@@ -953,6 +1131,17 @@ def actualizar_materia(materia_id: int):
         materia.activo = bool(data["activo"])
     db.session.commit()
     return jsonify(materia.to_dict())
+
+
+@admin_bp.delete("/materias-primas/<int:materia_id>")
+@role_required("admin", "inventario")
+def desactivar_materia(materia_id: int):
+    materia = MateriaPrima.query.get(materia_id)
+    if not materia:
+        return no_encontrado("Materia prima")
+    materia.activo = False
+    db.session.commit()
+    return jsonify({"mensaje": "Insumo desactivado", "id": materia.id})
 
 
 @admin_bp.post("/materias-primas/<int:materia_id>/ajuste")
@@ -1312,10 +1501,53 @@ def actualizar_actividad(actividad_id: int):
 def resumen_dashboard():
     hoy = date.today()
     inicio_mes = hoy.replace(day=1)
+    inicio_mes_anterior = (inicio_mes - timedelta(days=1)).replace(day=1)
 
     pedidos_mes = Pedido.query.filter(Pedido.fecha_pedido >= inicio_mes).all()
     ventas = sum(float(p.total or 0) for p in pedidos_mes if p.estado != "cancelado")
     ticket = ventas / len(pedidos_mes) if pedidos_mes else 0
+
+    pedidos_anterior = Pedido.query.filter(
+        Pedido.fecha_pedido >= inicio_mes_anterior,
+        Pedido.fecha_pedido < inicio_mes,
+        Pedido.estado != "cancelado",
+    ).all()
+    ventas_anterior = sum(float(p.total or 0) for p in pedidos_anterior)
+    variacion = (
+        round((ventas - ventas_anterior) / ventas_anterior * 100, 1) if ventas_anterior else 0
+    )
+
+    bajo_stock = (
+        MateriaPrima.query.filter(
+            MateriaPrima.activo.is_(True),
+            MateriaPrima.stock_actual <= MateriaPrima.stock_minimo,
+        )
+        .order_by(MateriaPrima.stock_actual.asc())
+        .limit(6)
+        .all()
+    )
+
+    recientes = Pedido.query.order_by(Pedido.creado_en.desc()).limit(6).all()
+
+    produccion = dict(
+        db.session.query(OrdenProduccion.etapa, func.count(OrdenProduccion.id))
+        .filter(OrdenProduccion.estado.in_(["pendiente", "en-proceso", "pausada"]))
+        .group_by(OrdenProduccion.etapa)
+        .all()
+    )
+
+    desde = hoy - timedelta(days=182)
+    ventas_linea = db.session.query(
+        Producto.linea_produccion,
+        func.coalesce(func.sum(PedidoItem.importe), 0),
+    ).join(
+        PedidoItem, PedidoItem.producto_id == Producto.id
+    ).join(
+        Pedido, Pedido.id == PedidoItem.pedido_id
+    ).filter(
+        Pedido.fecha_pedido >= desde,
+        Pedido.estado != "cancelado",
+    ).group_by(Producto.linea_produccion).all()
 
     return jsonify(
         {
@@ -1325,15 +1557,22 @@ def resumen_dashboard():
             "ordenesEnProduccion": OrdenProduccion.query.filter(
                 OrdenProduccion.estado.in_(["pendiente", "en-proceso", "pausada"])
             ).count(),
-            "materiasPrimasBajoStock": MateriaPrima.query.filter(
-                MateriaPrima.activo.is_(True),
-                MateriaPrima.stock_actual <= MateriaPrima.stock_minimo,
-            ).count(),
+            "materiasPrimasBajoStock": len(bajo_stock),
             "clientesActivos": Cliente.query.filter_by(activo=True).count(),
             "solicitudesNuevas": SolicitudCotizacion.query.filter_by(estado="nueva").count(),
             "solicitudesEnRevision": SolicitudCotizacion.query.filter_by(
                 estado="en-revision"
             ).count(),
+            "ventasMesAnterior": round(ventas_anterior, 2),
+            "variacionVentas": variacion,
+            "pedidosRecientes": [p.to_dict(incluir_detalle=False) for p in recientes],
+            "bajoStock": [m.to_dict() for m in bajo_stock],
+            "produccionPorEtapa": [
+                {"etapa": etapa, "total": total} for etapa, total in produccion.items()
+            ],
+            "ventasPorLinea": [
+                {"linea": linea, "total": float(total or 0)} for linea, total in ventas_linea
+            ],
         }
     )
 

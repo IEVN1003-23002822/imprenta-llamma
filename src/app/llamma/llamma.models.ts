@@ -406,3 +406,249 @@ export interface NuevaSolicitudPayload {
   archivos?: File[];
 }
 
+
+/* ---------------------------------------------------------------------------
+ * Contratos de la API interna (ERP)
+ * ------------------------------------------------------------------------- */
+
+export interface ClienteApi {
+  id: number;
+  nombre: string;
+  empresa?: string | null;
+  correo: string;
+  telefono?: string | null;
+  direccion?: string | null;
+  rfc?: string | null;
+  segmento: SegmentoCliente;
+  notas?: string | null;
+  activo: boolean;
+  fechaRegistro: string;
+  totalPedidos?: number;
+  totalFacturado?: number;
+}
+
+export interface ProductoApi {
+  id: number;
+  nombre: string;
+  descripcion?: string | null;
+  categoria: CategoriaProducto;
+  lineaProduccion: LineaProduccion;
+  precioBase: number;
+  unidadVenta: UnidadMedida;
+  icono?: string;
+  publicado: boolean;
+  activo: boolean;
+  tieneReceta?: boolean;
+}
+
+export interface RecetaComponenteApi {
+  id: number;
+  materiaPrimaId: number;
+  materiaPrima?: string;
+  cantidad: number;
+  unidadMedida: UnidadMedida;
+  desperdicioPorcentaje: number;
+}
+
+export interface RecetaApi {
+  id: number;
+  productoId: number;
+  nombre: string;
+  rendimiento: number;
+  unidadRendimiento: UnidadMedida;
+  costoEstimado: number;
+  tiempoProduccionMin: number;
+  componentes: RecetaComponenteApi[];
+}
+
+export interface MateriaPrimaApi {
+  id: number;
+  nombre: string;
+  categoria: CategoriaMateriaPrima | string;
+  unidadMedida: UnidadMedida;
+  stockActual: number;
+  stockMinimo: number;
+  stockMaximo: number;
+  costoUnitario: number;
+  proveedorId?: number | null;
+  proveedor?: string | null;
+  activo: boolean;
+  bajoStock?: boolean;
+}
+
+export interface MovimientoApi {
+  id: number;
+  materiaPrimaId: number;
+  materiaPrima?: string;
+  tipo: TipoMovimiento;
+  cantidad: number;
+  unidadMedida: UnidadMedida;
+  costoUnitario?: number;
+  referencia?: string | null;
+  motivo?: string | null;
+  usuario?: string | null;
+  fecha: string;
+}
+
+export interface ProveedorApi {
+  id: number;
+  nombre: string;
+  contacto?: string | null;
+  telefono?: string | null;
+  correo?: string | null;
+  condicionesPago?: string | null;
+  activo: boolean;
+}
+
+export interface OrdenCompraItemApi {
+  id: number;
+  materiaPrimaId: number;
+  materiaPrima?: string;
+  cantidad: number;
+  unidadMedida: UnidadMedida;
+  precioUnitario: number;
+  importe: number;
+}
+
+export interface OrdenCompraApi {
+  id: number;
+  folio: string;
+  proveedorId: number;
+  proveedor?: string;
+  estado: string;
+  fechaEmision: string;
+  fechaEntrega?: string | null;
+  subtotal: number;
+  impuestos: number;
+  total: number;
+  notas?: string | null;
+  items: OrdenCompraItemApi[];
+}
+
+export interface PagoApi {
+  id: number;
+  pedidoId: number;
+  tipo: TipoPago;
+  metodo: string;
+  monto: number;
+  referencia?: string | null;
+  fechaPago: string;
+  confirmado: boolean;
+}
+
+export interface PedidoItemApi {
+  id: number;
+  productoId?: number | null;
+  descripcion: string;
+  especificaciones?: string | null;
+  cantidad: number;
+  precioUnitario: number;
+  importe: number;
+  archivoDiseno?: string | null;
+}
+
+export interface ProduccionEtapaApi {
+  id: number;
+  etapa: EtapaProduccion;
+  estado: string;
+  responsable?: string | null;
+  inicio?: string | null;
+  fin?: string | null;
+  notas?: string | null;
+  creadoEn: string;
+}
+
+export interface ControlCalidadApi {
+  id: number;
+  criterio: string;
+  aprobado: boolean;
+  observaciones?: string | null;
+  revisadoPor?: string | null;
+  fecha?: string | null;
+}
+
+export interface OrdenProduccionApi {
+  id: number;
+  pedidoId: number;
+  pedidoFolio?: string;
+  etapa: EtapaProduccion;
+  estado: EstadoProduccion;
+  responsableId?: number | null;
+  responsable?: string | null;
+  fechaInicio?: string | null;
+  fechaFin?: string | null;
+  observaciones?: string | null;
+  historialEtapas: ProduccionEtapaApi[];
+  controlesCalidad: ControlCalidadApi[];
+}
+
+export interface PedidoApi {
+  id: number;
+  folio: string;
+  cotizacionId?: number | null;
+  clienteId: number;
+  cliente?: string | null;
+  estado: EstadoPedido;
+  prioridad: PrioridadPedido;
+  fechaPedido: string;
+  fechaEntrega?: string | null;
+  subtotal: number;
+  impuestos: number;
+  total: number;
+  anticipo: number;
+  saldo: number;
+  notas?: string | null;
+  items?: PedidoItemApi[];
+  pagos?: PagoApi[];
+  ordenProduccion?: OrdenProduccionApi | null;
+}
+
+export interface TableroProduccion {
+  columnas: Array<{ etapa: EtapaProduccion; ordenes: OrdenProduccionApi[] }>;
+  total: number;
+}
+
+export interface ActividadMarketingApi {
+  id: number;
+  nombre: string;
+  canal: CanalMarketing;
+  fechaInicio: string;
+  fechaFin?: string | null;
+  presupuesto: number;
+  inversionReal: number;
+  ingresosAtribuidos: number;
+  roi: number;
+  estado: EstadoActividadMarketing;
+  descripcion?: string | null;
+}
+
+export interface ResumenDashboardApi extends ResumenDashboard {
+  pedidosRecientes: PedidoApi[];
+  bajoStock: MateriaPrimaApi[];
+  produccionPorEtapa: Array<{ etapa: EtapaProduccion; total: number }>;
+  ventasPorLinea: Array<{ linea: string; total: number }>;
+  ventasMesAnterior: number;
+  variacionVentas: number;
+}
+
+export interface NotificacionResultado {
+  mensaje: string;
+}
+
+export interface PedidoConsultaApi extends PedidoApi {
+  lineas: string[];
+  partidas: number;
+}
+
+export interface ResumenConsultaApi {
+  pedidos: number;
+  monto: number;
+  ticket: number;
+  entregados: number;
+}
+
+export interface ConsultaPedidosApi extends RespuestaPaginada<PedidoConsultaApi> {
+  resumen: ResumenConsultaApi;
+  ventasPorLinea: Array<{ linea: string; total: number }>;
+  topClientes: Array<{ id: number; nombre: string; pedidos: number; total: number }>;
+}

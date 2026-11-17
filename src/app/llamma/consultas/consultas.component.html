@@ -10,10 +10,14 @@
         </p>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-outline-ink" type="button">
+        <button
+          class="btn btn-outline-ink"
+          type="button"
+          (click)="ui.info('Las consultas guardadas estarán disponibles en la siguiente versión.')"
+        >
           <i class="bi bi-bookmark-plus"></i> Guardar consulta
         </button>
-        <button class="btn btn-brand" type="button">
+        <button class="btn btn-brand" type="button" (click)="exportar()">
           <i class="bi bi-download"></i> Exportar resultados
         </button>
       </div>
@@ -25,115 +29,142 @@
           <span class="panel-kicker">Constructor de consultas</span>
           <h2>Filtros combinables</h2>
         </div>
-        <span class="badge badge-soft-muted"><i class="bi bi-funnel"></i> 4 filtros activos</span>
+        <span class="badge badge-soft-muted">
+          <i class="bi bi-funnel"></i> {{ resultado()?.total ?? 0 }} resultados
+        </span>
       </div>
 
-      <div class="row g-3">
-        <div class="col-md-6 col-xl-3">
-          <label class="form-label" for="consultaDesde">Desde</label>
-          <input id="consultaDesde" type="date" class="form-control" value="2026-11-01">
-        </div>
-        <div class="col-md-6 col-xl-3">
-          <label class="form-label" for="consultaHasta">Hasta</label>
-          <input id="consultaHasta" type="date" class="form-control" value="2026-11-30">
-        </div>
-        <div class="col-md-6 col-xl-3">
-          <label class="form-label" for="consultaCliente">Cliente</label>
-          <select id="consultaCliente" class="form-select">
-            <option selected>Todos los clientes</option>
-            <option>Alma Creativa</option>
-            <option>Estudio Nómada</option>
-            <option>Café Origen</option>
-            <option>Grupo Altura</option>
-          </select>
-        </div>
-        <div class="col-md-6 col-xl-3">
-          <label class="form-label" for="consultaLinea">Línea de negocio</label>
-          <select id="consultaLinea" class="form-select">
-            <option selected>Todas las líneas</option>
-            <option>Gran formato</option>
-            <option>Textil</option>
-            <option>Promocionales</option>
-            <option>Papelería</option>
-          </select>
-        </div>
-        <div class="col-md-6 col-xl-3">
-          <label class="form-label" for="consultaEstado">Estado del pedido</label>
-          <select id="consultaEstado" class="form-select">
-            <option selected>Todo estado</option>
-            <option>Confirmado</option>
-            <option>En producción</option>
-            <option>Listo</option>
-            <option>Entregado</option>
-            <option>Cancelado</option>
-          </select>
-        </div>
-        <div class="col-md-6 col-xl-3">
-          <label class="form-label" for="consultaResponsable">Responsable</label>
-          <select id="consultaResponsable" class="form-select">
-            <option selected>Cualquier responsable</option>
-            <option>Mariana Ruiz</option>
-            <option>Diego Salas</option>
-            <option>Paola Méndez</option>
-          </select>
-        </div>
-        <div class="col-md-12 col-xl-4">
-          <label class="form-label" for="consultaTexto">Búsqueda libre</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input
-              id="consultaTexto"
-              type="search"
-              class="form-control"
-              placeholder="Orden, cliente, producto o SKU..."
+      <form [formGroup]="form" (ngSubmit)="cargar(1)">
+        <div class="row g-3">
+          <div class="col-md-6 col-xl-3">
+            <label class="form-label" for="consultaDesde">Desde</label>
+            <input id="consultaDesde" type="date" class="form-control" formControlName="desde" />
+          </div>
+          <div class="col-md-6 col-xl-3">
+            <label class="form-label" for="consultaHasta">Hasta</label>
+            <input id="consultaHasta" type="date" class="form-control" formControlName="hasta" />
+          </div>
+          <div class="col-md-6 col-xl-3">
+            <label class="form-label" for="consultaCliente">Cliente</label>
+            <select id="consultaCliente" class="form-select" formControlName="clienteId">
+              <option value="">Todos los clientes</option>
+              @for (cliente of clientes(); track cliente.id) {
+                <option [value]="cliente.id">{{ cliente.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-6 col-xl-3">
+            <label class="form-label" for="consultaLinea">Línea de negocio</label>
+            <select id="consultaLinea" class="form-select" formControlName="linea">
+              @for (linea of lineas; track linea.valor) {
+                <option [value]="linea.valor">{{ linea.etiqueta }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-6 col-xl-3">
+            <label class="form-label" for="consultaEstado">Estado del pedido</label>
+            <select id="consultaEstado" class="form-select" formControlName="estado">
+              @for (estado of estados; track estado.valor) {
+                <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-12 col-xl-4">
+            <label class="form-label" for="consultaTexto">Búsqueda libre</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input
+                id="consultaTexto"
+                type="search"
+                class="form-control"
+                placeholder="Orden, cliente, empresa o producto…"
+                formControlName="q"
+              />
+            </div>
+          </div>
+          <div class="col-md-12 col-xl-2 d-flex align-items-end gap-2">
+            <button class="btn btn-ink flex-grow-1" type="submit" [disabled]="cargando()">
+              <i class="bi" [class]="cargando() ? 'bi-arrow-repeat spin' : 'bi-funnel-fill'"></i>
+              {{ cargando() ? 'Buscando…' : 'Filtrar' }}
+            </button>
+            <button
+              class="btn btn-soft"
+              type="button"
+              aria-label="Limpiar filtros"
+              (click)="limpiar()"
             >
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
           </div>
         </div>
-        <div class="col-md-12 col-xl-2 d-flex align-items-end gap-2">
-          <button class="btn btn-ink flex-grow-1" type="button">
-            <i class="bi bi-funnel-fill"></i> Filtrar
-          </button>
-          <button class="btn btn-soft" type="button" aria-label="Limpiar filtros">
-            <i class="bi bi-arrow-counterclockwise"></i>
-          </button>
-        </div>
-      </div>
+      </form>
 
       <div class="quick-filters">
         <span>Rangos rápidos</span>
-        <button class="filter-chip is-active" type="button">Este mes</button>
-        <button class="filter-chip" type="button">Últimos 7 días</button>
-        <button class="filter-chip" type="button">Últimos 30 días</button>
-        <button class="filter-chip" type="button">Este trimestre</button>
-        <button class="filter-chip" type="button">Año en curso</button>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === 'mes'"
+          type="button"
+          (click)="rango('mes')"
+        >
+          Este mes
+        </button>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === '7d'"
+          type="button"
+          (click)="rango('7d')"
+        >
+          Últimos 7 días
+        </button>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === '30d'"
+          type="button"
+          (click)="rango('30d')"
+        >
+          Últimos 30 días
+        </button>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === 'trimestre'"
+          type="button"
+          (click)="rango('trimestre')"
+        >
+          Este trimestre
+        </button>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === 'anio'"
+          type="button"
+          (click)="rango('anio')"
+        >
+          Año en curso
+        </button>
       </div>
     </section>
 
+    @if (error()) {
+      <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <span class="flex-grow-1">{{ error() }}</span>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar(pagina())">
+          Reintentar
+        </button>
+      </div>
+    }
+
     <div class="row g-3 mb-4">
-      <div class="col-sm-6 col-xl-3">
-        <div class="query-stat">
-          <span class="icon-tile icon-tile-cyan"><i class="bi bi-receipt-cutoff"></i></span>
-          <div><strong>84</strong><span>Pedidos encontrados</span></div>
+      @for (stat of estadisticas(); track stat.etiqueta) {
+        <div class="col-sm-6 col-xl-3">
+          <div class="query-stat">
+            <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
+              <i class="bi" [class]="'bi ' + stat.icono"></i>
+            </span>
+            <div><strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span></div>
+          </div>
         </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="query-stat">
-          <span class="icon-tile icon-tile-magenta"><i class="bi bi-cash-stack"></i></span>
-          <div><strong>$168,420</strong><span>Monto consultado</span></div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="query-stat">
-          <span class="icon-tile icon-tile-yellow"><i class="bi bi-bar-chart"></i></span>
-          <div><strong>$2,005</strong><span>Ticket promedio</span></div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="query-stat">
-          <span class="icon-tile icon-tile-success"><i class="bi bi-check2-circle"></i></span>
-          <div><strong>61</strong><span>Pedidos entregados</span></div>
-        </div>
-      </div>
+      }
     </div>
 
     <div class="row g-4">
@@ -145,13 +176,10 @@
               <h2>Pedidos del periodo</h2>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <span class="badge badge-soft-success">84 registros</span>
-              <button class="btn btn-icon" type="button" aria-label="Vista de lista">
-                <i class="bi bi-list-ul"></i>
-              </button>
-              <button class="btn btn-icon" type="button" aria-label="Vista de cuadrícula">
-                <i class="bi bi-grid-3x3-gap"></i>
-              </button>
+              <span class="badge badge-soft-success">{{ resultado()?.total ?? 0 }} registros</span>
+              @if (cargando()) {
+                <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+              }
             </div>
           </div>
 
@@ -167,86 +195,71 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>
-                    <div class="order-id">#LLM-1048</div>
-                    <div class="cell-muted">12 nov 2026</div>
-                  </td>
-                  <td>Alma Creativa</td>
-                  <td><span class="badge badge-soft-cyan">Gran formato</span></td>
-                  <td><span class="badge badge-soft-cyan">En producción</span></td>
-                  <td class="text-end cell-main">$8,143.20</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="order-id">#LLM-1047</div>
-                    <div class="cell-muted">12 nov 2026</div>
-                  </td>
-                  <td>Estudio Nómada</td>
-                  <td><span class="badge badge-soft-magenta">Textil</span></td>
-                  <td><span class="badge badge-soft-success">Listo</span></td>
-                  <td class="text-end cell-main">$6,200.00</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="order-id">#LLM-1046</div>
-                    <div class="cell-muted">11 nov 2026</div>
-                  </td>
-                  <td>Café Origen</td>
-                  <td><span class="badge badge-soft-yellow">Promocionales</span></td>
-                  <td><span class="badge badge-soft-cyan">En producción</span></td>
-                  <td class="text-end cell-main">$8,700.00</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="order-id">#LLM-1045</div>
-                    <div class="cell-muted">11 nov 2026</div>
-                  </td>
-                  <td>Grupo Altura</td>
-                  <td><span class="badge badge-soft-cyan">Gran formato</span></td>
-                  <td><span class="badge badge-soft-warning">Confirmado</span></td>
-                  <td class="text-end cell-main">$12,400.00</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="order-id">#LLM-1044</div>
-                    <div class="cell-muted">10 nov 2026</div>
-                  </td>
-                  <td>Papelería Lumen</td>
-                  <td><span class="badge badge-soft-muted">Papelería</span></td>
-                  <td><span class="badge badge-soft-success">Entregado</span></td>
-                  <td class="text-end cell-main">$2,940.00</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="order-id">#LLM-1043</div>
-                    <div class="cell-muted">09 nov 2026</div>
-                  </td>
-                  <td>Bistró Aurora</td>
-                  <td><span class="badge badge-soft-magenta">Textil</span></td>
-                  <td><span class="badge badge-soft-success">Entregado</span></td>
-                  <td class="text-end cell-main">$4,760.00</td>
-                </tr>
+                @for (pedido of resultado()?.items ?? []; track pedido.id) {
+                  <tr>
+                    <td>
+                      <a class="order-id" [routerLink]="['/detalle']" [queryParams]="{ pedido: pedido.id }">
+                        #{{ pedido.folio }}
+                      </a>
+                      <div class="cell-muted">{{ fechaCorta(pedido.fechaPedido) }}</div>
+                    </td>
+                    <td>
+                      <div class="cell-main">{{ pedido.cliente || 'Mostrador' }}</div>
+                      <div class="cell-muted">{{ pedido.partidas }} partidas</div>
+                    </td>
+                    <td>
+                      <div class="d-flex flex-wrap gap-1">
+                        @for (linea of pedido.lineas; track linea) {
+                          <span class="badge" [class]="claseLinea(linea)">{{ etiquetaLinea(linea) }}</span>
+                        } @empty {
+                          <span class="cell-muted">Sin línea</span>
+                        }
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge" [class]="claseEstado(pedido.estado)">
+                        {{ etiquetaEstado(pedido.estado) }}
+                      </span>
+                    </td>
+                    <td class="text-end cell-main">{{ moneda(pedido.total) }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-center text-muted py-5">
+                      <i class="bi bi-search d-block fs-4 mb-2"></i>
+                      No encontramos pedidos con esos filtros.
+                    </td>
+                  </tr>
+                }
               </tbody>
             </table>
           </div>
 
           <div class="table-footer">
-            <span>Mostrando 1–6 de 84 resultados</span>
-            <nav aria-label="Paginación de consultas">
-              <ul class="pagination pagination-sm mb-0">
-                <li class="page-item disabled">
-                  <a class="page-link" href="#" aria-label="Anterior"><i class="bi bi-chevron-left"></i></a>
-                </li>
-                <li class="page-item active" aria-current="page"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">14</a></li>
-                <li class="page-item">
-                  <a class="page-link" href="#" aria-label="Siguiente"><i class="bi bi-chevron-right"></i></a>
-                </li>
-              </ul>
-            </nav>
+            @if (resultado(); as data) {
+              <span>{{ rangoTexto(data) }}</span>
+              <nav aria-label="Paginación de consultas">
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" [class.disabled]="data.pagina <= 1">
+                    <button class="page-link" type="button" aria-label="Anterior" (click)="cargar(data.pagina - 1)">
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                  </li>
+                  @for (numero of paginas(); track numero) {
+                    <li class="page-item" [class.active]="numero === data.pagina">
+                      <button class="page-link" type="button" (click)="cargar(numero)">{{ numero }}</button>
+                    </li>
+                  }
+                  <li class="page-item" [class.disabled]="data.pagina >= data.paginas">
+                    <button class="page-link" type="button" aria-label="Siguiente" (click)="cargar(data.pagina + 1)">
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            } @else {
+              <span>Sin resultados</span>
+            }
           </div>
         </section>
       </div>
@@ -262,22 +275,20 @@
           </div>
 
           <div class="distribution">
-            <div class="distribution-row">
-              <div class="distribution-top"><span>Gran formato</span><strong>$68,400</strong></div>
-              <div class="distribution-track"><span class="fill-cyan" style="width: 62%"></span></div>
-            </div>
-            <div class="distribution-row">
-              <div class="distribution-top"><span>Textil</span><strong>$42,900</strong></div>
-              <div class="distribution-track"><span class="fill-magenta" style="width: 48%"></span></div>
-            </div>
-            <div class="distribution-row">
-              <div class="distribution-top"><span>Promocionales</span><strong>$35,120</strong></div>
-              <div class="distribution-track"><span class="fill-yellow" style="width: 38%"></span></div>
-            </div>
-            <div class="distribution-row">
-              <div class="distribution-top"><span>Papelería</span><strong>$22,000</strong></div>
-              <div class="distribution-track"><span class="fill-ink" style="width: 26%"></span></div>
-            </div>
+            @for (fila of distribucion(); track fila.linea) {
+              <div class="distribution-row">
+                <div class="distribution-top">
+                  <span>{{ fila.etiqueta }}</span><strong>{{ moneda(fila.total) }}</strong>
+                </div>
+                <div class="distribution-track">
+                  <span [class]="fila.clase" [style.width]="fila.porcentaje + '%'"></span>
+                </div>
+              </div>
+            } @empty {
+              <p class="text-muted mb-0 small">
+                Sin partidas de producto en el periodo seleccionado.
+              </p>
+            }
           </div>
         </section>
 
@@ -291,47 +302,24 @@
           </div>
 
           <div class="rank-list">
-            <div class="rank-item">
-              <span class="rank-number">01</span>
-              <span class="avatar avatar-cyan">AC</span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Alma Creativa</strong>
-                <small>14 pedidos · Gran formato</small>
+            @for (cliente of resultado()?.topClientes ?? []; track cliente.id; let i = $index) {
+              <div class="rank-item">
+                <span class="rank-number">{{ (i + 1).toString().padStart(2, '0') }}</span>
+                <span class="avatar" [class]="'avatar ' + avatar(i)">{{ iniciales(cliente.nombre) }}</span>
+                <div class="flex-grow-1 min-w-0">
+                  <strong>{{ cliente.nombre }}</strong>
+                  <small>{{ cliente.pedidos }} pedidos</small>
+                </div>
+                <strong class="rank-amount">{{ moneda(cliente.total) }}</strong>
               </div>
-              <strong class="rank-amount">$48,900</strong>
-            </div>
-            <div class="rank-item">
-              <span class="rank-number">02</span>
-              <span class="avatar avatar-magenta">EN</span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Estudio Nómada</strong>
-                <small>11 pedidos · Textil</small>
-              </div>
-              <strong class="rank-amount">$36,200</strong>
-            </div>
-            <div class="rank-item">
-              <span class="rank-number">03</span>
-              <span class="avatar avatar-yellow">CO</span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Café Origen</strong>
-                <small>9 pedidos · Promocionales</small>
-              </div>
-              <strong class="rank-amount">$28,750</strong>
-            </div>
-            <div class="rank-item">
-              <span class="rank-number">04</span>
-              <span class="avatar avatar-ink">GA</span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Grupo Altura</strong>
-                <small>6 pedidos · Corporativo</small>
-              </div>
-              <strong class="rank-amount">$24,100</strong>
-            </div>
+            } @empty {
+              <p class="text-muted mb-0 small">Aún no hay clientes con pedidos en el periodo.</p>
+            }
           </div>
 
           <div class="quote-note">
             <i class="bi bi-lightbulb"></i>
-            <span>Las consultas guardadas se podrán programar para enviarse por correo cada semana.</span>
+            <span>Filtra por rango de fechas y línea para analizar el desempeño comercial.</span>
           </div>
         </section>
       </div>

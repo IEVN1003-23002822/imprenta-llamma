@@ -106,6 +106,9 @@ Llamma/
 │   │   └── app.css
 │   ├── index.html
 │   ├── main.ts
+│   ├── assets/
+│   │   └── images/
+│   │       └── logo-llamma.png
 │   └── styles.css
 ├── proxy.conf.json
 ├── angular.json
@@ -163,6 +166,21 @@ python app.py
 
 La API se ejecuta en `http://127.0.0.1:5000`. Para MySQL, define `DATABASE_URL` con el driver
 `mysql+pymysql://usuario:password@host/base`.
+
+### Base de datos MySQL en Laragon
+
+El archivo `llamma_laragon.sql` de la raíz contiene el esquema completo y los datos demo: 26 tablas,
+llaves foráneas, índices, cotejamiento `utf8mb4_unicode_ci` y seeds.
+
+1. Arranca MySQL 8 desde Laragon (`localhost:3306`, usuario `root` sin contraseña).
+2. Importa el archivo desde HeidiSQL/phpMyAdmin o por consola:
+
+```powershell
+& "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" -u root < llamma_laragon.sql
+```
+
+El dump crea/restaura `llamma_db`. Como alternativa equivalente puedes regenerar la base desde
+Flask con `flask --app app init-db` y `flask --app app seed-db`.
 
 ### Usuarios demo
 

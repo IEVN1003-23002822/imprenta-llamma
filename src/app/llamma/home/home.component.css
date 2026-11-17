@@ -208,6 +208,18 @@
   border-bottom: 2px solid var(--llamma-carbon);
 }
 
+.poster-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.poster-logo {
+  display: block;
+  width: auto;
+  height: 38px;
+}
+
 .poster-title {
   position: relative;
   z-index: 1;

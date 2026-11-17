@@ -3,12 +3,13 @@
 <nav class="navbar navbar-expand-lg navbar-dark navbar-llamma sticky-top">
   <div class="container">
     <a class="navbar-brand brand-lockup" routerLink="/" aria-label="Llamma, ir al inicio">
-      <span class="brand-mark" aria-hidden="true">
-        <span class="brand-dot brand-dot-cyan"></span>
-        <span class="brand-dot brand-dot-magenta"></span>
-        <span class="brand-dot brand-dot-yellow"></span>
-        <span class="brand-dot brand-dot-carbon"></span>
-      </span>
+      <img
+        class="brand-logo"
+        src="assets/images/logo-llamma.png"
+        alt="Imprenta Llamma Logo"
+        width="31"
+        height="44"
+      >
       <span class="brand-text">
         <strong>LLAMMA</strong>
         <small>Imprimimos tus ideas</small>
@@ -160,3 +161,20 @@
 <main class="app-main">
   <router-outlet />
 </main>
+
+<div class="toast-stack" aria-live="polite" aria-atomic="true">
+  @for (toast of ui.toasts(); track toast.id) {
+    <div class="app-toast" [class]="'app-toast app-toast-' + toast.tipo" role="status">
+      <i
+        class="bi"
+        [class.bi-check-circle-fill]="toast.tipo === 'success'"
+        [class.bi-exclamation-octagon-fill]="toast.tipo === 'error'"
+        [class.bi-info-circle-fill]="toast.tipo === 'info'"
+      ></i>
+      <span>{{ toast.mensaje }}</span>
+      <button type="button" aria-label="Cerrar notificación" (click)="ui.cerrar(toast.id)">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  }
+</div>

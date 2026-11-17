@@ -9,6 +9,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 
 import { AuthService } from './llamma/auth.service';
 import { SolicitudesStore } from './llamma/solicitudes.store';
+import { UiService } from './llamma/ui.service';
 
 const REFRESCO_MS = 60_000;
 
@@ -22,6 +23,7 @@ const REFRESCO_MS = 60_000;
 export class App implements OnDestroy {
   readonly auth = inject(AuthService);
   readonly store = inject(SolicitudesStore);
+  readonly ui = inject(UiService);
   private readonly router = inject(Router);
   private refresco: ReturnType<typeof setInterval> | null = null;
 

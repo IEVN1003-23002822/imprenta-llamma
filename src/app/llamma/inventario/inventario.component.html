@@ -10,49 +10,62 @@
         </p>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-outline-ink" type="button">
+        <button class="btn btn-outline-ink" type="button" (click)="exportar()">
           <i class="bi bi-download"></i> Exportar
         </button>
-        <button class="btn btn-brand" type="button">
-          <i class="bi bi-arrow-left-right"></i> Registrar movimiento
-        </button>
+        @if (puedeGestionar()) {
+          <button class="btn btn-outline-ink" type="button" (click)="abrirNuevo()">
+            <i class="bi bi-plus-lg"></i> Nuevo insumo
+          </button>
+          <button class="btn btn-brand" type="button" (click)="abrirAjuste()">
+            <i class="bi bi-arrow-left-right"></i> Registrar movimiento
+          </button>
+        }
       </div>
     </header>
 
-    <div class="inventory-alert">
-      <i class="bi bi-exclamation-triangle-fill"></i>
-      <span>
-        <strong>3 insumos críticos</strong> y 3 con stock bajo. La tinta CMYK y la lona Frontlit
-        pueden detener la producción de esta semana.
-      </span>
-      <a routerLink="/abastecimiento">Generar orden de compra <i class="bi bi-arrow-right"></i></a>
-    </div>
+    @if (error()) {
+      <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <span class="flex-grow-1">{{ error() }}</span>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">Reintentar</button>
+      </div>
+    }
+
+    @if (resumenAlerta().total > 0) {
+      <div class="inventory-alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>
+          <strong>{{ dosDigitos(resumenAlerta().criticos) }} insumos críticos</strong>
+          y {{ dosDigitos(resumenAlerta().bajos) }} con stock bajo.
+          @if (resumenAlerta().nombres) {
+            {{ resumenAlerta().nombres }} pueden detener la producción de esta semana.
+          }
+        </span>
+        <a routerLink="/abastecimiento">Generar orden de compra <i class="bi bi-arrow-right"></i></a>
+      </div>
+    } @else if (!cargando()) {
+      <div class="inventory-alert is-ok">
+        <i class="bi bi-shield-check"></i>
+        <span>
+          <strong>Inventario saludable.</strong> Todos los insumos están por encima de su umbral
+          mínimo de operación.
+        </span>
+        <a routerLink="/abastecimiento">Ver abastecimiento <i class="bi bi-arrow-right"></i></a>
+      </div>
+    }
 
     <div class="row g-3 mb-4">
-      <div class="col-sm-6 col-xl-3">
-        <div class="inventory-stat">
-          <span class="icon-tile icon-tile-cyan"><i class="bi bi-cash-stack"></i></span>
-          <div><strong>$184,900</strong><span>Valor del inventario</span></div>
+      @for (stat of estadisticas(); track stat.etiqueta) {
+        <div class="col-sm-6 col-xl-3">
+          <div class="inventory-stat">
+            <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
+              <i class="bi" [class]="'bi ' + stat.icono"></i>
+            </span>
+            <div><strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span></div>
+          </div>
         </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="inventory-stat">
-          <span class="icon-tile icon-tile-magenta"><i class="bi bi-boxes"></i></span>
-          <div><strong>42</strong><span>Insumos controlados</span></div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="inventory-stat">
-          <span class="icon-tile icon-tile-danger"><i class="bi bi-exclamation-octagon"></i></span>
-          <div><strong>03</strong><span>Insumos críticos</span></div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="inventory-stat">
-          <span class="icon-tile icon-tile-yellow"><i class="bi bi-truck"></i></span>
-          <div><strong>08</strong><span>Proveedores activos</span></div>
-        </div>
-      </div>
+      }
     </div>
 
     <section class="panel-card mb-4">
@@ -61,45 +74,50 @@
           <span class="panel-kicker">Existencias en tiempo real</span>
           <h2>Materias primas</h2>
         </div>
-        <span class="badge badge-soft-muted">Actualizado hace 8 min</span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge badge-soft-muted">{{ filtradas().length }} insumos</span>
+          @if (cargando()) {
+            <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+          }
+        </div>
       </div>
 
-      <div class="row g-2 mb-3">
+      <form class="row g-2 mb-3" [formGroup]="filtros" (ngSubmit)="filtrar()">
         <div class="col-lg-5">
           <div class="input-group">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
             <input
               type="search"
               class="form-control"
-              placeholder="Buscar insumo, categoría o proveedor..."
+              placeholder="Buscar insumo, categoría o proveedor…"
               aria-label="Buscar insumo"
-            >
+              formControlName="q"
+            />
+            <button class="btn btn-ink" type="submit">Buscar</button>
           </div>
         </div>
         <div class="col-6 col-lg-3">
-          <select class="form-select" aria-label="Filtrar por categoría">
-            <option selected>Todas las categorías</option>
-            <option>Lonas y viniles</option>
-            <option>Tintas</option>
-            <option>Rígidos</option>
-            <option>Papeles</option>
-            <option>Herrajes</option>
+          <select class="form-select" aria-label="Filtrar por categoría" formControlName="categoria">
+            <option value="">Todas las categorías</option>
+            @for (categoria of categorias; track categoria.valor) {
+              <option [value]="categoria.valor">{{ categoria.etiqueta }}</option>
+            }
           </select>
         </div>
         <div class="col-6 col-lg-2">
-          <select class="form-select" aria-label="Filtrar por estado">
-            <option selected>Todo estado</option>
-            <option>Crítico</option>
-            <option>Bajo</option>
-            <option>Óptimo</option>
+          <select class="form-select" aria-label="Filtrar por estado" formControlName="estado">
+            <option value="">Todo estado</option>
+            <option value="critico">Crítico</option>
+            <option value="bajo">Bajo</option>
+            <option value="optimo">Óptimo</option>
           </select>
         </div>
         <div class="col-lg-2">
-          <button class="btn btn-soft w-100" type="button">
-            <i class="bi bi-sliders"></i> Filtros
+          <button class="btn btn-soft w-100" type="button" (click)="limpiar()">
+            <i class="bi bi-arrow-counterclockwise"></i> Limpiar
           </button>
         </div>
-      </div>
+      </form>
 
       <div class="table-responsive">
         <table class="table table-llamma align-middle">
@@ -112,223 +130,113 @@
               <th>Nivel de stock</th>
               <th class="text-end">Costo unitario</th>
               <th>Estado</th>
-              <th class="text-end">Acciones</th>
+              @if (puedeGestionar()) {
+                <th class="text-end">Acciones</th>
+              }
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>
-                <div class="product-cell">
-                  <span class="icon-tile icon-tile-sm icon-tile-cyan"><i class="bi bi-layers"></i></span>
-                  <div><strong>Lona Frontlit</strong><small>Proveedor · Gran Formato SA</small></div>
-                </div>
-              </td>
-              <td>Lonas y viniles</td>
-              <td class="text-end cell-main">12 m²</td>
-              <td class="text-center">40 / 120</td>
-              <td>
-                <div class="stock-cell">
-                  <div class="stock-cell-top"><strong class="text-danger">10%</strong><span>Crítico</span></div>
-                  <div class="stock-track stock-track-lg"><span class="stock-fill bg-danger" style="width: 10%"></span></div>
-                </div>
-              </td>
-              <td class="text-end">$185.00 / m²</td>
-              <td><span class="badge badge-soft-danger">Crítico</span></td>
-              <td class="text-end">
-                <div class="d-inline-flex gap-1">
-                  <button class="btn btn-icon" type="button" aria-label="Ver insumo"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-icon" type="button" aria-label="Editar insumo"><i class="bi bi-pencil"></i></button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="product-cell">
-                  <span class="icon-tile icon-tile-sm icon-tile-cyan"><i class="bi bi-square"></i></span>
-                  <div><strong>Vinil adhesivo blanco</strong><small>Proveedor · Insumos Delta</small></div>
-                </div>
-              </td>
-              <td>Lonas y viniles</td>
-              <td class="text-end cell-main">22 m²</td>
-              <td class="text-center">50 / 140</td>
-              <td>
-                <div class="stock-cell">
-                  <div class="stock-cell-top"><strong class="text-warning">16%</strong><span>Bajo</span></div>
-                  <div class="stock-track stock-track-lg"><span class="stock-fill bg-warning" style="width: 16%"></span></div>
-                </div>
-              </td>
-              <td class="text-end">$140.00 / m²</td>
-              <td><span class="badge badge-soft-warning">Bajo</span></td>
-              <td class="text-end">
-                <div class="d-inline-flex gap-1">
-                  <button class="btn btn-icon" type="button" aria-label="Ver insumo"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-icon" type="button" aria-label="Editar insumo"><i class="bi bi-pencil"></i></button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="product-cell">
-                  <span class="icon-tile icon-tile-sm icon-tile-magenta"><i class="bi bi-droplet-half"></i></span>
-                  <div><strong>Tinta Eco-solvente CMYK</strong><small>Proveedor · ColorLab MX</small></div>
-                </div>
-              </td>
-              <td>Tintas</td>
-              <td class="text-end cell-main">8 ml</td>
-              <td class="text-center">30 / 100</td>
-              <td>
-                <div class="stock-cell">
-                  <div class="stock-cell-top"><strong class="text-danger">8%</strong><span>Crítico</span></div>
-                  <div class="stock-track stock-track-lg"><span class="stock-fill bg-danger" style="width: 8%"></span></div>
-                </div>
-              </td>
-              <td class="text-end">$0.95 / ml</td>
-              <td><span class="badge badge-soft-danger">Crítico</span></td>
-              <td class="text-end">
-                <div class="d-inline-flex gap-1">
-                  <button class="btn btn-icon" type="button" aria-label="Ver insumo"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-icon" type="button" aria-label="Editar insumo"><i class="bi bi-pencil"></i></button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="product-cell">
-                  <span class="icon-tile icon-tile-sm icon-tile-ink"><i class="bi bi-disc"></i></span>
-                  <div><strong>Ojillos metálicos</strong><small>Proveedor · Herrajes del Norte</small></div>
-                </div>
-              </td>
-              <td>Herrajes</td>
-              <td class="text-end cell-main">150 pzas</td>
-              <td class="text-center">150 / 2,000</td>
-              <td>
-                <div class="stock-cell">
-                  <div class="stock-cell-top"><strong class="text-warning">8%</strong><span>Bajo</span></div>
-                  <div class="stock-track stock-track-lg"><span class="stock-fill bg-warning" style="width: 8%"></span></div>
-                </div>
-              </td>
-              <td class="text-end">$2.40 / pza</td>
-              <td><span class="badge badge-soft-warning">Bajo</span></td>
-              <td class="text-end">
-                <div class="d-inline-flex gap-1">
-                  <button class="btn btn-icon" type="button" aria-label="Ver insumo"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-icon" type="button" aria-label="Editar insumo"><i class="bi bi-pencil"></i></button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="product-cell">
-                  <span class="icon-tile icon-tile-sm icon-tile-cyan"><i class="bi bi-grid-3x3"></i></span>
-                  <div><strong>Trovicel / PVC 5 mm</strong><small>Proveedor · Rígidos Creativos</small></div>
-                </div>
-              </td>
-              <td>Rígidos</td>
-              <td class="text-end cell-main">36 hojas</td>
-              <td class="text-center">20 / 80</td>
-              <td>
-                <div class="stock-cell">
-                  <div class="stock-cell-top"><strong class="text-success">45%</strong><span>Óptimo</span></div>
-                  <div class="stock-track stock-track-lg"><span class="stock-fill bg-success" style="width: 45%"></span></div>
-                </div>
-              </td>
-              <td class="text-end">$320.00 / hoja</td>
-              <td><span class="badge badge-soft-success">Óptimo</span></td>
-              <td class="text-end">
-                <div class="d-inline-flex gap-1">
-                  <button class="btn btn-icon" type="button" aria-label="Ver insumo"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-icon" type="button" aria-label="Editar insumo"><i class="bi bi-pencil"></i></button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="product-cell">
-                  <span class="icon-tile icon-tile-sm icon-tile-cyan"><i class="bi bi-arrow-repeat"></i></span>
-                  <div><strong>Laminado en frío</strong><small>Proveedor · Acabados Pro</small></div>
-                </div>
-              </td>
-              <td>Acabados</td>
-              <td class="text-end cell-main">4 ml</td>
-              <td class="text-center">10 / 40</td>
-              <td>
-                <div class="stock-cell">
-                  <div class="stock-cell-top"><strong class="text-warning">10%</strong><span>Bajo</span></div>
-                  <div class="stock-track stock-track-lg"><span class="stock-fill bg-warning" style="width: 10%"></span></div>
-                </div>
-              </td>
-              <td class="text-end">$210.00 / ml</td>
-              <td><span class="badge badge-soft-warning">Bajo</span></td>
-              <td class="text-end">
-                <div class="d-inline-flex gap-1">
-                  <button class="btn btn-icon" type="button" aria-label="Ver insumo"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-icon" type="button" aria-label="Editar insumo"><i class="bi bi-pencil"></i></button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="product-cell">
-                  <span class="icon-tile icon-tile-sm icon-tile-ink"><i class="bi bi-file-earmark-text"></i></span>
-                  <div><strong>Papel Couché 300g</strong><small>Proveedor · Papelera Central</small></div>
-                </div>
-              </td>
-              <td>Papeles</td>
-              <td class="text-end cell-main">90 hojas</td>
-              <td class="text-center">300 / 1,000</td>
-              <td>
-                <div class="stock-cell">
-                  <div class="stock-cell-top"><strong class="text-danger">9%</strong><span>Crítico</span></div>
-                  <div class="stock-track stock-track-lg"><span class="stock-fill bg-danger" style="width: 9%"></span></div>
-                </div>
-              </td>
-              <td class="text-end">$4.50 / hoja</td>
-              <td><span class="badge badge-soft-danger">Crítico</span></td>
-              <td class="text-end">
-                <div class="d-inline-flex gap-1">
-                  <button class="btn btn-icon" type="button" aria-label="Ver insumo"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-icon" type="button" aria-label="Editar insumo"><i class="bi bi-pencil"></i></button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="product-cell">
-                  <span class="icon-tile icon-tile-sm icon-tile-yellow"><i class="bi bi-bounding-box"></i></span>
-                  <div><strong>Perfiles de aluminio</strong><small>Proveedor · Estructuras MX</small></div>
-                </div>
-              </td>
-              <td>Estructuras</td>
-              <td class="text-end cell-main">64 pzas</td>
-              <td class="text-center">40 / 160</td>
-              <td>
-                <div class="stock-cell">
-                  <div class="stock-cell-top"><strong class="text-success">40%</strong><span>Óptimo</span></div>
-                  <div class="stock-track stock-track-lg"><span class="stock-fill bg-success" style="width: 40%"></span></div>
-                </div>
-              </td>
-              <td class="text-end">$95.00 / pza</td>
-              <td><span class="badge badge-soft-success">Óptimo</span></td>
-              <td class="text-end">
-                <div class="d-inline-flex gap-1">
-                  <button class="btn btn-icon" type="button" aria-label="Ver insumo"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-icon" type="button" aria-label="Editar insumo"><i class="bi bi-pencil"></i></button>
-                </div>
-              </td>
-            </tr>
+            @for (materia of visibles(); track materia.id) {
+              @let estado = estadoStock(materia);
+              <tr>
+                <td>
+                  <div class="product-cell">
+                    <span class="icon-tile icon-tile-sm" [class]="'icon-tile icon-tile-sm ' + tonoCategoria(materia.categoria)">
+                      <i class="bi" [class]="'bi ' + iconoCategoria(materia.categoria)"></i>
+                    </span>
+                    <div>
+                      <strong>{{ materia.nombre }}</strong>
+                      <small>{{ materia.proveedor ? 'Proveedor · ' + materia.proveedor : 'Sin proveedor asignado' }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ etiquetaCategoria(materia.categoria) }}</td>
+                <td class="text-end cell-main">
+                  {{ cantidad(materia.stockActual, materia.unidadMedida) }}
+                </td>
+                <td class="text-center">
+                  {{ cantidad(materia.stockMinimo) }} / {{ cantidad(materia.stockMaximo) }}
+                </td>
+                <td>
+                  <div class="stock-cell">
+                    <div class="stock-cell-top">
+                      <strong [class]="estado.texto">{{ estado.porcentaje }}%</strong>
+                      <span>{{ estado.etiqueta }}</span>
+                    </div>
+                    <div class="stock-track stock-track-lg">
+                      <span class="stock-fill" [class]="'stock-fill ' + estado.barra" [style.width]="estado.porcentaje + '%'"></span>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-end">{{ costoUnitario(materia) }}</td>
+                <td>
+                  <span class="badge" [class]="estado.badge">{{ estado.etiqueta }}</span>
+                </td>
+                @if (puedeGestionar()) {
+                  <td class="text-end">
+                    <div class="d-inline-flex gap-1">
+                      <button
+                        class="btn btn-icon"
+                        type="button"
+                        aria-label="Registrar movimiento"
+                        title="Registrar movimiento"
+                        (click)="abrirAjuste(materia)"
+                      >
+                        <i class="bi bi-arrow-left-right"></i>
+                      </button>
+                      <button
+                        class="btn btn-icon"
+                        type="button"
+                        aria-label="Editar insumo"
+                        title="Editar insumo"
+                        (click)="abrirEditar(materia)"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button
+                        class="btn btn-icon"
+                        type="button"
+                        aria-label="Dar de baja"
+                        title="Dar de baja"
+                        (click)="desactivar(materia)"
+                      >
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </div>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="puedeGestionar() ? 8 : 7" class="text-center text-muted py-5">
+                  <i class="bi bi-boxes d-block fs-4 mb-2"></i>
+                  No hay insumos con esos filtros.
+                </td>
+              </tr>
+            }
           </tbody>
         </table>
       </div>
 
       <div class="table-footer">
-        <span>Mostrando 8 de 42 insumos</span>
+        <span>{{ rangoTexto() }}</span>
         <nav aria-label="Paginación del inventario">
           <ul class="pagination pagination-sm mb-0">
-            <li class="page-item disabled"><a class="page-link" href="#" aria-label="Anterior"><i class="bi bi-chevron-left"></i></a></li>
-            <li class="page-item active" aria-current="page"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item"><a class="page-link" href="#" aria-label="Siguiente"><i class="bi bi-chevron-right"></i></a></li>
+            <li class="page-item" [class.disabled]="pagina() <= 1">
+              <button class="page-link" type="button" aria-label="Anterior" (click)="irA(pagina() - 1)">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+            @for (numero of listaPaginas(); track numero) {
+              <li class="page-item" [class.active]="numero === pagina()">
+                <button class="page-link" type="button" (click)="irA(numero)">{{ numero }}</button>
+              </li>
+            }
+            <li class="page-item" [class.disabled]="pagina() >= paginas()">
+              <button class="page-link" type="button" aria-label="Siguiente" (click)="irA(pagina() + 1)">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
           </ul>
         </nav>
       </div>
@@ -342,42 +250,36 @@
               <span class="panel-kicker">Trazabilidad</span>
               <h2>Movimientos recientes</h2>
             </div>
-            <a class="panel-link mt-0" routerLink="/consultas">Ver historial <i class="bi bi-arrow-right"></i></a>
+            @if (cargandoMovimientos()) {
+              <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+            } @else {
+              <span class="badge badge-soft-muted">{{ movimientosRecientes().length }} registros</span>
+            }
           </div>
 
           <div class="movement-list">
-            <div class="movement-row">
-              <span class="icon-tile icon-tile-sm icon-tile-success"><i class="bi bi-box-arrow-in-down"></i></span>
-              <div class="flex-grow-1">
-                <strong>Entrada · Lona Frontlit</strong>
-                <small>Compra a Gran Formato SA · Hoy, 08:40</small>
+            @for (movimiento of movimientosRecientes(); track movimiento.id) {
+              @let estilo = claseMovimiento(movimiento.tipo);
+              <div class="movement-row">
+                <span class="icon-tile icon-tile-sm" [class]="'icon-tile icon-tile-sm ' + estilo.tono">
+                  <i class="bi" [class]="'bi ' + estilo.icono"></i>
+                </span>
+                <div class="flex-grow-1">
+                  <strong>{{ etiquetaTipo(movimiento.tipo) }} · {{ movimiento.materiaPrima }}</strong>
+                  <small>
+                    {{ movimiento.motivo || movimiento.referencia || (movimiento.usuario || 'Sistema') }}
+                    · {{ fechaHora(movimiento.fecha) }}
+                  </small>
+                </div>
+                <span class="movement-amount" [class]="'movement-amount ' + estilo.monto">
+                  {{ signoTipo(movimiento.tipo) }}{{ cantidad(movimiento.cantidad, movimiento.unidadMedida) }}
+                </span>
               </div>
-              <span class="movement-amount text-success">+30 m²</span>
-            </div>
-            <div class="movement-row">
-              <span class="icon-tile icon-tile-sm icon-tile-danger"><i class="bi bi-box-arrow-up"></i></span>
-              <div class="flex-grow-1">
-                <strong>Salida · Tinta Eco-solvente CMYK</strong>
-                <small>Orden #LLM-1048 · Hoy, 09:15</small>
-              </div>
-              <span class="movement-amount text-danger">−12 ml</span>
-            </div>
-            <div class="movement-row">
-              <span class="icon-tile icon-tile-sm icon-tile-warning"><i class="bi bi-sliders"></i></span>
-              <div class="flex-grow-1">
-                <strong>Ajuste · Ojillos metálicos</strong>
-                <small>Conteo físico · Ayer, 17:30</small>
-              </div>
-              <span class="movement-amount text-warning">−25 pzas</span>
-            </div>
-            <div class="movement-row">
-              <span class="icon-tile icon-tile-sm icon-tile-success"><i class="bi bi-box-arrow-in-down"></i></span>
-              <div class="flex-grow-1">
-                <strong>Entrada · Papel Couché 300g</strong>
-                <small>Compra a Papelera Central · Ayer, 11:05</small>
-              </div>
-              <span class="movement-amount text-success">+100 hojas</span>
-            </div>
+            } @empty {
+              <p class="text-muted mb-0 small">
+                Aún no hay movimientos registrados. Captura una entrada para comenzar el historial.
+              </p>
+            }
           </div>
         </article>
       </div>
@@ -389,34 +291,31 @@
               <span class="panel-kicker">Reposición sugerida</span>
               <h2>Sugerencias de compra</h2>
             </div>
-            <span class="badge badge-soft-magenta">6 insumos</span>
+            <span class="badge badge-soft-magenta">{{ sugerencias().length }} insumos</span>
           </div>
 
           <div>
-            <div class="purchase-item">
-              <span class="icon-tile icon-tile-sm icon-tile-danger"><i class="bi bi-droplet-half"></i></span>
-              <div>
-                <strong>Tinta Eco-solvente CMYK</strong>
-                <small>Reponer 60 ml · ColorLab MX</small>
+            @for (sugerencia of sugerencias().slice(0, 5); track sugerencia.materia.id) {
+              <div class="purchase-item">
+                <span class="icon-tile icon-tile-sm" [class]="'icon-tile icon-tile-sm ' + tonoCategoria(sugerencia.materia.categoria)">
+                  <i class="bi" [class]="'bi ' + sugerencia.icono"></i>
+                </span>
+                <div>
+                  <strong>{{ sugerencia.materia.nombre }}</strong>
+                  <small>
+                    Reponer {{ cantidad(sugerencia.reposicion, sugerencia.materia.unidadMedida) }} ·
+                    {{ sugerencia.materia.proveedor || 'Sin proveedor' }}
+                  </small>
+                </div>
+                <span class="badge" [class]="sugerencia.estado.clave === 'critico' ? 'badge-soft-danger' : 'badge-soft-warning'">
+                  {{ sugerencia.estado.clave === 'critico' ? 'Urgente' : 'Esta semana' }}
+                </span>
               </div>
-              <span class="badge badge-soft-danger">Urgente</span>
-            </div>
-            <div class="purchase-item">
-              <span class="icon-tile icon-tile-sm icon-tile-danger"><i class="bi bi-layers"></i></span>
-              <div>
-                <strong>Lona Frontlit</strong>
-                <small>Reponer 80 m² · Gran Formato SA</small>
-              </div>
-              <span class="badge badge-soft-danger">Urgente</span>
-            </div>
-            <div class="purchase-item">
-              <span class="icon-tile icon-tile-sm icon-tile-warning"><i class="bi bi-file-earmark-text"></i></span>
-              <div>
-                <strong>Papel Couché 300g</strong>
-                <small>Reponer 500 hojas · Papelera Central</small>
-              </div>
-              <span class="badge badge-soft-warning">Esta semana</span>
-            </div>
+            } @empty {
+              <p class="text-muted mb-0 small">
+                No hay reposiciones urgentes: el inventario cubre los umbrales definidos.
+              </p>
+            }
           </div>
 
           <a class="btn btn-outline-ink w-100 mt-auto" routerLink="/abastecimiento">
@@ -427,3 +326,172 @@
     </div>
   </div>
 </div>
+
+@if (formularioAbierto()) {
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <form [formGroup]="formulario" (ngSubmit)="guardar()">
+          <div class="modal-header">
+            <div>
+              <span class="panel-kicker">{{ editando() ? 'Editar insumo' : 'Alta de insumo' }}</span>
+              <h2 class="modal-title h5 mb-0">
+                {{ editando() ? editando()!.nombre : 'Nuevo insumo' }}
+              </h2>
+            </div>
+            <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarFormulario()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-7">
+                <label class="form-label" for="insumoNombre">Nombre del insumo *</label>
+                <input id="insumoNombre" class="form-control" formControlName="nombre" />
+                @if (formulario.controls.nombre.invalid && formulario.controls.nombre.touched) {
+                  <small class="text-danger">Indica al menos dos caracteres.</small>
+                }
+              </div>
+              <div class="col-md-5">
+                <label class="form-label" for="insumoCategoria">Categoría</label>
+                <select id="insumoCategoria" class="form-select" formControlName="categoria">
+                  @for (categoria of categorias; track categoria.valor) {
+                    <option [value]="categoria.valor">{{ categoria.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label" for="insumoUnidad">Unidad de medida</label>
+                <select id="insumoUnidad" class="form-select" formControlName="unidadMedida">
+                  @for (unidad of unidades; track unidad.valor) {
+                    <option [value]="unidad.valor">{{ unidad.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-7">
+                <label class="form-label" for="insumoProveedor">Proveedor</label>
+                <select id="insumoProveedor" class="form-select" formControlName="proveedorId">
+                  <option value="">Sin proveedor asignado</option>
+                  @for (proveedor of proveedores(); track proveedor.id) {
+                    <option [value]="proveedor.id">{{ proveedor.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="insumoActual">Stock actual</label>
+                <input id="insumoActual" type="number" min="0" step="0.01" class="form-control" formControlName="stockActual" />
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="insumoMinimo">Stock mínimo</label>
+                <input id="insumoMinimo" type="number" min="0" step="0.01" class="form-control" formControlName="stockMinimo" />
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="insumoMaximo">Stock máximo</label>
+                <input id="insumoMaximo" type="number" min="0" step="0.01" class="form-control" formControlName="stockMaximo" />
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="insumoCosto">Costo unitario</label>
+                <input id="insumoCosto" type="number" min="0" step="0.01" class="form-control" formControlName="costoUnitario" />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarFormulario()">Cancelar</button>
+            <button class="btn btn-brand" type="submit" [disabled]="guardando()">
+              <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+              {{ guardando() ? 'Guardando…' : 'Guardar insumo' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+@if (ajusteAbierto()) {
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form [formGroup]="ajusteForm" (ngSubmit)="registrarMovimiento()">
+          <div class="modal-header">
+            <div>
+              <span class="panel-kicker">Trazabilidad de inventario</span>
+              <h2 class="modal-title h5 mb-0">Registrar movimiento</h2>
+            </div>
+            <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarAjuste()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="movInsumo">Insumo *</label>
+                <select id="movInsumo" class="form-select" formControlName="materiaId">
+                  <option value="">Selecciona un insumo…</option>
+                  @for (materia of materias(); track materia.id) {
+                    <option [value]="materia.id">{{ materia.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="movTipo">Tipo de movimiento *</label>
+                <select id="movTipo" class="form-select" formControlName="tipo">
+                  @for (tipo of tiposMovimiento; track tipo.valor) {
+                    <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="movCantidad">Cantidad *</label>
+                <input id="movCantidad" type="number" min="0" step="0.01" class="form-control" formControlName="cantidad" />
+                @if (ajusteForm.controls.cantidad.invalid && ajusteForm.controls.cantidad.touched) {
+                  <small class="text-danger">Captura una cantidad mayor a cero.</small>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="movReferencia">Referencia</label>
+                <input id="movReferencia" class="form-control" formControlName="referencia" placeholder="Orden de compra, folio, proveedor…" />
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="movMotivo">Motivo</label>
+                <input id="movMotivo" class="form-control" formControlName="motivo" placeholder="Compra, consumo de producción, conteo físico…" />
+              </div>
+            </div>
+
+            @if (vistaPreviaAjuste(); as previa) {
+              <div class="movement-preview mt-3">
+                <div>
+                  <span>Stock actual</span>
+                  <strong>{{ cantidad(previa.materia.stockActual, previa.materia.unidadMedida) }}</strong>
+                </div>
+                <i class="bi bi-arrow-right"></i>
+                <div>
+                  <span>Stock resultante</span>
+                  <strong>{{ cantidad(previa.resultado, previa.materia.unidadMedida) }}</strong>
+                </div>
+              </div>
+              <p class="text-muted small mb-0 mt-2">
+                <i class="bi bi-info-circle"></i>
+                Usa <strong>Ajuste de conteo</strong> para fijar el stock final; entrada, salida, merma y
+                devolución operan como suma o resta.
+              </p>
+            }
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarAjuste()">Cancelar</button>
+            <button class="btn btn-brand" type="submit" [disabled]="ajustando() || !vistaPreviaAjuste()">
+              <i class="bi" [class]="ajustando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+              {{ ajustando() ? 'Registrando…' : 'Registrar movimiento' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

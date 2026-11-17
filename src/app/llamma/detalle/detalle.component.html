@@ -10,326 +10,470 @@
         </p>
       </div>
       <div class="d-flex flex-wrap align-items-center gap-2">
-        <span class="date-chip"><i class="bi bi-calendar3"></i> Noviembre 2026</span>
-        <button class="btn btn-outline-ink" type="button">
-          <i class="bi bi-download"></i> Exportar
+        <span class="date-chip">
+          <i class="bi bi-calendar3"></i>
+          {{ pedido() ? fechaCorta(pedido()!.fechaPedido) : 'Sin fecha' }}
+        </span>
+        <button class="btn btn-outline-ink" type="button" (click)="imprimir()" [disabled]="!pedido()">
+          <i class="bi bi-printer"></i> Imprimir
         </button>
-        <a class="btn btn-brand" routerLink="/captura">
-          <i class="bi bi-plus-lg"></i> Nuevo pedido
-        </a>
+        @if (puedeGestionar()) {
+          <a class="btn btn-brand" routerLink="/captura">
+            <i class="bi bi-plus-lg"></i> Nuevo pedido
+          </a>
+        }
       </div>
     </header>
 
     <div class="order-switcher">
       <span class="order-switcher-label"><i class="bi bi-clock-history"></i> Órdenes recientes</span>
       <div class="order-switcher-list">
-        <button class="order-pill is-current" type="button">#LLM-1048 <span>En producción</span></button>
-        <button class="order-pill" type="button">#LLM-1047 <span>Listo</span></button>
-        <button class="order-pill" type="button">#LLM-1046 <span>En producción</span></button>
-        <button class="order-pill" type="button">#LLM-1045 <span>Confirmado</span></button>
+        @if (cargandoLista()) {
+          <span class="text-muted small d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Cargando…
+          </span>
+        } @else {
+          @for (fila of pedidos(); track fila.id) {
+            <button
+              class="order-pill"
+              type="button"
+              [class.is-current]="fila.id === pedido()?.id"
+              (click)="seleccionar(fila.id)"
+            >
+              #{{ fila.folio }} <span>{{ etiquetaEstado(fila.estado) }}</span>
+            </button>
+          } @empty {
+            <span class="text-muted small">No hay órdenes registradas todavía.</span>
+          }
+        }
       </div>
     </div>
 
-    <div class="row g-4">
-      <div class="col-xl-8">
-        <section class="panel-card mb-4">
-          <div class="order-head">
-            <span class="order-emblem"><i class="bi bi-receipt"></i></span>
-            <div class="flex-grow-1 min-w-0">
-              <span class="panel-kicker">Orden de producción</span>
+    @if (error()) {
+      <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <span class="flex-grow-1">{{ error() }}</span>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargarLista()">
+          Reintentar
+        </button>
+      </div>
+    }
+
+    @if (cargandoDetalle() && !pedido()) {
+      <div class="panel-card text-center py-5">
+        <span class="spinner-border text-primary" role="status" aria-hidden="true"></span>
+        <p class="mt-3 mb-0 text-muted">Cargando la orden…</p>
+      </div>
+    }
+
+    @if (pedido(); as orden) {
+      <div class="row g-4">
+        <div class="col-xl-8">
+          <section class="panel-card mb-4">
+            <div class="order-head">
+              <span class="order-emblem"><i class="bi bi-receipt"></i></span>
+              <div class="flex-grow-1 min-w-0">
+                <span class="panel-kicker">Orden de producción</span>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <h2 class="order-title">#{{ orden.folio }}</h2>
+                  <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
+                  <span class="badge" [class]="clasePrioridad(orden.prioridad)">{{ etiquetaPrioridad(orden.prioridad) }}</span>
+                </div>
+              </div>
               <div class="d-flex flex-wrap align-items-center gap-2">
-                <h2 class="order-title">#LLM-1048</h2>
-                <span class="badge badge-soft-cyan">En producción</span>
-                <span class="badge badge-soft-magenta">Prioridad alta</span>
+                <button class="btn btn-icon" type="button" aria-label="Imprimir orden" (click)="imprimir()">
+                  <i class="bi bi-printer"></i>
+                </button>
+                @if (puedeGestionar()) {
+                  <select
+                    class="form-select form-select-sm"
+                    style="min-width: 11rem"
+                    [value]="orden.estado"
+                    [disabled]="guardandoEstado()"
+                    (change)="cambiarEstado($event)"
+                    aria-label="Cambiar estado del pedido"
+                  >
+                    @for (estado of estados; track estado.valor) {
+                      <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+                    }
+                  </select>
+                }
               </div>
             </div>
-            <div class="d-flex flex-wrap gap-2">
-              <button class="btn btn-icon" type="button" aria-label="Imprimir orden">
-                <i class="bi bi-printer"></i>
-              </button>
-              <button class="btn btn-outline-ink btn-sm" type="button">
-                <i class="bi bi-pencil"></i> Editar
-              </button>
-            </div>
-          </div>
 
-          <div class="row g-3 order-meta">
-            <div class="col-sm-6 col-lg-3">
-              <div class="order-meta-item">
-                <span>Cliente</span>
-                <strong>Alma Creativa</strong>
-                <small>Corporativo · CDMX</small>
+            <div class="row g-3 order-meta">
+              <div class="col-sm-6 col-lg-3">
+                <div class="order-meta-item">
+                  <span>Cliente</span>
+                  <strong>{{ cliente()?.nombre ?? orden.cliente ?? 'Mostrador' }}</strong>
+                  <small>
+                    {{ cliente()?.empresa || (cliente()?.segmento ?? 'particular') }}
+                    @if (cliente()?.rfc) {
+                      · {{ cliente()!.rfc }}
+                    }
+                  </small>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-3">
+                <div class="order-meta-item">
+                  <span>Fecha de alta</span>
+                  <strong>{{ fechaCorta(orden.fechaPedido) }}</strong>
+                  <small>
+                    @if (orden.cotizacionId) {
+                      Cotización #{{ orden.cotizacionId }}
+                    } @else {
+                      Pedido directo
+                    }
+                  </small>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-3">
+                <div class="order-meta-item">
+                  <span>Entrega comprometida</span>
+                  <strong>{{ fechaCorta(orden.fechaEntrega) }}</strong>
+                  <small>{{ orden.saldo <= 0.01 ? 'Liquidado' : 'Saldo: ' + moneda(orden.saldo) }}</small>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-3">
+                <div class="order-meta-item">
+                  <span>Responsable</span>
+                  <strong>{{ orden.ordenProduccion?.responsable || 'Sin asignar' }}</strong>
+                  <small>
+                    {{ orden.ordenProduccion ? 'Etapa: ' + (etapas()[etapaActual() - 1]?.etiqueta ?? 'Diseño') : 'Sin orden de producción' }}
+                  </small>
+                </div>
               </div>
             </div>
-            <div class="col-sm-6 col-lg-3">
-              <div class="order-meta-item">
-                <span>Fecha de alta</span>
-                <strong>12 nov 2026</strong>
-                <small>09:24 h · Sucursal Roma</small>
-              </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-              <div class="order-meta-item">
-                <span>Entrega comprometida</span>
-                <strong>21 nov 2026</strong>
-                <small>14:00 h · En taller</small>
-              </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-              <div class="order-meta-item">
-                <span>Responsable</span>
-                <strong>Mariana Ruiz</strong>
-                <small>Coordinación de producción</small>
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="panel-card mb-4">
-          <div class="panel-head">
-            <div>
-              <span class="panel-kicker">Partidas del pedido</span>
-              <h2>Productos y especificaciones</h2>
+          <section class="panel-card mb-4">
+            <div class="panel-head">
+              <div>
+                <span class="panel-kicker">Partidas del pedido</span>
+                <h2>Productos y especificaciones</h2>
+              </div>
+              <span class="badge badge-soft-cyan">
+                {{ partidas().length }} partidas · {{ totalPiezas() }} piezas
+              </span>
             </div>
-            <span class="badge badge-soft-cyan">3 partidas · 27 piezas</span>
-          </div>
 
-          <div class="table-responsive">
-            <table class="table table-llamma align-middle">
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Especificación</th>
-                  <th class="text-center">Cant.</th>
-                  <th class="text-end">P. unitario</th>
-                  <th class="text-end">Importe</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <div class="product-cell">
-                      <span class="icon-tile icon-tile-sm icon-tile-cyan"><i class="bi bi-easel2"></i></span>
-                      <div><strong>Roll-up premium</strong><small>85 × 200 cm</small></div>
+            <div class="table-responsive">
+              <table class="table table-llamma align-middle">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Especificación</th>
+                    <th class="text-center">Cant.</th>
+                    <th class="text-end">P. unitario</th>
+                    <th class="text-end">Importe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of partidas(); track item.id) {
+                    <tr>
+                      <td>
+                        <div class="product-cell">
+                          <span class="icon-tile icon-tile-sm icon-tile-cyan"><i class="bi bi-box"></i></span>
+                          <div>
+                            <strong>{{ item.descripcion }}</strong>
+                            <small>{{ item.archivoDiseno ? 'Con archivo de diseño' : 'Sin archivo' }}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="cell-main">{{ item.especificaciones || 'Sin especificaciones' }}</div>
+                        <div class="cell-muted">Precio unitario {{ moneda(item.precioUnitario) }}</div>
+                      </td>
+                      <td class="text-center">{{ item.cantidad }}</td>
+                      <td class="text-end">{{ moneda(item.precioUnitario) }}</td>
+                      <td class="text-end cell-main">{{ moneda(item.importe) }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="5" class="text-center text-muted py-4">
+                        Esta orden no tiene partidas registradas.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <p class="table-note">
+              <i class="bi bi-palette"></i>
+              Los acabados especiales se confirman al aprobar el archivo final de preprensa.
+            </p>
+          </section>
+
+          <section class="panel-card">
+            <div class="panel-head">
+              <div>
+                <span class="panel-kicker">Trazabilidad</span>
+                <h2>Seguimiento de producción</h2>
+              </div>
+              <span class="badge badge-soft-warning">
+                Etapa {{ etapaActual() }} de {{ etapas().length || 0 }}
+              </span>
+            </div>
+
+            <ol class="timeline">
+              @for (etapa of etapas(); track etapa.id) {
+                <li class="timeline-item" [class]="etapa.clase">
+                  <span class="timeline-dot"><i class="bi" [class]="'bi ' + etapa.icono"></i></span>
+                  <div class="timeline-body">
+                    <div class="timeline-top">
+                      <strong>{{ etapa.etiqueta }}</strong>
+                      <span>
+                        {{ etapa.clase === 'is-pending' ? 'Programado' : fechaHora(etapa.fin || etapa.inicio) }}
+                      </span>
                     </div>
-                  </td>
-                  <td>
-                    <div class="cell-main">Lona Frontlit + estructura</div>
-                    <div class="cell-muted">Acabado mate premium</div>
-                  </td>
-                  <td class="text-center">1</td>
-                  <td class="text-end">$3,850.00</td>
-                  <td class="text-end cell-main">$3,850.00</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="product-cell">
-                      <span class="icon-tile icon-tile-sm icon-tile-magenta"><i class="bi bi-bag-heart"></i></span>
-                      <div><strong>Tote bag de manta</strong><small>35 × 40 cm</small></div>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="cell-main">DTF full color</div>
-                    <div class="cell-muted">Asa reforzada · una cara</div>
-                  </td>
-                  <td class="text-center">25</td>
-                  <td class="text-end">$110.00</td>
-                  <td class="text-end cell-main">$2,750.00</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="product-cell">
-                      <span class="icon-tile icon-tile-sm icon-tile-ink"><i class="bi bi-stickies"></i></span>
-                      <div><strong>Sticker troquelado</strong><small>8 × 8 cm</small></div>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="cell-main">Vinil adhesivo brillante</div>
-                    <div class="cell-muted">Corte de precisión · 1 hoja</div>
-                  </td>
-                  <td class="text-center">1</td>
-                  <td class="text-end">$420.00</td>
-                  <td class="text-end cell-main">$420.00</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                    <p>
+                      {{ etapa.responsable || 'Sin responsable' }} ·
+                      {{ etapa.estado.replace('-', ' ') }}
+                      @if (etapa.notas) {
+                        · {{ etapa.notas }}
+                      }
+                    </p>
+                  </div>
+                </li>
+              } @empty {
+                <li class="text-muted">Aún no hay etapas registradas para esta orden.</li>
+              }
+            </ol>
 
-          <p class="table-note">
-            <i class="bi bi-palette"></i>
-            Los acabados especiales se confirman al aprobar el archivo final de preprensa.
-          </p>
-        </section>
+            @if (controles().length) {
+              <div class="panel-head mt-4">
+                <div>
+                  <span class="panel-kicker">Control de calidad</span>
+                  <h2>Revisiones de la orden</h2>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-llamma align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Criterio</th>
+                      <th>Resultado</th>
+                      <th>Revisó</th>
+                      <th class="text-end">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (control of controles(); track control.id) {
+                      <tr>
+                        <td>
+                          <div class="cell-main">{{ control.criterio }}</div>
+                          <div class="cell-muted">{{ control.observaciones || 'Sin observaciones' }}</div>
+                        </td>
+                        <td>
+                          <span class="badge" [class]="control.aprobado ? 'badge-soft-success' : 'badge-soft-danger'">
+                            {{ control.aprobado ? 'Aprobado' : 'Rechazado' }}
+                          </span>
+                        </td>
+                        <td>{{ control.revisadoPor || '—' }}</td>
+                        <td class="text-end cell-muted">{{ fechaHora(control.fecha) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+        </div>
 
-        <section class="panel-card">
-          <div class="panel-head">
-            <div>
-              <span class="panel-kicker">Trazabilidad</span>
-              <h2>Seguimiento de producción</h2>
+        <div class="col-xl-4 summary-sidebar">
+          <aside class="order-summary mb-4">
+            <div class="quote-summary-head">
+              <span>Resumen del pedido</span>
+              <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
             </div>
-            <span class="badge badge-soft-warning">Etapa 2 de 4</span>
-          </div>
 
-          <ol class="timeline">
-            <li class="timeline-item is-done">
-              <span class="timeline-dot"><i class="bi bi-check-lg"></i></span>
-              <div class="timeline-body">
-                <div class="timeline-top">
-                  <strong>Preprensa aprobada</strong>
-                  <span>12 nov · 10:20 h</span>
-                </div>
-                <p>Archivos revisados: sangrado, perfil CMYK y resolución 300 dpi.</p>
+            <div class="summary-client">
+              <span class="avatar avatar-magenta">{{ iniciales(cliente()?.nombre ?? orden.cliente) }}</span>
+              <div>
+                <strong>{{ cliente()?.nombre ?? orden.cliente ?? 'Mostrador' }}</strong>
+                <small>
+                  {{ cliente()?.telefono || 'Sin teléfono' }} · {{ cliente()?.correo || 'Sin correo' }}
+                </small>
               </div>
-            </li>
-            <li class="timeline-item is-active">
-              <span class="timeline-dot"><i class="bi bi-printer"></i></span>
-              <div class="timeline-body">
-                <div class="timeline-top">
-                  <strong>Impresión en curso</strong>
-                  <span>Hoy · 09:15 h</span>
-                </div>
-                <p>Lona Frontlit en equipo Roland XR-640. Tinta eco-solvente CMYK.</p>
+            </div>
+
+            <div class="summary-totals">
+              <div><span>Subtotal</span><strong>{{ moneda(orden.subtotal) }}</strong></div>
+              <div><span>IVA (16%)</span><strong>{{ moneda(orden.impuestos) }}</strong></div>
+              <div class="summary-total"><span>Total</span><strong>{{ moneda(orden.total) }}</strong></div>
+              <div><span>Anticipo recibido</span><strong>{{ moneda(orden.anticipo) }}</strong></div>
+              <div><span>Saldo pendiente</span><strong>{{ moneda(orden.saldo) }}</strong></div>
+            </div>
+
+            <div class="payment-state">
+              <span
+                class="icon-tile icon-tile-sm"
+                [class]="estadoPago().ok ? 'icon-tile icon-tile-sm icon-tile-success' : 'icon-tile icon-tile-sm icon-tile-danger'"
+              >
+                <i class="bi" [class]="estadoPago().ok ? 'bi bi-shield-check' : 'bi bi-exclamation-circle'"></i>
+              </span>
+              <div>
+                <strong>{{ estadoPago().titulo }}</strong>
+                <small>{{ estadoPago().detalle }}</small>
               </div>
-            </li>
-            <li class="timeline-item is-pending">
-              <span class="timeline-dot"><i class="bi bi-scissors"></i></span>
-              <div class="timeline-body">
-                <div class="timeline-top">
-                  <strong>Acabado y corte</strong>
-                  <span>Programado · 19 nov</span>
+            </div>
+
+            @if (puedeGestionar() && orden.saldo > 0.01) {
+              @if (!mostrarPago()) {
+                <button class="btn btn-brand w-100" type="button" (click)="abrirPago()">
+                  <i class="bi bi-cash-coin"></i> Registrar pago
+                </button>
+              } @else {
+                <form class="mt-2" [formGroup]="pagoForm" (ngSubmit)="registrarPago()">
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold" for="pago-tipo">Tipo</label>
+                      <select id="pago-tipo" class="form-select form-select-sm" formControlName="tipo">
+                        <option value="anticipo">Anticipo</option>
+                        <option value="abono">Abono</option>
+                        <option value="saldo">Liquidación</option>
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold" for="pago-metodo">Método</label>
+                      <select id="pago-metodo" class="form-select form-select-sm" formControlName="metodo">
+                        <option value="transferencia">Transferencia</option>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="cheque">Cheque</option>
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold" for="pago-monto">Monto</label>
+                      <input
+                        id="pago-monto"
+                        class="form-control form-control-sm"
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        formControlName="monto"
+                      />
+                      @if (pagoForm.controls.monto.invalid && pagoForm.controls.monto.touched) {
+                        <small class="text-danger">Indica un monto mayor a cero.</small>
+                      }
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold" for="pago-referencia">Referencia</label>
+                      <input
+                        id="pago-referencia"
+                        class="form-control form-control-sm"
+                        type="text"
+                        formControlName="referencia"
+                        placeholder="SPEI, folio…"
+                      />
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-brand btn-sm flex-grow-1" type="submit" [disabled]="registrandoPago()">
+                      <i class="bi" [class]="registrandoPago() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+                      {{ registrandoPago() ? 'Guardando…' : 'Confirmar pago' }}
+                    </button>
+                    <button class="btn btn-outline-ink btn-sm" type="button" (click)="mostrarPago.set(false)">
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              }
+            }
+
+            @if (pagos().length) {
+              <div class="mt-3">
+                <span class="panel-kicker">Pagos registrados</span>
+                <div class="pago-list mt-2">
+                  @for (pago of pagos(); track pago.id) {
+                    <div class="d-flex align-items-start justify-content-between gap-2">
+                      <div>
+                        <strong class="small text-capitalize">{{ pago.tipo }} · {{ pago.metodo }}</strong>
+                        <small class="d-block text-muted">
+                          {{ fechaHora(pago.fechaPago) }}
+                          @if (pago.referencia) {
+                            · {{ pago.referencia }}
+                          }
+                        </small>
+                      </div>
+                      <span class="fw-semibold small">{{ moneda(pago.monto) }}</span>
+                    </div>
+                  }
                 </div>
-                <p>Colocación de ojillos, refuerzo de bastilla y revisión de color.</p>
               </div>
-            </li>
-            <li class="timeline-item is-pending">
-              <span class="timeline-dot"><i class="bi bi-box-seam"></i></span>
-              <div class="timeline-body">
-                <div class="timeline-top">
-                  <strong>Entrega al cliente</strong>
-                  <span>Programado · 21 nov</span>
+            }
+          </aside>
+
+          <section class="panel-card mb-4">
+            <div class="panel-head">
+              <div>
+                <span class="panel-kicker">Logística</span>
+                <h2>Datos de entrega</h2>
+              </div>
+            </div>
+
+            <ul class="delivery-list">
+              <li>
+                <i class="bi bi-geo-alt"></i>
+                <div>
+                  <strong>{{ cliente()?.direccion || 'Dirección por confirmar' }}</strong>
+                  <span>{{ cliente()?.empresa || cliente()?.nombre || 'Cliente' }}</span>
                 </div>
-                <p>Entrega en recepción del edificio. Contacto: Ana Torres.</p>
+              </li>
+              <li>
+                <i class="bi bi-truck"></i>
+                <div>
+                  <strong>Entrega: {{ fechaCorta(orden.fechaEntrega) }}</strong>
+                  <span>Recepción de 9:00 a 18:00 h</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-person"></i>
+                <div>
+                  <strong>{{ cliente()?.nombre || 'Contacto' }}</strong>
+                  <span>{{ cliente()?.telefono || 'Sin teléfono' }} · {{ cliente()?.correo || 'Sin correo' }}</span>
+                </div>
+              </li>
+            </ul>
+          </section>
+
+          <section class="panel-card">
+            <div class="panel-head">
+              <div>
+                <span class="panel-kicker">Documentos</span>
+                <h2>Archivos del pedido</h2>
               </div>
-            </li>
-          </ol>
-        </section>
+              <span class="badge badge-soft-muted">{{ archivos().length }}</span>
+            </div>
+
+            <div class="file-list">
+              @for (archivo of archivos(); track archivo.nombre + archivo.descripcion) {
+                <div class="file-row">
+                  <span class="icon-tile icon-tile-sm icon-tile-magenta"><i class="bi bi-file-earmark-image"></i></span>
+                  <div class="flex-grow-1 min-w-0">
+                    <strong>{{ archivo.nombre }}</strong>
+                    <small>{{ archivo.descripcion }}</small>
+                  </div>
+                  <a
+                    class="btn btn-icon"
+                    [href]="archivo.ruta"
+                    target="_blank"
+                    rel="noopener"
+                    aria-label="Abrir archivo"
+                  >
+                    <i class="bi bi-box-arrow-up-right"></i>
+                  </a>
+                </div>
+              } @empty {
+                <p class="text-muted mb-0 small">
+                  Esta orden no tiene archivos adjuntos. Los diseños se cargan desde la solicitud.
+                </p>
+              }
+            </div>
+          </section>
+        </div>
       </div>
-
-      <div class="col-xl-4 summary-sidebar">
-        <aside class="order-summary mb-4">
-          <div class="quote-summary-head">
-            <span>Resumen del pedido</span>
-            <span class="badge badge-soft-cyan">Borrador</span>
-          </div>
-
-          <div class="summary-client">
-            <span class="avatar avatar-magenta">AC</span>
-            <div>
-              <strong>Alma Creativa</strong>
-              <small>Ana Torres · 55 1234 5678</small>
-            </div>
-          </div>
-
-          <div class="summary-totals">
-            <div><span>Subtotal</span><strong>$7,020.00</strong></div>
-            <div><span>IVA (16%)</span><strong>$1,123.20</strong></div>
-            <div class="summary-total"><span>Total</span><strong>$8,143.20</strong></div>
-            <div><span>Anticipo recibido</span><strong>$4,071.60</strong></div>
-            <div><span>Saldo pendiente</span><strong>$4,071.60</strong></div>
-          </div>
-
-          <div class="payment-state">
-            <span class="icon-tile icon-tile-sm icon-tile-success"><i class="bi bi-shield-check"></i></span>
-            <div>
-              <strong>Anticipo confirmado</strong>
-              <small>Transferencia SPEI · 12 nov 2026</small>
-            </div>
-          </div>
-
-          <button class="btn btn-brand w-100" type="button">
-            <i class="bi bi-file-earmark-check"></i> Descargar comprobante
-          </button>
-          <button class="btn btn-outline-ink w-100 mt-2" type="button">
-            <i class="bi bi-envelope"></i> Enviar por correo
-          </button>
-        </aside>
-
-        <section class="panel-card mb-4">
-          <div class="panel-head">
-            <div>
-              <span class="panel-kicker">Logística</span>
-              <h2>Datos de entrega</h2>
-            </div>
-          </div>
-
-          <ul class="delivery-list">
-            <li>
-              <i class="bi bi-geo-alt"></i>
-              <div>
-                <strong>Av. Álvaro Obregón 120</strong>
-                <span>Roma Norte, CDMX · CP 06700</span>
-              </div>
-            </li>
-            <li>
-              <i class="bi bi-truck"></i>
-              <div>
-                <strong>Entrega en taller</strong>
-                <span>Recepción de 9:00 a 18:00 h</span>
-              </div>
-            </li>
-            <li>
-              <i class="bi bi-person"></i>
-              <div>
-                <strong>Ana Torres</strong>
-                <span>Contacto en sitio · 55 1234 5678</span>
-              </div>
-            </li>
-          </ul>
-        </section>
-
-        <section class="panel-card">
-          <div class="panel-head">
-            <div>
-              <span class="panel-kicker">Documentos</span>
-              <h2>Archivos del pedido</h2>
-            </div>
-            <span class="badge badge-soft-muted">3</span>
-          </div>
-
-          <div class="file-list">
-            <div class="file-row">
-              <span class="icon-tile icon-tile-sm icon-tile-magenta"><i class="bi bi-filetype-ai"></i></span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>diseno-rollup.ai</strong>
-                <small>24.8 MB · Aprobado</small>
-              </div>
-              <button class="btn btn-icon" type="button" aria-label="Descargar archivo">
-                <i class="bi bi-download"></i>
-              </button>
-            </div>
-            <div class="file-row">
-              <span class="icon-tile icon-tile-sm icon-tile-cyan"><i class="bi bi-filetype-pdf"></i></span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>comprobante-anticipo.pdf</strong>
-                <small>320 KB · Verificado</small>
-              </div>
-              <button class="btn btn-icon" type="button" aria-label="Descargar archivo">
-                <i class="bi bi-download"></i>
-              </button>
-            </div>
-            <div class="file-row">
-              <span class="icon-tile icon-tile-sm icon-tile-ink"><i class="bi bi-filetype-png"></i></span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>referencia-color.png</strong>
-                <small>1.2 MB · Revisión</small>
-              </div>
-              <button class="btn btn-icon" type="button" aria-label="Descargar archivo">
-                <i class="bi bi-download"></i>
-              </button>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
+    }
   </div>
 </div>

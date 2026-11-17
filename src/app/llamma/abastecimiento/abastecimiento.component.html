@@ -10,49 +10,50 @@
         </p>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-outline-ink" type="button">
+        <button class="btn btn-outline-ink" type="button" (click)="exportar()">
           <i class="bi bi-download"></i> Exportar
         </button>
-        <button class="btn btn-brand" type="button">
-          <i class="bi bi-cart-plus"></i> Nueva orden de compra
-        </button>
+        @if (puedeGestionar()) {
+          <button class="btn btn-outline-ink" type="button" (click)="abrirProveedor()">
+            <i class="bi bi-person-plus"></i> Nuevo proveedor
+          </button>
+          <button class="btn btn-brand" type="button" (click)="abrirNueva()">
+            <i class="bi bi-cart-plus"></i> Nueva orden de compra
+          </button>
+        }
       </div>
     </header>
 
-    <div class="inventory-alert">
-      <i class="bi bi-exclamation-triangle-fill"></i>
-      <span>
-        <strong>4 insumos requieren reposición inmediata.</strong> La tinta CMYK, la lona Frontlit,
-        el papel Couché y el laminado en frío están por debajo de su punto de reorden.
-      </span>
-      <a routerLink="/inventario">Revisar existencias <i class="bi bi-arrow-right"></i></a>
-    </div>
+    @if (error()) {
+      <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <span class="flex-grow-1">{{ error() }}</span>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">Reintentar</button>
+      </div>
+    }
+
+    @if (resumenAlerta().total > 0) {
+      <div class="inventory-alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>
+          <strong>{{ resumenAlerta().total }} insumos requieren reposición.</strong>
+          {{ resumenAlerta().nombres }} están por debajo de su punto de reorden.
+        </span>
+        <a routerLink="/inventario">Revisar existencias <i class="bi bi-arrow-right"></i></a>
+      </div>
+    }
 
     <div class="row g-3 mb-4">
-      <div class="col-sm-6 col-xl-3">
-        <div class="supply-stat">
-          <span class="icon-tile icon-tile-cyan"><i class="bi bi-file-earmark-text"></i></span>
-          <div><strong>06</strong><span>Órdenes de compra abiertas</span></div>
+      @for (stat of estadisticas(); track stat.etiqueta) {
+        <div class="col-sm-6 col-xl-3">
+          <div class="supply-stat">
+            <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
+              <i class="bi" [class]="'bi ' + stat.icono"></i>
+            </span>
+            <div><strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span></div>
+          </div>
         </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="supply-stat">
-          <span class="icon-tile icon-tile-magenta"><i class="bi bi-cash-coin"></i></span>
-          <div><strong>$86,400</strong><span>Monto comprometido</span></div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="supply-stat">
-          <span class="icon-tile icon-tile-yellow"><i class="bi bi-truck"></i></span>
-          <div><strong>08</strong><span>Proveedores activos</span></div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="supply-stat">
-          <span class="icon-tile icon-tile-success"><i class="bi bi-clock-history"></i></span>
-          <div><strong>4.2 días</strong><span>Tiempo promedio de entrega</span></div>
-        </div>
-      </div>
+      }
     </div>
 
     <div class="row g-4 mb-4">
@@ -61,10 +62,44 @@
           <div class="panel-head flex-wrap">
             <div>
               <span class="panel-kicker">Compras en curso</span>
-              <h2>Órdenes de compra abiertas</h2>
+              <h2>Órdenes de compra</h2>
             </div>
-            <span class="badge badge-soft-cyan">6 activas</span>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge badge-soft-cyan">{{ filtradas().length }} órdenes</span>
+              @if (cargando()) {
+                <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+              }
+            </div>
           </div>
+
+          <form class="row g-2 mb-3" [formGroup]="filtros" (ngSubmit)="filtrar()">
+            <div class="col-lg-7">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Buscar folio, proveedor o insumo…"
+                  aria-label="Buscar orden de compra"
+                  formControlName="q"
+                />
+                <button class="btn btn-ink" type="submit">Buscar</button>
+              </div>
+            </div>
+            <div class="col-7 col-lg-3">
+              <select class="form-select" aria-label="Filtrar por estado" formControlName="estado">
+                <option value="">Todo estado</option>
+                @for (estado of estados; track estado.valor) {
+                  <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-5 col-lg-2">
+              <button class="btn btn-soft w-100" type="button" (click)="limpiar()">
+                <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+              </button>
+            </div>
+          </form>
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle">
@@ -79,133 +114,92 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>
-                    <div class="order-id">OC-2026-184</div>
-                    <div class="cell-muted">Emitida el 11 nov</div>
-                  </td>
-                  <td>
-                    <div class="supplier-meta">
-                      <span class="avatar avatar-cyan">GF</span>
-                      <div><strong>Gran Formato SA</strong><small>Lona Frontlit · 80 m²</small></div>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="cell-main">18 nov 2026</div>
-                    <div class="cell-muted">En tránsito</div>
-                  </td>
-                  <td class="text-end cell-main">$14,800.00</td>
-                  <td><span class="badge badge-soft-cyan">En tránsito</span></td>
-                  <td class="text-end">
-                    <div class="d-inline-flex gap-1">
-                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
-                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="order-id">OC-2026-183</div>
-                    <div class="cell-muted">Emitida el 10 nov</div>
-                  </td>
-                  <td>
-                    <div class="supplier-meta">
-                      <span class="avatar avatar-magenta">CL</span>
-                      <div><strong>ColorLab MX</strong><small>Tinta Eco-solvente CMYK · 60 ml</small></div>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="cell-main">16 nov 2026</div>
-                    <div class="cell-muted">Confirmada</div>
-                  </td>
-                  <td class="text-end cell-main">$57.00</td>
-                  <td><span class="badge badge-soft-warning">Confirmada</span></td>
-                  <td class="text-end">
-                    <div class="d-inline-flex gap-1">
-                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
-                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="order-id">OC-2026-182</div>
-                    <div class="cell-muted">Emitida el 09 nov</div>
-                  </td>
-                  <td>
-                    <div class="supplier-meta">
-                      <span class="avatar avatar-ink">PC</span>
-                      <div><strong>Papelera Central</strong><small>Papel Couché 300g · 500 hojas</small></div>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="cell-main">15 nov 2026</div>
-                    <div class="cell-muted">En tránsito</div>
-                  </td>
-                  <td class="text-end cell-main">$2,250.00</td>
-                  <td><span class="badge badge-soft-cyan">En tránsito</span></td>
-                  <td class="text-end">
-                    <div class="d-inline-flex gap-1">
-                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
-                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="order-id">OC-2026-181</div>
-                    <div class="cell-muted">Emitida el 07 nov</div>
-                  </td>
-                  <td>
-                    <div class="supplier-meta">
-                      <span class="avatar avatar-yellow">AP</span>
-                      <div><strong>Acabados Pro</strong><small>Laminado en frío · 30 ml</small></div>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="cell-main">14 nov 2026</div>
-                    <div class="cell-muted">Pendiente de confirmar</div>
-                  </td>
-                  <td class="text-end cell-main">$6,300.00</td>
-                  <td><span class="badge badge-soft-muted">Pendiente</span></td>
-                  <td class="text-end">
-                    <div class="d-inline-flex gap-1">
-                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
-                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="order-id">OC-2026-180</div>
-                    <div class="cell-muted">Emitida el 05 nov</div>
-                  </td>
-                  <td>
-                    <div class="supplier-meta">
-                      <span class="avatar avatar-cyan">EM</span>
-                      <div><strong>Estructuras MX</strong><small>Perfiles de aluminio · 120 piezas</small></div>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="cell-main">13 nov 2026</div>
-                    <div class="cell-muted">Recibida parcial</div>
-                  </td>
-                  <td class="text-end cell-main">$11,400.00</td>
-                  <td><span class="badge badge-soft-success">Recibida</span></td>
-                  <td class="text-end">
-                    <div class="d-inline-flex gap-1">
-                      <button class="btn btn-icon" type="button" aria-label="Ver orden"><i class="bi bi-eye"></i></button>
-                      <button class="btn btn-icon" type="button" aria-label="Más opciones"><i class="bi bi-three-dots"></i></button>
-                    </div>
-                  </td>
-                </tr>
+                @for (orden of visibles(); track orden.id) {
+                  <tr>
+                    <td>
+                      <div class="order-id">{{ orden.folio }}</div>
+                      <div class="cell-muted">Emitida {{ fechaCorta(orden.fechaEmision) }}</div>
+                    </td>
+                    <td>
+                      <div class="supplier-meta">
+                        <span class="avatar" [class]="'avatar ' + avatarProveedor(orden.proveedor)">
+                          {{ iniciales(orden.proveedor) }}
+                        </span>
+                        <div>
+                          <strong>{{ orden.proveedor || 'Sin proveedor' }}</strong>
+                          <small>{{ etiquetaItems(orden) }}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="cell-main">{{ fechaCorta(orden.fechaEntrega) }}</div>
+                      <div class="cell-muted">{{ etiquetaEstado(orden.estado) }}</div>
+                    </td>
+                    <td class="text-end cell-main">{{ monedaExacta(orden.total) }}</td>
+                    <td>
+                      <span class="badge" [class]="claseEstado(orden.estado)">
+                        {{ etiquetaEstado(orden.estado) }}
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <div class="d-inline-flex gap-1">
+                        <button
+                          class="btn btn-icon"
+                          type="button"
+                          aria-label="Ver orden"
+                          title="Ver orden"
+                          (click)="abrirDetalle(orden)"
+                        >
+                          <i class="bi bi-eye"></i>
+                        </button>
+                        @if (puedeGestionar() && (orden.estado === 'pendiente' || orden.estado === 'confirmada' || orden.estado === 'en-transito')) {
+                          <button
+                            class="btn btn-icon"
+                            type="button"
+                            aria-label="Marcar como recibida"
+                            title="Marcar como recibida"
+                            [disabled]="cambiandoEstado()"
+                            (click)="recibir(orden)"
+                          >
+                            <i class="bi bi-box-arrow-in-down"></i>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="text-center text-muted py-5">
+                      <i class="bi bi-cart-x d-block fs-4 mb-2"></i>
+                      No hay órdenes de compra con esos filtros.
+                    </td>
+                  </tr>
+                }
               </tbody>
             </table>
           </div>
 
           <div class="table-footer">
-            <span>Mostrando 5 de 6 órdenes abiertas</span>
-            <a class="panel-link mt-0" routerLink="/consultas">Ver historial completo <i class="bi bi-arrow-right"></i></a>
+            <span>{{ rangoTexto() }}</span>
+            <nav aria-label="Paginación de órdenes de compra">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" [class.disabled]="pagina() <= 1">
+                  <button class="page-link" type="button" aria-label="Anterior" (click)="irA(pagina() - 1)">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                </li>
+                @for (numero of listaPaginas(); track numero) {
+                  <li class="page-item" [class.active]="numero === pagina()">
+                    <button class="page-link" type="button" (click)="irA(numero)">{{ numero }}</button>
+                  </li>
+                }
+                <li class="page-item" [class.disabled]="pagina() >= paginas()">
+                  <button class="page-link" type="button" aria-label="Siguiente" (click)="irA(pagina() + 1)">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </li>
+              </ul>
+            </nav>
           </div>
         </section>
       </div>
@@ -217,52 +211,45 @@
               <span class="panel-kicker">Reposición sugerida</span>
               <h2>Compras recomendadas</h2>
             </div>
-            <span class="badge badge-soft-danger">4 insumos</span>
+            <span class="badge badge-soft-danger">{{ sugerencias().length }} insumos</span>
           </div>
 
           <div>
-            <div class="purchase-item">
-              <span class="icon-tile icon-tile-sm icon-tile-danger"><i class="bi bi-layers"></i></span>
-              <div>
-                <strong>Lona Frontlit</strong>
-                <small>Reponer 120 m² · Gran Formato SA</small>
+            @for (sugerencia of sugerencias().slice(0, 4); track sugerencia.materia.id) {
+              <div class="purchase-item">
+                <span class="icon-tile icon-tile-sm" [class]="'icon-tile icon-tile-sm ' + sugerencia.tono">
+                  <i class="bi" [class]="'bi ' + sugerencia.icono"></i>
+                </span>
+                <div>
+                  <strong>{{ sugerencia.materia.nombre }}</strong>
+                  <small>
+                    Reponer {{ cantidad(sugerencia.reposicion, sugerencia.materia.unidadMedida) }} ·
+                    {{ sugerencia.materia.proveedor || 'Sin proveedor' }}
+                  </small>
+                </div>
+                <span class="badge" [class]="sugerencia.critico ? 'badge-soft-danger' : 'badge-soft-warning'">
+                  {{ sugerencia.critico ? 'Urgente' : 'Esta semana' }}
+                </span>
               </div>
-              <span class="badge badge-soft-danger">Urgente</span>
-            </div>
-            <div class="purchase-item">
-              <span class="icon-tile icon-tile-sm icon-tile-danger"><i class="bi bi-droplet-half"></i></span>
-              <div>
-                <strong>Tinta Eco-solvente CMYK</strong>
-                <small>Reponer 80 ml · ColorLab MX</small>
-              </div>
-              <span class="badge badge-soft-danger">Urgente</span>
-            </div>
-            <div class="purchase-item">
-              <span class="icon-tile icon-tile-sm icon-tile-warning"><i class="bi bi-file-earmark-text"></i></span>
-              <div>
-                <strong>Papel Couché 300g</strong>
-                <small>Reponer 500 hojas · Papelera Central</small>
-              </div>
-              <span class="badge badge-soft-warning">Esta semana</span>
-            </div>
-            <div class="purchase-item">
-              <span class="icon-tile icon-tile-sm icon-tile-warning"><i class="bi bi-arrow-repeat"></i></span>
-              <div>
-                <strong>Laminado en frío</strong>
-                <small>Reponer 20 ml · Acabados Pro</small>
-              </div>
-              <span class="badge badge-soft-warning">Esta semana</span>
-            </div>
+            } @empty {
+              <p class="text-muted mb-0 small">
+                No hay insumos por debajo de su punto de reorden. El inventario está cubierto.
+              </p>
+            }
           </div>
 
           <div class="quote-note">
             <i class="bi bi-calculator"></i>
-            <span>La sugerencia considera el consumo promedio de los últimos 90 días y el stock mínimo.</span>
+            <span>
+              La sugerencia repone hasta el stock máximo o el doble del mínimo, el mayor de ambos.
+            </span>
           </div>
 
-          <button class="btn btn-ink w-100 mt-auto" type="button">
-            <i class="bi bi-file-earmark-plus"></i> Generar orden consolidada
-          </button>
+          @if (puedeGestionar()) {
+            <button class="btn btn-ink w-100 mt-auto" type="button" (click)="generarConsolidada()">
+              <i class="bi bi-file-earmark-plus"></i> Generar orden consolidada
+            </button>
+          }
         </section>
       </div>
     </div>
@@ -275,58 +262,39 @@
               <span class="panel-kicker">Directorio</span>
               <h2>Proveedores estratégicos</h2>
             </div>
-            <a class="panel-link mt-0" routerLink="/inventario">Ver insumos <i class="bi bi-arrow-right"></i></a>
+            <div class="d-flex align-items-center gap-2">
+              @if (cargandoCatalogos()) {
+                <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+              }
+              <a class="panel-link mt-0" routerLink="/inventario">
+                Ver insumos <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
           </div>
 
           <div class="supplier-list">
-            <div class="supplier-row">
-              <span class="avatar avatar-cyan">GF</span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Gran Formato SA</strong>
-                <small>Lonas, viniles y microperforado</small>
+            @for (proveedor of proveedores(); track proveedor.id; let i = $index) {
+              <div class="supplier-row">
+                <span class="avatar" [class]="'avatar ' + avatar(i)">{{ iniciales(proveedor.nombre) }}</span>
+                <div class="flex-grow-1 min-w-0">
+                  <strong>{{ proveedor.nombre }}</strong>
+                  <small>
+                    {{ proveedor.contacto || 'Sin contacto' }}
+                    @if (proveedor.telefono) {
+                      · {{ proveedor.telefono }}
+                    }
+                    @if (proveedor.condicionesPago) {
+                      · {{ proveedor.condicionesPago }}
+                    }
+                  </small>
+                </div>
+                <span class="badge" [class]="proveedor.activo ? 'badge-soft-success' : 'badge-soft-muted'">
+                  {{ proveedor.activo ? 'Activo' : 'Inactivo' }}
+                </span>
               </div>
-              <div class="supplier-score">
-                <strong>96%</strong>
-                <span>Cumplimiento</span>
-              </div>
-              <span class="badge badge-soft-success">Activo</span>
-            </div>
-            <div class="supplier-row">
-              <span class="avatar avatar-magenta">CL</span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>ColorLab MX</strong>
-                <small>Tintas CMYK y perfiles ICC</small>
-              </div>
-              <div class="supplier-score">
-                <strong>92%</strong>
-                <span>Cumplimiento</span>
-              </div>
-              <span class="badge badge-soft-success">Activo</span>
-            </div>
-            <div class="supplier-row">
-              <span class="avatar avatar-ink">PC</span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Papelera Central</strong>
-                <small>Papel Couché, opalina y bond</small>
-              </div>
-              <div class="supplier-score">
-                <strong>88%</strong>
-                <span>Cumplimiento</span>
-              </div>
-              <span class="badge badge-soft-warning">Revisión</span>
-            </div>
-            <div class="supplier-row">
-              <span class="avatar avatar-yellow">AP</span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Acabados Pro</strong>
-                <small>Laminados, adhesivos y protectores</small>
-              </div>
-              <div class="supplier-score">
-                <strong>94%</strong>
-                <span>Cumplimiento</span>
-              </div>
-              <span class="badge badge-soft-success">Activo</span>
-            </div>
+            } @empty {
+              <p class="text-muted mb-0 small">Aún no hay proveedores registrados.</p>
+            }
           </div>
         </section>
       </div>
@@ -338,42 +306,25 @@
               <span class="panel-kicker">Calendario</span>
               <h2>Recepciones programadas</h2>
             </div>
-            <span class="badge badge-soft-muted">Próximos 7 días</span>
+            <span class="badge badge-soft-muted">{{ recepciones().length }} en camino</span>
           </div>
 
           <div class="receipt-list">
-            <div class="receipt-item">
-              <span class="receipt-date"><strong>14</strong><span>NOV</span></span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Laminado en frío · Acabados Pro</strong>
-                <small>OC-2026-181 · 30 ml · Andén 2</small>
+            @for (orden of recepciones(); track orden.id) {
+              <div class="receipt-item">
+                <span class="receipt-date">
+                  <strong>{{ diaRecepcion(orden.fechaEntrega) }}</strong>
+                  <span>{{ mesRecepcion(orden.fechaEntrega) }}</span>
+                </span>
+                <div class="flex-grow-1 min-w-0">
+                  <strong>{{ orden.proveedor || 'Sin proveedor' }}</strong>
+                  <small>{{ orden.folio }} · {{ etiquetaItems(orden) }}</small>
+                </div>
+                <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
               </div>
-              <span class="badge badge-soft-warning">Por confirmar</span>
-            </div>
-            <div class="receipt-item">
-              <span class="receipt-date"><strong>15</strong><span>NOV</span></span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Papel Couché 300g · Papelera Central</strong>
-                <small>OC-2026-182 · 500 hojas · Andén 1</small>
-              </div>
-              <span class="badge badge-soft-cyan">En tránsito</span>
-            </div>
-            <div class="receipt-item">
-              <span class="receipt-date"><strong>16</strong><span>NOV</span></span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Tinta Eco-solvente CMYK · ColorLab MX</strong>
-                <small>OC-2026-183 · 60 ml · Recepción directa</small>
-              </div>
-              <span class="badge badge-soft-cyan">En tránsito</span>
-            </div>
-            <div class="receipt-item">
-              <span class="receipt-date"><strong>18</strong><span>NOV</span></span>
-              <div class="flex-grow-1 min-w-0">
-                <strong>Lona Frontlit · Gran Formato SA</strong>
-                <small>OC-2026-184 · 80 m² · Andén 2</small>
-              </div>
-              <span class="badge badge-soft-cyan">En tránsito</span>
-            </div>
+            } @empty {
+              <p class="text-muted mb-0 small">No hay recepciones programadas para los próximos días.</p>
+            }
           </div>
 
           <p class="table-note">
@@ -385,3 +336,303 @@
     </div>
   </div>
 </div>
+
+@if (ordenAbierta()) {
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <form [formGroup]="ordenForm" (ngSubmit)="crearOrden()">
+          <div class="modal-header">
+            <div>
+              <span class="panel-kicker">Compras y reposición</span>
+              <h2 class="modal-title h5 mb-0">Nueva orden de compra</h2>
+            </div>
+            <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarNueva()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-5">
+                <label class="form-label" for="ocProveedor">Proveedor *</label>
+                <select id="ocProveedor" class="form-select" formControlName="proveedorId">
+                  <option value="">Selecciona un proveedor…</option>
+                  @for (proveedor of proveedores(); track proveedor.id) {
+                    <option [value]="proveedor.id">{{ proveedor.nombre }}</option>
+                  }
+                </select>
+                @if (ordenForm.controls.proveedorId.invalid && ordenForm.controls.proveedorId.touched) {
+                  <small class="text-danger">Selecciona el proveedor de la orden.</small>
+                }
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="ocEstado">Estado inicial</label>
+                <select id="ocEstado" class="form-select" formControlName="estado">
+                  @for (estado of estados; track estado.valor) {
+                    @if (estado.valor !== 'recibida' && estado.valor !== 'cancelada') {
+                      <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+                    }
+                  }
+                </select>
+              </div>
+              <div class="col-6 col-md-4">
+                <label class="form-label" for="ocEntrega">Entrega estimada</label>
+                <input id="ocEntrega" type="date" class="form-control" formControlName="fechaEntrega" />
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mt-4 mb-2">
+              <span class="panel-kicker mb-0">Partidas de la orden</span>
+              <button class="btn btn-soft btn-sm" type="button" (click)="agregarItem()">
+                <i class="bi bi-plus-lg"></i> Agregar insumo
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-llamma align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th style="min-width: 14rem">Insumo</th>
+                    <th style="min-width: 7rem">Cantidad</th>
+                    <th style="min-width: 9rem">Precio unitario</th>
+                    <th class="text-end">Importe</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="items">
+                  @for (grupo of itemsArray.controls; track grupo; let i = $index) {
+                    <tr [formGroupName]="i">
+                      <td>
+                        <select class="form-select form-select-sm" formControlName="materiaPrimaId" (change)="actualizarPrecio(i)">
+                          <option value="">Selecciona insumo…</option>
+                          @for (materia of materias(); track materia.id) {
+                            <option [value]="materia.id">{{ materia.nombre }}</option>
+                          }
+                        </select>
+                        <small class="cell-muted">
+                          {{ unidadItem(i) }} · stock actual
+                          {{ materiaDe(i)?.stockActual ?? 0 }}
+                        </small>
+                      </td>
+                      <td>
+                        <input type="number" min="0" step="0.01" class="form-control form-control-sm" formControlName="cantidad" />
+                      </td>
+                      <td>
+                        <input type="number" min="0" step="0.01" class="form-control form-control-sm" formControlName="precioUnitario" />
+                      </td>
+                      <td class="text-end cell-main">{{ monedaExacta(importeItem(i)) }}</td>
+                      <td class="text-end">
+                        <button
+                          class="btn btn-icon"
+                          type="button"
+                          aria-label="Quitar partida"
+                          title="Quitar partida"
+                          (click)="quitarItem(i)"
+                        >
+                          <i class="bi bi-trash3"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-md-7">
+                <label class="form-label" for="ocNotas">Notas</label>
+                <textarea
+                  id="ocNotas"
+                  class="form-control"
+                  rows="2"
+                  placeholder="Condiciones de entrega, andén, referencias…"
+                  formControlName="notas"
+                ></textarea>
+              </div>
+              <div class="col-md-5">
+                <div class="order-totals">
+                  <div><span>Partidas</span><strong>{{ totalesFormulario().partidas }}</strong></div>
+                  <div><span>Subtotal</span><strong>{{ monedaExacta(totalesFormulario().subtotal) }}</strong></div>
+                  <div><span>IVA (16%)</span><strong>{{ monedaExacta(totalesFormulario().impuestos) }}</strong></div>
+                  <div class="order-totals-final"><span>Total</span><strong>{{ monedaExacta(totalesFormulario().total) }}</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarNueva()">Cancelar</button>
+            <button class="btn btn-brand" type="submit" [disabled]="guardando()">
+              <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+              {{ guardando() ? 'Creando orden…' : 'Crear orden de compra' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+@if (detalle(); as orden) {
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <span class="panel-kicker">Orden de compra</span>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <h2 class="modal-title h5 mb-0">{{ orden.folio }}</h2>
+              <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
+            </div>
+          </div>
+          <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarDetalle()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <span class="panel-kicker">Proveedor</span>
+              <strong class="d-block">{{ orden.proveedor || 'Sin proveedor' }}</strong>
+              <small class="cell-muted">Emitida {{ fechaCorta(orden.fechaEmision) }}</small>
+            </div>
+            <div class="col-sm-3">
+              <span class="panel-kicker">Entrega</span>
+              <strong class="d-block">{{ fechaCorta(orden.fechaEntrega) }}</strong>
+              <small class="cell-muted">{{ orden.items.length }} partidas</small>
+            </div>
+            <div class="col-sm-3">
+              <span class="panel-kicker">Estado</span>
+              @if (puedeGestionar()) {
+                <select
+                  class="form-select form-select-sm"
+                  [value]="orden.estado"
+                  [disabled]="cambiandoEstado()"
+                  (change)="cambiarEstado($event, orden)"
+                  aria-label="Cambiar estado de la orden"
+                >
+                  @for (estado of estados; track estado.valor) {
+                    <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+                  }
+                </select>
+              } @else {
+                <strong class="d-block">{{ etiquetaEstado(orden.estado) }}</strong>
+              }
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-llamma align-middle">
+              <thead>
+                <tr>
+                  <th>Insumo</th>
+                  <th class="text-center">Cantidad</th>
+                  <th class="text-end">Precio</th>
+                  <th class="text-end">Importe</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of orden.items; track item.id) {
+                  <tr>
+                    <td class="cell-main">{{ item.materiaPrima || 'Insumo' }}</td>
+                    <td class="text-center">{{ cantidad(item.cantidad, item.unidadMedida) }}</td>
+                    <td class="text-end">{{ monedaExacta(item.precioUnitario) }}</td>
+                    <td class="text-end cell-main">{{ monedaExacta(item.importe) }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="text-center text-muted py-4">La orden no tiene partidas.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="order-totals mt-3">
+            <div><span>Subtotal</span><strong>{{ monedaExacta(orden.subtotal) }}</strong></div>
+            <div><span>IVA (16%)</span><strong>{{ monedaExacta(orden.impuestos) }}</strong></div>
+            <div class="order-totals-final"><span>Total</span><strong>{{ monedaExacta(orden.total) }}</strong></div>
+          </div>
+
+          @if (orden.notas) {
+            <p class="table-note mt-3 mb-0"><i class="bi bi-journal-text"></i> {{ orden.notas }}</p>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-ink" type="button" (click)="cerrarDetalle()">Cerrar</button>
+          @if (puedeGestionar() && orden.estado !== 'recibida' && orden.estado !== 'cancelada') {
+            <button class="btn btn-brand" type="button" [disabled]="cambiandoEstado()" (click)="recibir(orden)">
+              <i class="bi" [class]="cambiandoEstado() ? 'bi-arrow-repeat spin' : 'bi-box-arrow-in-down'"></i>
+              {{ cambiandoEstado() ? 'Actualizando…' : 'Marcar como recibida' }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+@if (proveedorAbierto()) {
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form [formGroup]="proveedorForm" (ngSubmit)="guardarProveedor()">
+          <div class="modal-header">
+            <div>
+              <span class="panel-kicker">Directorio de compras</span>
+              <h2 class="modal-title h5 mb-0">Nuevo proveedor</h2>
+            </div>
+            <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarProveedor()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="provNombre">Nombre o razón social *</label>
+                <input id="provNombre" class="form-control" formControlName="nombre" />
+                @if (proveedorForm.controls.nombre.invalid && proveedorForm.controls.nombre.touched) {
+                  <small class="text-danger">Indica al menos dos caracteres.</small>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="provContacto">Contacto</label>
+                <input id="provContacto" class="form-control" formControlName="contacto" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="provTelefono">Teléfono</label>
+                <input id="provTelefono" class="form-control" formControlName="telefono" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="provCorreo">Correo</label>
+                <input id="provCorreo" type="email" class="form-control" formControlName="correo" />
+                @if (proveedorForm.controls.correo.invalid && proveedorForm.controls.correo.touched) {
+                  <small class="text-danger">Captura un correo válido.</small>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="provCondiciones">Condiciones de pago</label>
+                <input id="provCondiciones" class="form-control" formControlName="condicionesPago" placeholder="Crédito 30 días…" />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarProveedor()">Cancelar</button>
+            <button class="btn btn-brand" type="submit" [disabled]="guardandoProveedor()">
+              <i class="bi" [class]="guardandoProveedor() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+              {{ guardandoProveedor() ? 'Guardando…' : 'Guardar proveedor' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

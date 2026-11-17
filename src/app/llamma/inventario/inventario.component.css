@@ -35,3 +35,49 @@
 .inventario-page .purchase-item:last-of-type {
   margin-bottom: 1.2rem;
 }
+
+.inventory-alert.is-ok {
+  border-color: rgba(25, 135, 84, 0.18);
+  background: linear-gradient(90deg, #eefaf2, #f7fdf9);
+  color: #1c5c3b;
+}
+
+.inventory-alert.is-ok > i,
+.inventory-alert.is-ok a {
+  color: #198754;
+}
+
+.movement-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fbfaf7;
+}
+
+.movement-preview > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.movement-preview span {
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.movement-preview strong {
+  font-family: var(--llamma-font-display);
+  font-size: 1.05rem;
+}
+
+.movement-preview > i {
+  color: var(--llamma-magenta);
+  font-size: 1.1rem;
+}

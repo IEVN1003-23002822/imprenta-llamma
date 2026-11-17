@@ -13,11 +13,12 @@ class Config:
 
     SECRET_KEY = os.getenv("SECRET_KEY", "llamma-dev-secret-cambiar-en-produccion")
 
-    # MySQL es el motor objetivo. Para pruebas locales se puede usar SQLite:
-    #   DATABASE_URL=sqlite:///llamma_dev.db
+    # MySQL/MariaDB de Laragon con el usuario root sin contraseña.
+    # Se puede sobreescribir con la variable de entorno DATABASE_URL, por
+    # ejemplo para pruebas con SQLite: DATABASE_URL=sqlite:///llamma_dev.db
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",
-        "mysql+pymysql://llamma:llamma@127.0.0.1:3306/llamma_db?charset=utf8mb4",
+        "mysql+pymysql://root:@127.0.0.1:3306/llamma_db?charset=utf8mb4",
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 280}
