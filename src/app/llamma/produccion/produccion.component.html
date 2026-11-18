@@ -24,7 +24,9 @@
       <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
         <span class="flex-grow-1">{{ error() }}</span>
-        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">Reintentar</button>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
+          Reintentar
+        </button>
       </div>
     }
 
@@ -35,7 +37,9 @@
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
             </span>
-            <div><strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span></div>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
           </div>
         </div>
       }
@@ -68,22 +72,34 @@
             </header>
 
             @for (orden of columna.ordenes; track orden.id) {
-              <article class="task-card" [class.is-featured]="orden.estado === 'pausada' || orden.estado === 'rechazada'">
+              <article
+                class="task-card"
+                [class.is-featured]="orden.estado === 'pausada' || orden.estado === 'rechazada'"
+              >
                 <div class="task-top">
                   <span class="order-id">#{{ orden.pedidoFolio ?? orden.pedidoId }}</span>
-                  <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
+                  <span class="badge" [class]="claseEstado(orden.estado)">{{
+                    etiquetaEstado(orden.estado)
+                  }}</span>
                 </div>
                 <strong class="task-title">{{ titulo(orden) }}</strong>
                 <span class="task-client"><i class="bi bi-person"></i> {{ cliente(orden) }}</span>
                 <div class="task-meta">
                   <span><i class="bi bi-clock"></i> Entrega {{ fechaEntrega(orden) }}</span>
-                  <span><i class="bi bi-person-badge"></i> {{ orden.responsable || 'Sin asignar' }}</span>
+                  <span
+                    ><i class="bi bi-person-badge"></i>
+                    {{ orden.responsable || 'Sin asignar' }}</span
+                  >
                 </div>
                 @if (orden.estado === 'pausada' && orden.observaciones) {
-                  <p class="task-note"><i class="bi bi-exclamation-triangle"></i> {{ orden.observaciones }}</p>
+                  <p class="task-note">
+                    <i class="bi bi-exclamation-triangle"></i> {{ orden.observaciones }}
+                  </p>
                 }
                 <div class="task-foot">
-                  <span class="task-progress-track"><span [style.width]="progreso(orden) + '%'"></span></span>
+                  <span class="task-progress-track"
+                    ><span [style.width]="progreso(orden) + '%'"></span
+                  ></span>
                   <span>{{ progreso(orden) }}%</span>
                 </div>
 
@@ -134,9 +150,7 @@
                 }
               </article>
             } @empty {
-              <p class="kanban-empty">
-                <i class="bi bi-inbox"></i> Sin órdenes en esta etapa
-              </p>
+              <p class="kanban-empty"><i class="bi bi-inbox"></i> Sin órdenes en esta etapa</p>
             }
           </section>
         }
@@ -179,7 +193,10 @@
               <span class="panel-kicker">Calidad</span>
               <h2>Últimos controles</h2>
             </div>
-            <span class="badge" [class]="controlesPendientes() ? 'badge-soft-warning' : 'badge-soft-success'">
+            <span
+              class="badge"
+              [class]="controlesPendientes() ? 'badge-soft-warning' : 'badge-soft-success'"
+            >
               {{ controlesPendientes() ? controlesPendientes() + ' por atender' : 'Todo en orden' }}
             </span>
           </div>
@@ -188,7 +205,10 @@
             @for (fila of calidadReciente(); track fila.control.id) {
               <div class="quality-row" [class.is-done]="fila.control.aprobado">
                 <span class="quality-check">
-                  <i class="bi" [class]="fila.control.aprobado ? 'bi-check-lg' : 'bi-hourglass-split'"></i>
+                  <i
+                    class="bi"
+                    [class]="fila.control.aprobado ? 'bi-check-lg' : 'bi-hourglass-split'"
+                  ></i>
                 </span>
                 <div>
                   <strong>{{ fila.control.criterio }}</strong>
@@ -197,20 +217,26 @@
                     {{ fechaHora(fila.control.fecha) }}
                   </small>
                 </div>
-                <span class="badge" [class]="fila.control.aprobado ? 'badge-soft-success' : 'badge-soft-warning'">
+                <span
+                  class="badge"
+                  [class]="fila.control.aprobado ? 'badge-soft-success' : 'badge-soft-warning'"
+                >
                   {{ fila.control.aprobado ? 'OK' : 'Pendiente' }}
                 </span>
               </div>
             } @empty {
               <p class="text-muted mb-0 small">
-                Aún no hay controles de calidad registrados. Abre una orden para capturar el primero.
+                Aún no hay controles de calidad registrados. Abre una orden para capturar el
+                primero.
               </p>
             }
           </div>
 
           <div class="quote-note">
             <i class="bi bi-shield-check"></i>
-            <span>Ninguna orden sale del taller sin el checklist de calidad completo y firmado.</span>
+            <span
+              >Ninguna orden sale del taller sin el checklist de calidad completo y firmado.</span
+            >
           </div>
 
           <a class="btn btn-outline-ink w-100 mt-auto" routerLink="/detalle">
@@ -223,7 +249,13 @@
 </div>
 
 @if (seleccionada(); as orden) {
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarDetalle()"
+    style="z-index: 1055"
+  >
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
@@ -231,7 +263,9 @@
             <span class="panel-kicker">Orden de producción</span>
             <div class="d-flex flex-wrap align-items-center gap-2">
               <h2 class="modal-title h5 mb-0">#{{ orden.pedidoFolio ?? orden.pedidoId }}</h2>
-              <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
+              <span class="badge" [class]="claseEstado(orden.estado)">{{
+                etiquetaEstado(orden.estado)
+              }}</span>
               <span class="badge badge-soft-muted">
                 <i class="bi" [class]="'bi ' + iconoEtapa(orden.etapa)"></i>
                 {{ etiquetaEtapa(orden.etapa) }}
@@ -275,16 +309,37 @@
 
               <div class="stage-list mt-3">
                 @for (etapa of orden.historialEtapas; track etapa.id) {
-                  <div class="stage-list-item" [class.is-done]="etapa.estado === 'completada'" [class.is-active]="etapa.estado === 'en-proceso'">
-                    <span class="stage-list-dot"><i class="bi" [class]="'bi ' + iconoEtapa(etapa.etapa)"></i></span>
+                  <div
+                    class="stage-list-item"
+                    [class.is-done]="etapa.estado === 'completada'"
+                    [class.is-active]="etapa.estado === 'en-proceso'"
+                  >
+                    <span class="stage-list-dot"
+                      ><i class="bi" [class]="'bi ' + iconoEtapa(etapa.etapa)"></i
+                    ></span>
                     <div class="flex-grow-1 min-w-0">
                       <strong>{{ etiquetaEtapa(etapa.etapa) }}</strong>
                       <small>
                         {{ etapa.responsable || 'Sin responsable' }} ·
-                        {{ etapa.fin ? fechaHora(etapa.fin) : etapa.inicio ? fechaHora(etapa.inicio) : 'Programado' }}
+                        {{
+                          etapa.fin
+                            ? fechaHora(etapa.fin)
+                            : etapa.inicio
+                              ? fechaHora(etapa.inicio)
+                              : 'Programado'
+                        }}
                       </small>
                     </div>
-                    <span class="badge" [class]="etapa.estado === 'completada' ? 'badge-soft-success' : etapa.estado === 'en-proceso' ? 'badge-soft-cyan' : 'badge-soft-muted'">
+                    <span
+                      class="badge"
+                      [class]="
+                        etapa.estado === 'completada'
+                          ? 'badge-soft-success'
+                          : etapa.estado === 'en-proceso'
+                            ? 'badge-soft-cyan'
+                            : 'badge-soft-muted'
+                      "
+                    >
                       {{ etapa.estado }}
                     </span>
                   </div>
@@ -321,16 +376,29 @@
                     </div>
                     <div class="col-12">
                       <label class="form-label" for="prodObs">Observaciones</label>
-                      <textarea id="prodObs" class="form-control" rows="2" formControlName="observaciones"></textarea>
+                      <textarea
+                        id="prodObs"
+                        class="form-control"
+                        rows="2"
+                        formControlName="observaciones"
+                      ></textarea>
                     </div>
                   </div>
                   <div class="d-flex flex-wrap gap-2 mt-3">
                     <button class="btn btn-brand" type="submit" [disabled]="guardando()">
-                      <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+                      <i
+                        class="bi"
+                        [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"
+                      ></i>
                       {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
                     </button>
                     @if (orden.estado !== 'completada') {
-                      <button class="btn btn-outline-ink" type="button" [disabled]="guardando()" (click)="completar(orden)">
+                      <button
+                        class="btn btn-outline-ink"
+                        type="button"
+                        [disabled]="guardando()"
+                        (click)="completar(orden)"
+                      >
                         <i class="bi bi-flag"></i> Completar orden
                       </button>
                     }
@@ -343,17 +411,22 @@
                   <span class="panel-kicker">Checklist de calidad</span>
                   <h2>Controles de la orden</h2>
                 </div>
-                <span class="badge badge-soft-muted">{{ controlesDe(orden).length }} registros</span>
+                <span class="badge badge-soft-muted"
+                  >{{ controlesDe(orden).length }} registros</span
+                >
               </div>
 
               <div class="table-responsive">
                 <table class="table table-llamma align-middle">
+                  <caption class="visually-hidden">
+                    Controles de calidad de la orden
+                  </caption>
                   <thead>
                     <tr>
-                      <th>Criterio</th>
-                      <th>Resultado</th>
-                      <th>Revisó</th>
-                      <th class="text-end">Fecha</th>
+                      <th scope="col">Criterio</th>
+                      <th scope="col">Resultado</th>
+                      <th scope="col">Revisó</th>
+                      <th scope="col" class="text-end">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -361,10 +434,15 @@
                       <tr>
                         <td>
                           <div class="cell-main">{{ control.criterio }}</div>
-                          <div class="cell-muted">{{ control.observaciones || 'Sin observaciones' }}</div>
+                          <div class="cell-muted">
+                            {{ control.observaciones || 'Sin observaciones' }}
+                          </div>
                         </td>
                         <td>
-                          <span class="badge" [class]="control.aprobado ? 'badge-soft-success' : 'badge-soft-danger'">
+                          <span
+                            class="badge"
+                            [class]="control.aprobado ? 'badge-soft-success' : 'badge-soft-danger'"
+                          >
                             {{ control.aprobado ? 'Aprobado' : 'Rechazado' }}
                           </span>
                         </td>
@@ -383,7 +461,11 @@
               </div>
 
               @if (puedeGestionar()) {
-                <form class="quality-form" [formGroup]="calidadForm" (ngSubmit)="registrarCalidad()">
+                <form
+                  class="quality-form"
+                  [formGroup]="calidadForm"
+                  (ngSubmit)="registrarCalidad()"
+                >
                   <span class="panel-kicker">Nuevo control</span>
                   <div class="row g-2 mt-1">
                     <div class="col-md-6">
@@ -393,7 +475,10 @@
                         aria-label="Criterio de calidad"
                         formControlName="criterio"
                       />
-                      @if (calidadForm.controls.criterio.invalid && calidadForm.controls.criterio.touched) {
+                      @if (
+                        calidadForm.controls.criterio.invalid &&
+                        calidadForm.controls.criterio.touched
+                      ) {
                         <small class="text-danger">Describe el criterio a revisar.</small>
                       }
                     </div>
@@ -407,11 +492,25 @@
                     </div>
                     <div class="col-12 d-flex flex-wrap align-items-center gap-3">
                       <div class="form-check form-switch mb-0">
-                        <input id="calidadAprobado" class="form-check-input" type="checkbox" formControlName="aprobado" />
+                        <input
+                          id="calidadAprobado"
+                          class="form-check-input"
+                          type="checkbox"
+                          formControlName="aprobado"
+                        />
                         <label class="form-check-label small" for="calidadAprobado">Aprobado</label>
                       </div>
-                      <button class="btn btn-ink btn-sm ms-auto" type="submit" [disabled]="registrandoCalidad()">
-                        <i class="bi" [class]="registrandoCalidad() ? 'bi-arrow-repeat spin' : 'bi-clipboard-check'"></i>
+                      <button
+                        class="btn btn-ink btn-sm ms-auto"
+                        type="submit"
+                        [disabled]="registrandoCalidad()"
+                      >
+                        <i
+                          class="bi"
+                          [class]="
+                            registrandoCalidad() ? 'bi-arrow-repeat spin' : 'bi-clipboard-check'
+                          "
+                        ></i>
                         {{ registrandoCalidad() ? 'Registrando…' : 'Registrar control' }}
                       </button>
                     </div>
@@ -423,7 +522,9 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-outline-ink" type="button" (click)="cerrarDetalle()">Cerrar</button>
+          <button class="btn btn-outline-ink" type="button" (click)="cerrarDetalle()">
+            Cerrar
+          </button>
           <a class="btn btn-brand" routerLink="/detalle" [queryParams]="{ pedido: orden.pedidoId }">
             <i class="bi bi-receipt"></i> Ver pedido
           </a>

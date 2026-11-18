@@ -1,0 +1,65 @@
+<aside class="quote-summary request-summary">
+  <div class="quote-summary-head">
+    <span>Resumen de tu solicitud</span>
+    <span class="badge badge-soft-cyan">{{ carrito().length }} partidas</span>
+  </div>
+
+  @if (carrito().length) {
+    <div class="summary-lines">
+      @for (item of carrito(); track $index) {
+        <div>
+          <span>{{ item.nombreProducto }} · {{ item.cantidad }}</span>
+          <strong>{{ moneda(item.precioEstimado ?? 0) }}</strong>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="summary-empty">
+      <i class="bi bi-file-earmark-text"></i>
+      <p>Tu solicitud se puede enviar solo con el mensaje descriptivo.</p>
+    </div>
+  }
+
+  <div class="summary-totals">
+    <div>
+      <span>Piezas / unidades</span><strong>{{ totalPiezas() }}</strong>
+    </div>
+    <div>
+      <span>Estimado referencial</span><strong>{{ moneda(totalEstimado()) }}</strong>
+    </div>
+    <div>
+      <span>IVA (16%)</span><strong>{{ moneda(ivaEstimado()) }}</strong>
+    </div>
+    <div class="summary-total">
+      <span>Total estimado</span><strong>{{ moneda(totalConIva()) }}</strong>
+    </div>
+  </div>
+
+  <div class="request-note">
+    <i class="bi bi-info-circle"></i>
+    <span>
+      Los precios son referenciales. La cotización final se confirma después de revisar medidas,
+      materiales y archivo de diseño.
+    </span>
+  </div>
+
+  @if (error()) {
+    <div class="request-error" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <button class="btn btn-brand w-100" type="submit" form="solicitudForm" [disabled]="enviando()">
+    @if (enviando()) {
+      <i class="bi bi-hourglass-split"></i> Enviando solicitud...
+    } @else {
+      <i class="bi bi-send"></i> Enviar solicitud de cotización
+    }
+  </button>
+
+  <p class="summary-note">
+    <i class="bi bi-shield-check"></i>
+    Sin costo y sin compromiso. Respondemos en horario de oficina.
+  </p>
+</aside>

@@ -8,26 +8,16 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { ETAPAS_PRODUCCION, LINEAS_PRODUCCION, etiquetaDe } from '../estados';
 import { LlammaService } from '../llamma.service';
-import { EtapaProduccion, ResumenDashboardApi } from '../llamma.models';
+import { ResumenDashboardApi } from '../llamma.models';
 import { UiService } from '../ui.service';
 
-const ETAPAS: Record<EtapaProduccion, string> = {
-  diseno: 'Diseño',
-  impresion: 'Impresión',
-  laminado: 'Laminado',
-  corte: 'Corte',
-  confeccion: 'Confección',
-  armado: 'Armado',
-  acabado: 'Acabado',
-  entrega: 'Entrega',
-};
-
-const LINEAS: Record<string, { etiqueta: string; color: string }> = {
-  'gran-formato': { etiqueta: 'Gran formato', color: 'var(--llamma-cyan)' },
-  textil: { etiqueta: 'Textil', color: 'var(--llamma-magenta)' },
-  promocionales: { etiqueta: 'Promocionales', color: 'var(--llamma-yellow)' },
-  papeleria: { etiqueta: 'Papelería', color: 'var(--llamma-carbon)' },
+const COLORES_LINEA: Record<string, string> = {
+  'gran-formato': 'var(--llamma-cyan)',
+  textil: 'var(--llamma-magenta)',
+  promocionales: 'var(--llamma-yellow)',
+  papeleria: 'var(--llamma-carbon)',
 };
 
 @Component({
@@ -50,7 +40,8 @@ export class DashboardComponent implements OnInit {
     const maximo = Math.max(1, ...filas.map((fila) => fila.total));
     return filas.map((fila) => ({
       ...fila,
-      ...(LINEAS[fila.linea] ?? { etiqueta: fila.linea, color: 'var(--llamma-carbon)' }),
+      etiqueta: etiquetaDe(LINEAS_PRODUCCION, fila.linea),
+      color: COLORES_LINEA[fila.linea] ?? 'var(--llamma-carbon)',
       porcentaje: Math.max(6, Math.round((fila.total / maximo) * 100)),
     }));
   });
@@ -62,7 +53,7 @@ export class DashboardComponent implements OnInit {
       .sort((a, b) => b.total - a.total)
       .map((fila) => ({
         ...fila,
-        etiqueta: ETAPAS[fila.etapa] ?? fila.etapa,
+        etiqueta: etiquetaDe(ETAPAS_PRODUCCION, fila.etapa),
         porcentaje: total ? Math.round((fila.total / total) * 100) : 0,
       }));
   });
@@ -88,7 +79,6 @@ export class DashboardComponent implements OnInit {
     });
     return `conic-gradient(${partes.join(', ')})`;
   });
-
 
   ngOnInit(): void {
     this.cargar();

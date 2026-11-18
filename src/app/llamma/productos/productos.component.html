@@ -4,18 +4,19 @@
       <div class="page-brand">
         <img
           class="page-brand-logo"
-          src="assets/images/logo-llamma.png"
+          src="assets/images/logo-llamma-128.webp"
+          srcset="assets/images/logo-llamma-128.webp 2x, assets/images/logo-llamma-256.webp 4x"
           alt="Imprenta Llamma Logo"
           width="38"
           height="54"
-        >
+        />
         <div>
           <span class="eyebrow">Catálogo público</span>
           <h1>Productos que podemos transformar.</h1>
           <p class="page-lead">
             Gran formato, textil, promocionales y papelería creativa. Explora el catálogo, elige tus
-            piezas y solicita una cotización a tu medida. Los precios son referenciales y se confirman
-            al revisar medidas, materiales y archivo de diseño.
+            piezas y solicita una cotización a tu medida. Los precios son referenciales y se
+            confirman al revisar medidas, materiales y archivo de diseño.
           </p>
         </div>
       </div>
@@ -38,12 +39,12 @@
     <section class="panel-card mb-4">
       <div class="catalog-toolbar">
         <div class="catalog-tabs" role="tablist" aria-label="Filtrar por línea de producción">
-          @for (opcion of lineas; track opcion.clave) {
+          @for (opcion of lineas; track opcion.valor) {
             <button
               class="filter-chip"
               type="button"
-              [class.is-active]="linea() === opcion.clave"
-              (click)="filtrarPor(opcion.clave)"
+              [class.is-active]="linea() === opcion.valor"
+              (click)="filtrarPor(opcion.valor)"
             >
               {{ opcion.etiqueta }}
             </button>
@@ -56,9 +57,10 @@
             type="search"
             class="form-control"
             placeholder="Buscar producto..."
+            aria-label="Buscar producto en el catálogo"
             [value]="busqueda()"
             (input)="actualizarBusqueda($event)"
-          >
+          />
         </div>
       </div>
     </section>
@@ -84,12 +86,31 @@
       <div class="catalog-grid">
         @for (producto of filtrados(); track producto.id) {
           <article class="product-card">
-            <div class="product-card-head">
-              <span class="icon-tile icon-tile-cyan">
-                <i class="bi {{ producto.icono || 'bi-box-seam' }}"></i>
-              </span>
-              <span class="badge badge-soft-muted">{{ etiquetaLinea(producto.lineaProduccion) }}</span>
-            </div>
+            @if (producto.imagenUrl && !imagenesConError().has(producto.id)) {
+              <figure class="product-card-media">
+                <img
+                  [src]="producto.imagenUrl"
+                  [alt]="'Foto de ' + producto.nombre"
+                  width="640"
+                  height="420"
+                  loading="lazy"
+                  decoding="async"
+                  (error)="marcarImagenRota(producto.id)"
+                />
+                <span class="badge badge-soft-muted product-card-badge">
+                  {{ etiquetaLinea(producto.lineaProduccion) }}
+                </span>
+              </figure>
+            } @else {
+              <div class="product-card-head">
+                <span class="icon-tile icon-tile-cyan">
+                  <i class="bi {{ producto.icono || 'bi-box-seam' }}"></i>
+                </span>
+                <span class="badge badge-soft-muted">{{
+                  etiquetaLinea(producto.lineaProduccion)
+                }}</span>
+              </div>
+            }
 
             <h2>{{ producto.nombre }}</h2>
             <p>{{ producto.descripcion || 'Producto personalizable según tu proyecto.' }}</p>
@@ -130,7 +151,13 @@
 </div>
 
 @if (gestionAbierta()) {
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarGestion()"
+    style="z-index: 1055"
+  >
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
@@ -138,7 +165,13 @@
             <span class="panel-kicker">Catálogo interno</span>
             <div class="d-flex flex-wrap align-items-center gap-2">
               <h2 class="modal-title h5 mb-0">
-                {{ vista() === 'formulario' ? (editando() ? 'Editar producto' : 'Nuevo producto') : 'Gestión de productos' }}
+                {{
+                  vista() === 'formulario'
+                    ? editando()
+                      ? 'Editar producto'
+                      : 'Nuevo producto'
+                    : 'Gestión de productos'
+                }}
               </h2>
               <span class="badge badge-soft-muted">{{ resumenAdmin().total }} productos</span>
             </div>
@@ -164,10 +197,18 @@
                   />
                 </div>
               </div>
-              <div class="col-lg-6 d-flex flex-wrap align-items-center justify-content-lg-end gap-2">
-                <span class="badge badge-soft-success">{{ resumenAdmin().publicados }} publicados</span>
-                <span class="badge badge-soft-warning">{{ resumenAdmin().borradores }} borradores</span>
-                <span class="badge badge-soft-danger">{{ resumenAdmin().inactivos }} inactivos</span>
+              <div
+                class="col-lg-6 d-flex flex-wrap align-items-center justify-content-lg-end gap-2"
+              >
+                <span class="badge badge-soft-success"
+                  >{{ resumenAdmin().publicados }} publicados</span
+                >
+                <span class="badge badge-soft-warning"
+                  >{{ resumenAdmin().borradores }} borradores</span
+                >
+                <span class="badge badge-soft-danger"
+                  >{{ resumenAdmin().inactivos }} inactivos</span
+                >
                 <button class="btn btn-brand btn-sm" type="button" (click)="abrirNuevo()">
                   <i class="bi bi-plus-lg"></i> Nuevo producto
                 </button>
@@ -176,14 +217,17 @@
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle">
+                <caption class="visually-hidden">
+                  Catálogo de productos
+                </caption>
                 <thead>
                   <tr>
-                    <th>Producto</th>
-                    <th>Categoría</th>
-                    <th>Línea</th>
-                    <th class="text-end">Precio base</th>
-                    <th>Estado</th>
-                    <th class="text-end">Acciones</th>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Categoría</th>
+                    <th scope="col">Línea</th>
+                    <th scope="col" class="text-end">Precio base</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -208,10 +252,16 @@
                       </td>
                       <td>
                         <div class="d-flex flex-wrap gap-1">
-                          <span class="badge" [class]="producto.activo ? 'badge-soft-success' : 'badge-soft-danger'">
+                          <span
+                            class="badge"
+                            [class]="producto.activo ? 'badge-soft-success' : 'badge-soft-danger'"
+                          >
                             {{ producto.activo ? 'Activo' : 'Inactivo' }}
                           </span>
-                          <span class="badge" [class]="producto.publicado ? 'badge-soft-cyan' : 'badge-soft-muted'">
+                          <span
+                            class="badge"
+                            [class]="producto.publicado ? 'badge-soft-cyan' : 'badge-soft-muted'"
+                          >
                             {{ producto.publicado ? 'Publicado' : 'Borrador' }}
                           </span>
                           @if (producto.tieneReceta) {
@@ -233,12 +283,19 @@
                           <button
                             class="btn btn-icon"
                             type="button"
-                            [attr.aria-label]="producto.publicado ? 'Ocultar del catálogo' : 'Publicar en catálogo'"
-                            [title]="producto.publicado ? 'Ocultar del catálogo' : 'Publicar en catálogo'"
+                            [attr.aria-label]="
+                              producto.publicado ? 'Ocultar del catálogo' : 'Publicar en catálogo'
+                            "
+                            [title]="
+                              producto.publicado ? 'Ocultar del catálogo' : 'Publicar en catálogo'
+                            "
                             [disabled]="cambiandoId() === producto.id || !producto.activo"
                             (click)="alternarPublicado(producto)"
                           >
-                            <i class="bi" [class]="producto.publicado ? 'bi-eye-slash' : 'bi-eye'"></i>
+                            <i
+                              class="bi"
+                              [class]="producto.publicado ? 'bi-eye-slash' : 'bi-eye'"
+                            ></i>
                           </button>
                           <button
                             class="btn btn-icon"
@@ -248,7 +305,10 @@
                             [disabled]="cambiandoId() === producto.id"
                             (click)="alternarActivo(producto)"
                           >
-                            <i class="bi" [class]="producto.activo ? 'bi-trash3' : 'bi-arrow-counterclockwise'"></i>
+                            <i
+                              class="bi"
+                              [class]="producto.activo ? 'bi-trash3' : 'bi-arrow-counterclockwise'"
+                            ></i>
                           </button>
                         </div>
                       </td>
@@ -257,7 +317,11 @@
                     <tr>
                       <td colspan="6" class="text-center text-muted py-5">
                         <i class="bi bi-box-seam d-block fs-4 mb-2"></i>
-                        {{ cargandoAdmin() ? 'Cargando productos…' : 'No hay productos con esa búsqueda.' }}
+                        {{
+                          cargandoAdmin()
+                            ? 'Cargando productos…'
+                            : 'No hay productos con esa búsqueda.'
+                        }}
                       </td>
                     </tr>
                   }
@@ -284,21 +348,33 @@
                 </div>
                 <div class="col-12">
                   <label class="form-label" for="prodDescripcion">Descripción</label>
-                  <textarea id="prodDescripcion" class="form-control" rows="2" formControlName="descripcion"></textarea>
+                  <textarea
+                    id="prodDescripcion"
+                    class="form-control"
+                    rows="2"
+                    formControlName="descripcion"
+                  ></textarea>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label" for="prodLinea">Línea de producción</label>
                   <select id="prodLinea" class="form-select" formControlName="lineaProduccion">
-                    @for (linea of lineas; track linea.clave) {
-                      @if (linea.clave) {
-                        <option [value]="linea.clave">{{ linea.etiqueta }}</option>
+                    @for (linea of lineas; track linea.valor) {
+                      @if (linea.valor) {
+                        <option [value]="linea.valor">{{ linea.etiqueta }}</option>
                       }
                     }
                   </select>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label" for="prodPrecio">Precio base</label>
-                  <input id="prodPrecio" type="number" min="0" step="0.01" class="form-control" formControlName="precioBase" />
+                  <input
+                    id="prodPrecio"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="form-control"
+                    formControlName="precioBase"
+                  />
                 </div>
                 <div class="col-md-4">
                   <label class="form-label" for="prodUnidad">Unidad de venta</label>
@@ -308,17 +384,48 @@
                     }
                   </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label class="form-label" for="prodIcono">Icono (Bootstrap Icons)</label>
-                  <input id="prodIcono" class="form-control" formControlName="icono" placeholder="bi-box-seam" />
+                  <input
+                    id="prodIcono"
+                    class="form-control"
+                    formControlName="icono"
+                    placeholder="bi-box-seam"
+                  />
+                </div>
+                <div class="col-md-8">
+                  <label class="form-label" for="prodImagen">Foto del producto (opcional)</label>
+                  <input
+                    id="prodImagen"
+                    class="form-control"
+                    formControlName="imagenUrl"
+                    placeholder="assets/images/productos/playera.webp"
+                    aria-describedby="prodImagenAyuda"
+                  />
+                  <small id="prodImagenAyuda" class="cell-muted">
+                    Ruta local dentro de <code>assets</code> o URL del mismo dominio. Se muestra en
+                    la tarjeta del catálogo.
+                  </small>
                 </div>
                 <div class="col-md-6 d-flex flex-wrap align-items-center gap-3 pt-md-4">
                   <div class="form-check form-switch mb-0">
-                    <input id="prodPublicado" class="form-check-input" type="checkbox" formControlName="publicado" />
-                    <label class="form-check-label small" for="prodPublicado">Visible en catálogo</label>
+                    <input
+                      id="prodPublicado"
+                      class="form-check-input"
+                      type="checkbox"
+                      formControlName="publicado"
+                    />
+                    <label class="form-check-label small" for="prodPublicado"
+                      >Visible en catálogo</label
+                    >
                   </div>
                   <div class="form-check form-switch mb-0">
-                    <input id="prodActivo" class="form-check-input" type="checkbox" formControlName="activo" />
+                    <input
+                      id="prodActivo"
+                      class="form-check-input"
+                      type="checkbox"
+                      formControlName="activo"
+                    />
                     <label class="form-check-label small" for="prodActivo">Activo</label>
                   </div>
                 </div>
@@ -337,13 +444,22 @@
 
         <div class="modal-footer">
           @if (vista() === 'formulario') {
-            <button class="btn btn-outline-ink" type="button" (click)="volverLista()">Volver</button>
-            <button class="btn btn-brand" type="button" [disabled]="guardando()" (click)="guardar()">
+            <button class="btn btn-outline-ink" type="button" (click)="volverLista()">
+              Volver
+            </button>
+            <button
+              class="btn btn-brand"
+              type="button"
+              [disabled]="guardando()"
+              (click)="guardar()"
+            >
               <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
               {{ guardando() ? 'Guardando…' : 'Guardar producto' }}
             </button>
           } @else {
-            <button class="btn btn-outline-ink" type="button" (click)="cerrarGestion()">Cerrar</button>
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarGestion()">
+              Cerrar
+            </button>
           }
         </div>
       </div>

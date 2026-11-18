@@ -14,7 +14,12 @@
           <i class="bi bi-calendar3"></i>
           {{ pedido() ? fechaCorta(pedido()!.fechaPedido) : 'Sin fecha' }}
         </span>
-        <button class="btn btn-outline-ink" type="button" (click)="imprimir()" [disabled]="!pedido()">
+        <button
+          class="btn btn-outline-ink"
+          type="button"
+          (click)="imprimir()"
+          [disabled]="!pedido()"
+        >
           <i class="bi bi-printer"></i> Imprimir
         </button>
         @if (puedeGestionar()) {
@@ -26,7 +31,9 @@
     </header>
 
     <div class="order-switcher">
-      <span class="order-switcher-label"><i class="bi bi-clock-history"></i> Órdenes recientes</span>
+      <span class="order-switcher-label"
+        ><i class="bi bi-clock-history"></i> Órdenes recientes</span
+      >
       <div class="order-switcher-list">
         @if (cargandoLista()) {
           <span class="text-muted small d-inline-flex align-items-center gap-2">
@@ -76,12 +83,21 @@
                 <span class="panel-kicker">Orden de producción</span>
                 <div class="d-flex flex-wrap align-items-center gap-2">
                   <h2 class="order-title">#{{ orden.folio }}</h2>
-                  <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
-                  <span class="badge" [class]="clasePrioridad(orden.prioridad)">{{ etiquetaPrioridad(orden.prioridad) }}</span>
+                  <span class="badge" [class]="claseEstado(orden.estado)">{{
+                    etiquetaEstado(orden.estado)
+                  }}</span>
+                  <span class="badge" [class]="clasePrioridad(orden.prioridad)">{{
+                    etiquetaPrioridad(orden.prioridad)
+                  }}</span>
                 </div>
               </div>
               <div class="d-flex flex-wrap align-items-center gap-2">
-                <button class="btn btn-icon" type="button" aria-label="Imprimir orden" (click)="imprimir()">
+                <button
+                  class="btn btn-icon"
+                  type="button"
+                  aria-label="Imprimir orden"
+                  (click)="imprimir()"
+                >
                   <i class="bi bi-printer"></i>
                 </button>
                 @if (puedeGestionar()) {
@@ -131,7 +147,9 @@
                 <div class="order-meta-item">
                   <span>Entrega comprometida</span>
                   <strong>{{ fechaCorta(orden.fechaEntrega) }}</strong>
-                  <small>{{ orden.saldo <= 0.01 ? 'Liquidado' : 'Saldo: ' + moneda(orden.saldo) }}</small>
+                  <small>{{
+                    orden.saldo <= 0.01 ? 'Liquidado' : 'Saldo: ' + moneda(orden.saldo)
+                  }}</small>
                 </div>
               </div>
               <div class="col-sm-6 col-lg-3">
@@ -139,7 +157,11 @@
                   <span>Responsable</span>
                   <strong>{{ orden.ordenProduccion?.responsable || 'Sin asignar' }}</strong>
                   <small>
-                    {{ orden.ordenProduccion ? 'Etapa: ' + (etapas()[etapaActual() - 1]?.etiqueta ?? 'Diseño') : 'Sin orden de producción' }}
+                    {{
+                      orden.ordenProduccion
+                        ? 'Etapa: ' + (etapas()[etapaActual() - 1]?.etiqueta ?? 'Diseño')
+                        : 'Sin orden de producción'
+                    }}
                   </small>
                 </div>
               </div>
@@ -159,13 +181,16 @@
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle">
+                <caption class="visually-hidden">
+                  Partidas del pedido
+                </caption>
                 <thead>
                   <tr>
-                    <th>Producto</th>
-                    <th>Especificación</th>
-                    <th class="text-center">Cant.</th>
-                    <th class="text-end">P. unitario</th>
-                    <th class="text-end">Importe</th>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Especificación</th>
+                    <th scope="col" class="text-center">Cant.</th>
+                    <th scope="col" class="text-end">P. unitario</th>
+                    <th scope="col" class="text-end">Importe</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -173,16 +198,24 @@
                     <tr>
                       <td>
                         <div class="product-cell">
-                          <span class="icon-tile icon-tile-sm icon-tile-cyan"><i class="bi bi-box"></i></span>
+                          <span class="icon-tile icon-tile-sm icon-tile-cyan"
+                            ><i class="bi bi-box"></i
+                          ></span>
                           <div>
                             <strong>{{ item.descripcion }}</strong>
-                            <small>{{ item.archivoDiseno ? 'Con archivo de diseño' : 'Sin archivo' }}</small>
+                            <small>{{
+                              item.archivoDiseno ? 'Con archivo de diseño' : 'Sin archivo'
+                            }}</small>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <div class="cell-main">{{ item.especificaciones || 'Sin especificaciones' }}</div>
-                        <div class="cell-muted">Precio unitario {{ moneda(item.precioUnitario) }}</div>
+                        <div class="cell-main">
+                          {{ item.especificaciones || 'Sin especificaciones' }}
+                        </div>
+                        <div class="cell-muted">
+                          Precio unitario {{ moneda(item.precioUnitario) }}
+                        </div>
                       </td>
                       <td class="text-center">{{ item.cantidad }}</td>
                       <td class="text-end">{{ moneda(item.precioUnitario) }}</td>
@@ -224,7 +257,11 @@
                     <div class="timeline-top">
                       <strong>{{ etapa.etiqueta }}</strong>
                       <span>
-                        {{ etapa.clase === 'is-pending' ? 'Programado' : fechaHora(etapa.fin || etapa.inicio) }}
+                        {{
+                          etapa.clase === 'is-pending'
+                            ? 'Programado'
+                            : fechaHora(etapa.fin || etapa.inicio)
+                        }}
                       </span>
                     </div>
                     <p>
@@ -250,12 +287,15 @@
               </div>
               <div class="table-responsive">
                 <table class="table table-llamma align-middle mb-0">
+                  <caption class="visually-hidden">
+                    Controles de calidad del pedido
+                  </caption>
                   <thead>
                     <tr>
-                      <th>Criterio</th>
-                      <th>Resultado</th>
-                      <th>Revisó</th>
-                      <th class="text-end">Fecha</th>
+                      <th scope="col">Criterio</th>
+                      <th scope="col">Resultado</th>
+                      <th scope="col">Revisó</th>
+                      <th scope="col" class="text-end">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -263,10 +303,15 @@
                       <tr>
                         <td>
                           <div class="cell-main">{{ control.criterio }}</div>
-                          <div class="cell-muted">{{ control.observaciones || 'Sin observaciones' }}</div>
+                          <div class="cell-muted">
+                            {{ control.observaciones || 'Sin observaciones' }}
+                          </div>
                         </td>
                         <td>
-                          <span class="badge" [class]="control.aprobado ? 'badge-soft-success' : 'badge-soft-danger'">
+                          <span
+                            class="badge"
+                            [class]="control.aprobado ? 'badge-soft-success' : 'badge-soft-danger'"
+                          >
                             {{ control.aprobado ? 'Aprobado' : 'Rechazado' }}
                           </span>
                         </td>
@@ -285,33 +330,55 @@
           <aside class="order-summary mb-4">
             <div class="quote-summary-head">
               <span>Resumen del pedido</span>
-              <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
+              <span class="badge" [class]="claseEstado(orden.estado)">{{
+                etiquetaEstado(orden.estado)
+              }}</span>
             </div>
 
             <div class="summary-client">
-              <span class="avatar avatar-magenta">{{ iniciales(cliente()?.nombre ?? orden.cliente) }}</span>
+              <span class="avatar avatar-magenta">{{
+                iniciales(cliente()?.nombre ?? orden.cliente)
+              }}</span>
               <div>
                 <strong>{{ cliente()?.nombre ?? orden.cliente ?? 'Mostrador' }}</strong>
                 <small>
-                  {{ cliente()?.telefono || 'Sin teléfono' }} · {{ cliente()?.correo || 'Sin correo' }}
+                  {{ cliente()?.telefono || 'Sin teléfono' }} ·
+                  {{ cliente()?.correo || 'Sin correo' }}
                 </small>
               </div>
             </div>
 
             <div class="summary-totals">
-              <div><span>Subtotal</span><strong>{{ moneda(orden.subtotal) }}</strong></div>
-              <div><span>IVA (16%)</span><strong>{{ moneda(orden.impuestos) }}</strong></div>
-              <div class="summary-total"><span>Total</span><strong>{{ moneda(orden.total) }}</strong></div>
-              <div><span>Anticipo recibido</span><strong>{{ moneda(orden.anticipo) }}</strong></div>
-              <div><span>Saldo pendiente</span><strong>{{ moneda(orden.saldo) }}</strong></div>
+              <div>
+                <span>Subtotal</span><strong>{{ moneda(orden.subtotal) }}</strong>
+              </div>
+              <div>
+                <span>IVA (16%)</span><strong>{{ moneda(orden.impuestos) }}</strong>
+              </div>
+              <div class="summary-total">
+                <span>Total</span><strong>{{ moneda(orden.total) }}</strong>
+              </div>
+              <div>
+                <span>Anticipo recibido</span><strong>{{ moneda(orden.anticipo) }}</strong>
+              </div>
+              <div>
+                <span>Saldo pendiente</span><strong>{{ moneda(orden.saldo) }}</strong>
+              </div>
             </div>
 
             <div class="payment-state">
               <span
                 class="icon-tile icon-tile-sm"
-                [class]="estadoPago().ok ? 'icon-tile icon-tile-sm icon-tile-success' : 'icon-tile icon-tile-sm icon-tile-danger'"
+                [class]="
+                  estadoPago().ok
+                    ? 'icon-tile icon-tile-sm icon-tile-success'
+                    : 'icon-tile icon-tile-sm icon-tile-danger'
+                "
               >
-                <i class="bi" [class]="estadoPago().ok ? 'bi bi-shield-check' : 'bi bi-exclamation-circle'"></i>
+                <i
+                  class="bi"
+                  [class]="estadoPago().ok ? 'bi bi-shield-check' : 'bi bi-exclamation-circle'"
+                ></i>
               </span>
               <div>
                 <strong>{{ estadoPago().titulo }}</strong>
@@ -329,7 +396,11 @@
                   <div class="row g-2">
                     <div class="col-6">
                       <label class="form-label small fw-semibold" for="pago-tipo">Tipo</label>
-                      <select id="pago-tipo" class="form-select form-select-sm" formControlName="tipo">
+                      <select
+                        id="pago-tipo"
+                        class="form-select form-select-sm"
+                        formControlName="tipo"
+                      >
                         <option value="anticipo">Anticipo</option>
                         <option value="abono">Abono</option>
                         <option value="saldo">Liquidación</option>
@@ -337,7 +408,11 @@
                     </div>
                     <div class="col-6">
                       <label class="form-label small fw-semibold" for="pago-metodo">Método</label>
-                      <select id="pago-metodo" class="form-select form-select-sm" formControlName="metodo">
+                      <select
+                        id="pago-metodo"
+                        class="form-select form-select-sm"
+                        formControlName="metodo"
+                      >
                         <option value="transferencia">Transferencia</option>
                         <option value="efectivo">Efectivo</option>
                         <option value="tarjeta">Tarjeta</option>
@@ -359,7 +434,9 @@
                       }
                     </div>
                     <div class="col-6">
-                      <label class="form-label small fw-semibold" for="pago-referencia">Referencia</label>
+                      <label class="form-label small fw-semibold" for="pago-referencia"
+                        >Referencia</label
+                      >
                       <input
                         id="pago-referencia"
                         class="form-control form-control-sm"
@@ -370,11 +447,22 @@
                     </div>
                   </div>
                   <div class="d-flex gap-2 mt-2">
-                    <button class="btn btn-brand btn-sm flex-grow-1" type="submit" [disabled]="registrandoPago()">
-                      <i class="bi" [class]="registrandoPago() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+                    <button
+                      class="btn btn-brand btn-sm flex-grow-1"
+                      type="submit"
+                      [disabled]="registrandoPago()"
+                    >
+                      <i
+                        class="bi"
+                        [class]="registrandoPago() ? 'bi-arrow-repeat spin' : 'bi-check2'"
+                      ></i>
                       {{ registrandoPago() ? 'Guardando…' : 'Confirmar pago' }}
                     </button>
-                    <button class="btn btn-outline-ink btn-sm" type="button" (click)="mostrarPago.set(false)">
+                    <button
+                      class="btn btn-outline-ink btn-sm"
+                      type="button"
+                      (click)="mostrarPago.set(false)"
+                    >
                       Cancelar
                     </button>
                   </div>
@@ -389,7 +477,9 @@
                   @for (pago of pagos(); track pago.id) {
                     <div class="d-flex align-items-start justify-content-between gap-2">
                       <div>
-                        <strong class="small text-capitalize">{{ pago.tipo }} · {{ pago.metodo }}</strong>
+                        <strong class="small text-capitalize"
+                          >{{ pago.tipo }} · {{ pago.metodo }}</strong
+                        >
                         <small class="d-block text-muted">
                           {{ fechaHora(pago.fechaPago) }}
                           @if (pago.referencia) {
@@ -432,7 +522,10 @@
                 <i class="bi bi-person"></i>
                 <div>
                   <strong>{{ cliente()?.nombre || 'Contacto' }}</strong>
-                  <span>{{ cliente()?.telefono || 'Sin teléfono' }} · {{ cliente()?.correo || 'Sin correo' }}</span>
+                  <span
+                    >{{ cliente()?.telefono || 'Sin teléfono' }} ·
+                    {{ cliente()?.correo || 'Sin correo' }}</span
+                  >
                 </div>
               </li>
             </ul>
@@ -450,7 +543,9 @@
             <div class="file-list">
               @for (archivo of archivos(); track archivo.nombre + archivo.descripcion) {
                 <div class="file-row">
-                  <span class="icon-tile icon-tile-sm icon-tile-magenta"><i class="bi bi-file-earmark-image"></i></span>
+                  <span class="icon-tile icon-tile-sm icon-tile-magenta"
+                    ><i class="bi bi-file-earmark-image"></i
+                  ></span>
                   <div class="flex-grow-1 min-w-0">
                     <strong>{{ archivo.nombre }}</strong>
                     <small>{{ archivo.descripcion }}</small>

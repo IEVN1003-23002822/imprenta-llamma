@@ -11,6 +11,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import { ESTADOS_COTIZACION, badgeDe, etiquetaDe } from '../estados';
 import { LlammaService } from '../llamma.service';
 import {
   Cotizacion,
@@ -278,9 +279,7 @@ export class CapturaComponent implements OnInit {
   }
 
   quitarPartida(indice: number): void {
-    this.partidas.update((partidas) =>
-      partidas.filter((_, posicion) => posicion !== indice),
-    );
+    this.partidas.update((partidas) => partidas.filter((_, posicion) => posicion !== indice));
   }
 
   guardar(): void {
@@ -374,9 +373,7 @@ export class CapturaComponent implements OnInit {
           );
         },
         error: (respuesta: HttpErrorResponse) => {
-          this.error.set(
-            respuesta.error?.error || 'No pudimos convertir la cotización en pedido.',
-          );
+          this.error.set(respuesta.error?.error || 'No pudimos convertir la cotización en pedido.');
         },
       });
   }
@@ -407,29 +404,11 @@ export class CapturaComponent implements OnInit {
   }
 
   etiquetaEstado(): string {
-    const estado = this.cotizacion()?.estado;
-    const etiquetas: Record<string, string> = {
-      borrador: 'Borrador',
-      enviada: 'Enviada',
-      aprobada: 'Aprobada',
-      rechazada: 'Rechazada',
-      vencida: 'Vencida',
-      convertida: 'Convertida a pedido',
-    };
-    return estado ? (etiquetas[estado] ?? estado) : 'Borrador';
+    return etiquetaDe(ESTADOS_COTIZACION, this.cotizacion()?.estado) || 'Borrador';
   }
 
   claseEstado(): string {
-    const estado = this.cotizacion()?.estado;
-    const clases: Record<string, string> = {
-      borrador: 'badge-soft-muted',
-      enviada: 'badge-soft-cyan',
-      aprobada: 'badge-soft-success',
-      rechazada: 'badge-soft-danger',
-      vencida: 'badge-soft-muted',
-      convertida: 'badge-soft-success',
-    };
-    return estado ? (clases[estado] ?? 'badge-soft-muted') : 'badge-soft-muted';
+    return badgeDe(ESTADOS_COTIZACION, this.cotizacion()?.estado);
   }
 
   iniciales(nombre: string): string {

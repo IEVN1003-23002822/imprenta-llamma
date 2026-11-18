@@ -1,0 +1,45 @@
+<div class="module-page not-found-page">
+  <div class="container">
+    <section class="panel-card not-found-card">
+      <span class="eyebrow">Error 404</span>
+      <p class="not-found-code" aria-hidden="true">404</p>
+      <h1>Esta página no existe.</h1>
+      <p class="page-lead">
+        Puede que el enlace esté roto o que la página se haya movido. Busca un producto en el
+        catálogo o vuelve al inicio para seguir explorando.
+      </p>
+
+      <form class="not-found-search" (ngSubmit)="buscar()">
+        <label class="visually-hidden" for="busqueda404">Buscar en el catálogo</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            id="busqueda404"
+            class="form-control"
+            type="search"
+            name="q"
+            placeholder="Buscar producto, línea o material…"
+            autocomplete="off"
+            [(ngModel)]="texto"
+          />
+          <button class="btn btn-brand" type="submit">
+            Buscar <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      </form>
+
+      <nav class="not-found-links" aria-label="Enlaces de ayuda">
+        <a class="btn btn-brand" routerLink="/"> <i class="bi bi-house"></i> Ir al inicio </a>
+        <a class="btn btn-outline-ink" routerLink="/productos">
+          <i class="bi bi-grid-3x3-gap"></i> Ver catálogo
+        </a>
+        <a class="btn btn-soft" routerLink="/cotizar">
+          <i class="bi bi-send"></i> Solicitar cotización
+        </a>
+        <a class="btn btn-soft" routerLink="/seguimiento">
+          <i class="bi bi-search"></i> Seguir mi solicitud
+        </a>
+      </nav>
+    </section>
+  </div>
+</div>

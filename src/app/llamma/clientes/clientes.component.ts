@@ -10,29 +10,16 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../auth.service';
+import { ConfirmacionService } from '../confirmacion.service';
+import { SEGMENTOS_CLIENTE, badgeDe, etiquetaDe } from '../estados';
 import { ClienteApi, SegmentoCliente } from '../llamma.models';
 import { LlammaService } from '../llamma.service';
+import { ModalAccesibleDirective } from '../modal-accesible.directive';
 import { UiService } from '../ui.service';
-
-const SEGMENTOS: { valor: SegmentoCliente; etiqueta: string }[] = [
-  { valor: 'corporativo', etiqueta: 'Corporativo' },
-  { valor: 'pyme', etiqueta: 'Pyme' },
-  { valor: 'eventos', etiqueta: 'Eventos' },
-  { valor: 'escolar', etiqueta: 'Escolar' },
-  { valor: 'particular', etiqueta: 'Particular' },
-];
-
-const COLOR_SEGMENTO: Record<string, string> = {
-  corporativo: 'badge-soft-cyan',
-  pyme: 'badge-soft-magenta',
-  eventos: 'badge-soft-yellow',
-  escolar: 'badge-soft-muted',
-  particular: 'badge-soft-success',
-};
 
 @Component({
   selector: 'app-clientes',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, ModalAccesibleDirective],
   templateUrl: './clientes.component.html',
   styleUrl: './clientes.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,10 +27,11 @@ const COLOR_SEGMENTO: Record<string, string> = {
 export class ClientesComponent implements OnInit {
   private readonly service = inject(LlammaService);
   private readonly ui = inject(UiService);
+  private readonly confirmacion = inject(ConfirmacionService);
   private readonly fb = inject(FormBuilder);
   readonly auth = inject(AuthService);
 
-  readonly segmentos = SEGMENTOS;
+  readonly segmentos = SEGMENTOS_CLIENTE;
   readonly clientes = signal<ClienteApi[]>([]);
   readonly todos = signal<ClienteApi[]>([]);
   readonly seleccionado = signal<ClienteApi | null>(null);
@@ -125,7 +113,7 @@ export class ClientesComponent implements OnInit {
   readonly distribucion = computed(() => {
     const todos = this.todos();
     const total = Math.max(1, todos.length);
-    return SEGMENTOS.map((segmento) => {
+    return SEGMENTOS_CLIENTE.map((segmento) => {
       const cantidad = todos.filter((cliente) => cliente.segmento === segmento.valor).length;
       return {
         ...segmento,
@@ -270,19 +258,28 @@ export class ClientesComponent implements OnInit {
         this.cargarTodos();
         this.seleccionado.set(cliente);
       },
-      error: (error) => this.ui.error(this.ui.mensajeDeError(error, 'No pudimos guardar el cliente.')),
+      error: (error) =>
+        this.ui.error(this.ui.mensajeDeError(error, 'No pudimos guardar el cliente.')),
     });
   }
 
-  desactivar(cliente: ClienteApi): void {
-    if (!window.confirm(`¿Desactivar a ${cliente.nombre}? Su historial se conservará.`)) return;
+  async desactivar(cliente: ClienteApi): Promise<void> {
+    const confirmado = await this.confirmacion.confirmar({
+      titulo: 'Desactivar cliente',
+      mensaje: `¿Desactivar a ${cliente.nombre}? Su historial de compras y notas se conservará.`,
+      confirmar: 'Desactivar',
+      peligro: true,
+    });
+    if (!confirmado) return;
+
     this.service.desactivarCliente(cliente.id).subscribe({
       next: () => {
         this.ui.exito('Cliente desactivado.');
         this.cargar(this.pagina());
         this.cargarTodos();
       },
-      error: (error) => this.ui.error(this.ui.mensajeDeError(error, 'No pudimos desactivar el cliente.')),
+      error: (error) =>
+        this.ui.error(this.ui.mensajeDeError(error, 'No pudimos desactivar el cliente.')),
     });
   }
 
@@ -298,10 +295,14 @@ export class ClientesComponent implements OnInit {
       next: (actualizado) => {
         this.seleccionado.set(actualizado);
         this.todos.update((lista) =>
-          lista.map((fila) => (fila.id === actualizado.id ? { ...fila, notas: actualizado.notas } : fila)),
+          lista.map((fila) =>
+            fila.id === actualizado.id ? { ...fila, notas: actualizado.notas } : fila,
+          ),
         );
         this.clientes.update((lista) =>
-          lista.map((fila) => (fila.id === actualizado.id ? { ...fila, notas: actualizado.notas } : fila)),
+          lista.map((fila) =>
+            fila.id === actualizado.id ? { ...fila, notas: actualizado.notas } : fila,
+          ),
         );
         this.notaForm.reset({ nota: '' });
         this.notaAbierta.set(false);
@@ -313,7 +314,17 @@ export class ClientesComponent implements OnInit {
 
   exportar(): void {
     const filas = [
-      ['Nombre', 'Empresa', 'Correo', 'Teléfono', 'RFC', 'Segmento', 'Pedidos', 'Facturado', 'Activo'],
+      [
+        'Nombre',
+        'Empresa',
+        'Correo',
+        'Teléfono',
+        'RFC',
+        'Segmento',
+        'Pedidos',
+        'Facturado',
+        'Activo',
+      ],
       ...this.todos().map((cliente) => [
         cliente.nombre,
         cliente.empresa ?? '',
@@ -342,11 +353,11 @@ export class ClientesComponent implements OnInit {
   }
 
   etiquetaSegmento(segmento: string): string {
-    return SEGMENTOS.find((fila) => fila.valor === segmento)?.etiqueta ?? segmento;
+    return etiquetaDe(SEGMENTOS_CLIENTE, segmento);
   }
 
   claseSegmento(segmento: string): string {
-    return COLOR_SEGMENTO[segmento] ?? 'badge-soft-muted';
+    return badgeDe(SEGMENTOS_CLIENTE, segmento);
   }
 
   iniciales(nombre: string): string {

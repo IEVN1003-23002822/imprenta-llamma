@@ -12,6 +12,8 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../auth.service';
+import { ConfirmacionService } from '../confirmacion.service';
+import { ESTADOS_PRODUCCION, ETAPAS_PRODUCCION, badgeDe, etiquetaDe } from '../estados';
 import {
   ControlCalidadApi,
   EtapaProduccion,
@@ -21,35 +23,12 @@ import {
   TableroProduccion,
 } from '../llamma.models';
 import { LlammaService } from '../llamma.service';
+import { ModalAccesibleDirective } from '../modal-accesible.directive';
 import { UiService } from '../ui.service';
-
-const ETAPAS: Array<{
-  valor: EtapaProduccion;
-  etiqueta: string;
-  icono: string;
-  dot: string;
-}> = [
-  { valor: 'diseno', etiqueta: 'Preprensa', icono: 'bi-vector-pen', dot: 'dot-cyan' },
-  { valor: 'impresion', etiqueta: 'Impresión', icono: 'bi-printer', dot: 'dot-magenta' },
-  { valor: 'laminado', etiqueta: 'Laminado', icono: 'bi-layers', dot: 'dot-cyan' },
-  { valor: 'corte', etiqueta: 'Corte', icono: 'bi-scissors', dot: 'dot-yellow' },
-  { valor: 'confeccion', etiqueta: 'Confección', icono: 'bi-bag', dot: 'dot-magenta' },
-  { valor: 'armado', etiqueta: 'Armado', icono: 'bi-tools', dot: 'dot-yellow' },
-  { valor: 'acabado', etiqueta: 'Acabado', icono: 'bi-stars', dot: 'dot-ink' },
-  { valor: 'entrega', etiqueta: 'Entrega', icono: 'bi-box-seam', dot: 'dot-ink' },
-];
-
-const ESTADOS: Array<{ valor: EstadoProduccion; etiqueta: string; badge: string }> = [
-  { valor: 'pendiente', etiqueta: 'Pendiente', badge: 'badge-soft-muted' },
-  { valor: 'en-proceso', etiqueta: 'En proceso', badge: 'badge-soft-cyan' },
-  { valor: 'pausada', etiqueta: 'Pausada', badge: 'badge-soft-warning' },
-  { valor: 'completada', etiqueta: 'Completada', badge: 'badge-soft-success' },
-  { valor: 'rechazada', etiqueta: 'Rechazada', badge: 'badge-soft-danger' },
-];
 
 @Component({
   selector: 'app-produccion',
-  imports: [DatePipe, ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, ModalAccesibleDirective],
   templateUrl: './produccion.component.html',
   styleUrl: './produccion.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,11 +36,12 @@ const ESTADOS: Array<{ valor: EstadoProduccion; etiqueta: string; badge: string 
 export class ProduccionComponent implements OnInit {
   private readonly service = inject(LlammaService);
   private readonly ui = inject(UiService);
+  private readonly confirmacion = inject(ConfirmacionService);
   private readonly fb = inject(FormBuilder);
   readonly auth = inject(AuthService);
 
-  readonly etapas = ETAPAS;
-  readonly estados = ESTADOS;
+  readonly etapas = ETAPAS_PRODUCCION;
+  readonly estados = ESTADOS_PRODUCCION;
 
   readonly tablero = signal<TableroProduccion | null>(null);
   readonly pedidos = signal<PedidoApi[]>([]);
@@ -96,7 +76,7 @@ export class ProduccionComponent implements OnInit {
     const tablero = this.tablero();
     const porEtapa = new Map<EtapaProduccion, OrdenProduccionApi[]>();
     for (const columna of tablero?.columnas ?? []) porEtapa.set(columna.etapa, columna.ordenes);
-    return ETAPAS.map((etapa) => ({
+    return ETAPAS_PRODUCCION.map((etapa) => ({
       ...etapa,
       ordenes: porEtapa.get(etapa.valor) ?? [],
     }));
@@ -109,7 +89,8 @@ export class ProduccionComponent implements OnInit {
   readonly estadisticas = computed(() => {
     const columnas = this.columnas();
     const total = this.tablero()?.total ?? 0;
-    const enImpresion = columnas.find((columna) => columna.valor === 'impresion')?.ordenes.length ?? 0;
+    const enImpresion =
+      columnas.find((columna) => columna.valor === 'impresion')?.ordenes.length ?? 0;
     const enEntrega = columnas.find((columna) => columna.valor === 'entrega')?.ordenes.length ?? 0;
     const atencion = this.ordenes().filter(
       (orden) => orden.estado === 'pausada' || orden.estado === 'rechazada',
@@ -163,7 +144,9 @@ export class ProduccionComponent implements OnInit {
         ordenId: orden.id,
       })),
     );
-    return filas.sort((a, b) => String(b.control.fecha).localeCompare(String(a.control.fecha))).slice(0, 6);
+    return filas
+      .sort((a, b) => String(b.control.fecha).localeCompare(String(a.control.fecha)))
+      .slice(0, 6);
   });
 
   readonly controlesPendientes = computed(
@@ -189,8 +172,7 @@ export class ProduccionComponent implements OnInit {
           this.cargarDetalles(
             tablero.columnas.flatMap((columna) => columna.ordenes.map((orden) => orden.pedidoId)),
           );
-          const objetivo =
-            seleccionarId ?? this.seleccionada()?.id;
+          const objetivo = seleccionarId ?? this.seleccionada()?.id;
           if (objetivo) {
             const actual = tablero.columnas
               .flatMap((columna) => columna.ordenes)
@@ -200,7 +182,9 @@ export class ProduccionComponent implements OnInit {
           }
         },
         error: (error) => {
-          this.error.set(this.ui.mensajeDeError(error, 'No pudimos cargar el tablero de producción.'));
+          this.error.set(
+            this.ui.mensajeDeError(error, 'No pudimos cargar el tablero de producción.'),
+          );
         },
       });
   }
@@ -274,36 +258,36 @@ export class ProduccionComponent implements OnInit {
   }
 
   progreso(orden: OrdenProduccionApi): number {
-    const indice = ETAPAS.findIndex((etapa) => etapa.valor === orden.etapa);
-    return Math.round(((indice + 1) / ETAPAS.length) * 100);
+    const indice = ETAPAS_PRODUCCION.findIndex((etapa) => etapa.valor === orden.etapa);
+    return Math.round(((indice + 1) / ETAPAS_PRODUCCION.length) * 100);
   }
 
   indiceEtapa(etapa: string): number {
-    return ETAPAS.findIndex((fila) => fila.valor === etapa);
+    return ETAPAS_PRODUCCION.findIndex((fila) => fila.valor === etapa);
   }
 
   etiquetaEtapa(etapa: string): string {
-    return ETAPAS.find((fila) => fila.valor === etapa)?.etiqueta ?? etapa;
+    return ETAPAS_PRODUCCION.find((fila) => fila.valor === etapa)?.etiqueta ?? etapa;
   }
 
   iconoEtapa(etapa: string): string {
-    return ETAPAS.find((fila) => fila.valor === etapa)?.icono ?? 'bi-circle';
+    return ETAPAS_PRODUCCION.find((fila) => fila.valor === etapa)?.icono ?? 'bi-circle';
   }
 
   dotEtapa(etapa: string): string {
-    return `kanban-dot ${ETAPAS.find((fila) => fila.valor === etapa)?.dot ?? 'dot-ink'}`;
+    return `kanban-dot ${ETAPAS_PRODUCCION.find((fila) => fila.valor === etapa)?.dot ?? 'dot-ink'}`;
   }
 
   etiquetaEstado(estado: string): string {
-    return ESTADOS.find((fila) => fila.valor === estado)?.etiqueta ?? estado;
+    return etiquetaDe(ESTADOS_PRODUCCION, estado);
   }
 
   claseEstado(estado: string): string {
-    return ESTADOS.find((fila) => fila.valor === estado)?.badge ?? 'badge-soft-muted';
+    return badgeDe(ESTADOS_PRODUCCION, estado);
   }
 
   puedeAvanzar(orden: OrdenProduccionApi): boolean {
-    return this.indiceEtapa(orden.etapa) < ETAPAS.length - 1;
+    return this.indiceEtapa(orden.etapa) < ETAPAS_PRODUCCION.length - 1;
   }
 
   puedeRetroceder(orden: OrdenProduccionApi): boolean {
@@ -312,7 +296,7 @@ export class ProduccionComponent implements OnInit {
 
   mover(orden: OrdenProduccionApi, delta: number): void {
     const indice = this.indiceEtapa(orden.etapa);
-    const destino = ETAPAS[indice + delta];
+    const destino = ETAPAS_PRODUCCION[indice + delta];
     if (!destino) return;
     this.moviendoId.set(orden.id);
     this.service
@@ -374,13 +358,14 @@ export class ProduccionComponent implements OnInit {
       });
   }
 
-  completar(orden: OrdenProduccionApi): void {
-    if (
-      !window.confirm(
-        `¿Marcar ${orden.pedidoFolio ?? 'la orden'} como completada? El pedido se moverá a Listo.`,
-      )
-    )
-      return;
+  async completar(orden: OrdenProduccionApi): Promise<void> {
+    const confirmado = await this.confirmacion.confirmar({
+      titulo: 'Completar producción',
+      mensaje: `¿Marcar ${orden.pedidoFolio ?? 'la orden'} como completada? El pedido se moverá a Listo.`,
+      confirmar: 'Completar orden',
+    });
+    if (!confirmado) return;
+
     this.guardando.set(true);
     this.service
       .actualizarOrdenProduccion(orden.id, { estado: 'completada' })
@@ -414,13 +399,17 @@ export class ProduccionComponent implements OnInit {
       .subscribe({
         next: (control) => {
           this.ui.exito(
-            control.aprobado ? 'Control de calidad aprobado.' : 'Control de calidad registrado como rechazado.',
+            control.aprobado
+              ? 'Control de calidad aprobado.'
+              : 'Control de calidad registrado como rechazado.',
           );
           this.calidadForm.reset({ criterio: '', aprobado: true, observaciones: '' });
           this.cargar(orden.id);
         },
         error: (error) =>
-          this.ui.error(this.ui.mensajeDeError(error, 'No pudimos registrar el control de calidad.')),
+          this.ui.error(
+            this.ui.mensajeDeError(error, 'No pudimos registrar el control de calidad.'),
+          ),
       });
   }
 

@@ -84,8 +84,9 @@
             <span class="panel-kicker">Cotización guardada</span>
             <h2>{{ cot.folio }}</h2>
             <p>
-              Total {{ moneda(cot.total) }} para {{ cot.cliente || form.controls.nombreCliente.value }}.
-              Ya puedes convertirla en pedido con el anticipo del 50%.
+              Total {{ moneda(cot.total) }} para
+              {{ cot.cliente || form.controls.nombreCliente.value }}. Ya puedes convertirla en
+              pedido con el anticipo del 50%.
             </p>
           </div>
           @if (!pedidoCreado()) {
@@ -148,12 +149,15 @@
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle">
+                <caption class="visually-hidden">
+                  Partidas de la cotización
+                </caption>
                 <thead>
                   <tr>
-                    <th>Producto</th>
-                    <th class="text-center">Cant.</th>
-                    <th class="text-end">P. unitario</th>
-                    <th class="text-end">Importe</th>
+                    <th scope="col">Producto</th>
+                    <th scope="col" class="text-center">Cant.</th>
+                    <th scope="col" class="text-end">P. unitario</th>
+                    <th scope="col" class="text-end">Importe</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -199,11 +203,21 @@
             </div>
 
             <div class="summary-totals">
-              <div><span>Subtotal</span><strong>{{ moneda(subtotal()) }}</strong></div>
-              <div><span>IVA (16%)</span><strong>{{ moneda(impuestos()) }}</strong></div>
-              <div class="summary-total"><span>Total</span><strong>{{ moneda(total()) }}</strong></div>
-              <div><span>Anticipo (50%)</span><strong>{{ moneda(anticipo()) }}</strong></div>
-              <div><span>Saldo</span><strong>{{ moneda(saldo()) }}</strong></div>
+              <div>
+                <span>Subtotal</span><strong>{{ moneda(subtotal()) }}</strong>
+              </div>
+              <div>
+                <span>IVA (16%)</span><strong>{{ moneda(impuestos()) }}</strong>
+              </div>
+              <div class="summary-total">
+                <span>Total</span><strong>{{ moneda(total()) }}</strong>
+              </div>
+              <div>
+                <span>Anticipo (50%)</span><strong>{{ moneda(anticipo()) }}</strong>
+              </div>
+              <div>
+                <span>Saldo</span><strong>{{ moneda(saldo()) }}</strong>
+              </div>
             </div>
 
             @if (!yaConvertida()) {
@@ -214,7 +228,7 @@
                   id="anticipoPagado"
                   [checked]="anticipoPagado()"
                   (change)="toggleAnticipo($event)"
-                >
+                />
                 <label class="form-check-label" for="anticipoPagado">
                   Registrar anticipo de {{ moneda(anticipo()) }} como pagado
                 </label>
@@ -242,7 +256,11 @@
               </div>
             }
 
-            <button class="btn btn-outline-ink w-100 mt-2" type="button" (click)="nuevaCotizacion()">
+            <button
+              class="btn btn-outline-ink w-100 mt-2"
+              type="button"
+              (click)="nuevaCotizacion()"
+            >
               <i class="bi bi-plus-lg"></i> Nueva cotización
             </button>
 
@@ -298,10 +316,22 @@
                     class="form-control"
                     formControlName="nombreCliente"
                     placeholder="Ej. Ana Torres"
-                    [class.is-invalid]="form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid"
-                  >
+                    [attr.aria-invalid]="
+                      form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                    "
+                    [attr.aria-describedby]="
+                      form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                        ? 'clienteNombreError'
+                        : null
+                    "
+                    [class.is-invalid]="
+                      form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                    "
+                  />
                   @if (form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid) {
-                    <span class="field-error">Escribe el nombre del contacto.</span>
+                    <span class="field-error" id="clienteNombreError"
+                      >Escribe el nombre del contacto.</span
+                    >
                   }
                 </div>
                 <div class="col-md-6">
@@ -312,7 +342,7 @@
                     class="form-control"
                     formControlName="empresa"
                     placeholder="Ej. Estudio Nómada"
-                  >
+                  />
                 </div>
                 <div class="col-md-6">
                   <label class="form-label" for="clienteCorreo">Correo electrónico</label>
@@ -322,10 +352,22 @@
                     class="form-control"
                     formControlName="correo"
                     placeholder="nombre&#64;empresa.mx"
-                    [class.is-invalid]="form.controls.correo.touched && form.controls.correo.invalid"
-                  >
+                    [attr.aria-invalid]="
+                      form.controls.correo.touched && form.controls.correo.invalid
+                    "
+                    [attr.aria-describedby]="
+                      form.controls.correo.touched && form.controls.correo.invalid
+                        ? 'clienteCorreoError'
+                        : null
+                    "
+                    [class.is-invalid]="
+                      form.controls.correo.touched && form.controls.correo.invalid
+                    "
+                  />
                   @if (form.controls.correo.touched && form.controls.correo.invalid) {
-                    <span class="field-error">Ingresa un correo válido.</span>
+                    <span class="field-error" id="clienteCorreoError"
+                      >Ingresa un correo válido.</span
+                    >
                   }
                 </div>
                 <div class="col-md-6">
@@ -336,10 +378,22 @@
                     class="form-control"
                     formControlName="telefono"
                     placeholder="55 0000 0000"
-                    [class.is-invalid]="form.controls.telefono.touched && form.controls.telefono.invalid"
-                  >
+                    [attr.aria-invalid]="
+                      form.controls.telefono.touched && form.controls.telefono.invalid
+                    "
+                    [attr.aria-describedby]="
+                      form.controls.telefono.touched && form.controls.telefono.invalid
+                        ? 'clienteTelefonoError'
+                        : null
+                    "
+                    [class.is-invalid]="
+                      form.controls.telefono.touched && form.controls.telefono.invalid
+                    "
+                  />
                   @if (form.controls.telefono.touched && form.controls.telefono.invalid) {
-                    <span class="field-error">Escribe un teléfono de contacto.</span>
+                    <span class="field-error" id="clienteTelefonoError"
+                      >Escribe un teléfono de contacto.</span
+                    >
                   }
                 </div>
                 <div class="col-md-6">
@@ -350,7 +404,7 @@
                     class="form-control"
                     formControlName="rfc"
                     placeholder="RFC con homoclave"
-                  >
+                  />
                 </div>
                 <div class="col-md-6">
                   <label class="form-label" for="clienteSegmento">Segmento</label>
@@ -371,7 +425,7 @@
                     class="form-control"
                     formControlName="direccion"
                     placeholder="Calle, número, colonia y ciudad"
-                  >
+                  />
                 </div>
               </div>
             </section>
@@ -412,7 +466,7 @@
                     placeholder="Ej. Lona impresa 2 × 1 m"
                     [value]="descripcion()"
                     (input)="cambiarDescripcion($event)"
-                  >
+                  />
                 </div>
                 <div class="col-md-4">
                   <label class="form-label" for="productoEspecificaciones">Especificaciones</label>
@@ -423,7 +477,7 @@
                     placeholder="Acabado, medida, tintas..."
                     [value]="especificaciones()"
                     (input)="cambiarEspecificaciones($event)"
-                  >
+                  />
                 </div>
                 <div class="col-4 col-md-2">
                   <label class="form-label" for="productoCantidad">Cantidad</label>
@@ -435,7 +489,7 @@
                     step="1"
                     [value]="cantidad()"
                     (input)="cambiarCantidad($event)"
-                  >
+                  />
                 </div>
                 <div class="col-4 col-md-3">
                   <label class="form-label" for="productoPrecio">Precio unitario</label>
@@ -447,7 +501,7 @@
                     step="0.01"
                     [value]="precio()"
                     (input)="cambiarPrecio($event)"
-                  >
+                  />
                 </div>
                 <div class="col-4 col-md-3">
                   <button class="btn btn-ink w-100" type="button" (click)="agregarPartida()">
@@ -484,13 +538,16 @@
 
               <div class="table-responsive">
                 <table class="table table-llamma align-middle">
+                  <caption class="visually-hidden">
+                    Partidas de la cotización existente
+                  </caption>
                   <thead>
                     <tr>
-                      <th>Producto</th>
-                      <th class="text-center capture-col-qty">Cant.</th>
-                      <th class="text-end capture-col-price">P. unitario</th>
-                      <th class="text-end">Importe</th>
-                      <th></th>
+                      <th scope="col">Producto</th>
+                      <th scope="col" class="text-center capture-col-qty">Cant.</th>
+                      <th scope="col" class="text-end capture-col-price">P. unitario</th>
+                      <th scope="col" class="text-end">Importe</th>
+                      <th scope="col"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -511,7 +568,7 @@
                             [value]="item.cantidad"
                             (input)="actualizarCantidad($index, $event)"
                             [attr.aria-label]="'Cantidad de ' + item.descripcion"
-                          >
+                          />
                         </td>
                         <td>
                           <input
@@ -522,7 +579,7 @@
                             [value]="item.precioUnitario"
                             (input)="actualizarPrecio($index, $event)"
                             [attr.aria-label]="'Precio unitario de ' + item.descripcion"
-                          >
+                          />
                         </td>
                         <td class="text-end cell-main">{{ moneda(item.importe) }}</td>
                         <td class="text-end">
@@ -577,8 +634,13 @@
                     min="1"
                     max="90"
                     formControlName="vigenciaDias"
-                    [class.is-invalid]="form.controls.vigenciaDias.touched && form.controls.vigenciaDias.invalid"
-                  >
+                    [attr.aria-invalid]="
+                      form.controls.vigenciaDias.touched && form.controls.vigenciaDias.invalid
+                    "
+                    [class.is-invalid]="
+                      form.controls.vigenciaDias.touched && form.controls.vigenciaDias.invalid
+                    "
+                  />
                 </div>
                 <div class="col-md-8">
                   <label class="form-label" for="cotizacionNotas">Notas para el cliente</label>
@@ -629,14 +691,29 @@
             }
 
             <div class="summary-totals">
-              <div><span>Subtotal</span><strong>{{ moneda(subtotal()) }}</strong></div>
-              <div><span>IVA (16%)</span><strong>{{ moneda(impuestos()) }}</strong></div>
-              <div class="summary-total"><span>Total</span><strong>{{ moneda(total()) }}</strong></div>
-              <div><span>Anticipo (50%)</span><strong>{{ moneda(anticipo()) }}</strong></div>
-              <div><span>Saldo</span><strong>{{ moneda(saldo()) }}</strong></div>
+              <div>
+                <span>Subtotal</span><strong>{{ moneda(subtotal()) }}</strong>
+              </div>
+              <div>
+                <span>IVA (16%)</span><strong>{{ moneda(impuestos()) }}</strong>
+              </div>
+              <div class="summary-total">
+                <span>Total</span><strong>{{ moneda(total()) }}</strong>
+              </div>
+              <div>
+                <span>Anticipo (50%)</span><strong>{{ moneda(anticipo()) }}</strong>
+              </div>
+              <div>
+                <span>Saldo</span><strong>{{ moneda(saldo()) }}</strong>
+              </div>
             </div>
 
-            <button class="btn btn-brand w-100" type="button" [disabled]="guardando()" (click)="guardar()">
+            <button
+              class="btn btn-brand w-100"
+              type="button"
+              [disabled]="guardando()"
+              (click)="guardar()"
+            >
               @if (guardando()) {
                 <i class="bi bi-hourglass-split"></i> Guardando cotización...
               } @else {

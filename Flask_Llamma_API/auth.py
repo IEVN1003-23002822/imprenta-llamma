@@ -50,10 +50,14 @@ def revocar_sesion(sesion: SesionUsuario) -> None:
 
 
 def _leer_token() -> str | None:
+    """Solo acepta el token por cabecera.
+
+    Aceptarlo por `?token=` lo filtraba a logs, historial y cabecera Referer.
+    """
     encabezado = request.headers.get("Authorization", "")
     if encabezado.lower().startswith("bearer "):
         return encabezado[7:].strip()
-    return request.headers.get("X-Auth-Token") or request.args.get("token")
+    return request.headers.get("X-Auth-Token") or None
 
 
 def sesion_actual() -> SesionUsuario | None:

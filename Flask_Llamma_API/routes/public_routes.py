@@ -17,6 +17,7 @@ from models import (
     SolicitudItem,
     utcnow,
 )
+from ratelimit import cliente_ip, demasiadas_peticiones, excedido
 from routes.helpers import (
     MAX_MENSAJE_CHAT,
     campo,
@@ -37,6 +38,21 @@ def _solicitud_por_credenciales(folio: str, correo: str) -> SolicitudCotizacion 
     if not solicitud or solicitud.correo.lower() != correo.strip().lower():
         return None
     return solicitud
+
+
+def _limitar_consultas(folio: str):
+    """Evita enumerar folios a fuerza de probar folio + correo."""
+    espera = excedido(
+        (
+            "consulta-publica",
+            f"{cliente_ip()}|{folio.strip().upper()[:20]}",
+            current_app.config["PUBLICO_MAX_CONSULTAS"],
+            current_app.config["PUBLICO_VENTANA_CONSULTAS_SEGUNDOS"],
+        )
+    )
+    if espera is None:
+        return None
+    return demasiadas_peticiones(espera, "Demasiadas consultas. Espera un momento.")
 
 
 @public_bp.get("/health")
@@ -107,6 +123,19 @@ def opciones_publicas():
 
 @public_bp.post("/public/solicitudes")
 def crear_solicitud():
+    espera = excedido(
+        (
+            "solicitud-publica",
+            cliente_ip(),
+            current_app.config["PUBLICO_MAX_SOLICITUDES"],
+            current_app.config["PUBLICO_VENTANA_SEGUNDOS"],
+        )
+    )
+    if espera is not None:
+        return demasiadas_peticiones(
+            espera, "Recibimos varias solicitudes desde tu conexión. Intenta más tarde."
+        )
+
     data = payload()
 
     nombre = str(campo(data, "nombreCliente", "nombre_cliente", "nombre", default="")).strip()
@@ -229,6 +258,10 @@ def crear_solicitud():
 
 @public_bp.get("/public/solicitudes/<folio>")
 def consultar_solicitud(folio: str):
+    limitado = _limitar_consultas(folio)
+    if limitado:
+        return limitado
+
     correo = (request.args.get("correo") or "").strip().lower()
     if not correo:
         return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")
@@ -269,6 +302,10 @@ def consultar_solicitud(folio: str):
 
 @public_bp.get("/public/solicitudes/<folio>/mensajes")
 def listar_mensajes_solicitud(folio: str):
+    limitado = _limitar_consultas(folio)
+    if limitado:
+        return limitado
+
     correo = (request.args.get("correo") or "").strip().lower()
     if not correo:
         return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")
@@ -288,6 +325,19 @@ def listar_mensajes_solicitud(folio: str):
 
 @public_bp.post("/public/solicitudes/<folio>/mensajes")
 def enviar_mensaje_solicitud(folio: str):
+    espera = excedido(
+        (
+            "chat-publico",
+            f"{cliente_ip()}|{folio.strip().upper()[:20]}",
+            current_app.config["CHAT_MAX_MENSAJES"],
+            current_app.config["CHAT_VENTANA_SEGUNDOS"],
+        )
+    )
+    if espera is not None:
+        return demasiadas_peticiones(
+            espera, "Enviaste varios mensajes seguidos. Espera un momento para continuar."
+        )
+
     data = payload()
     correo = str(campo(data, "correo", "email", default="")).strip().lower()
     if not correo:
@@ -341,6 +391,10 @@ def enviar_mensaje_solicitud(folio: str):
 
 @public_bp.get("/public/solicitudes/<folio>/mensajes/<int:mensaje_id>/archivo")
 def descargar_adjunto_mensaje(folio: str, mensaje_id: int):
+    limitado = _limitar_consultas(folio)
+    if limitado:
+        return limitado
+
     correo = (request.args.get("correo") or "").strip().lower()
     if not correo:
         return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")

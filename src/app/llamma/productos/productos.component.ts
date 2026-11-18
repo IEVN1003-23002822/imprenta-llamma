@@ -7,10 +7,18 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../auth.service';
+import { ConfirmacionService } from '../confirmacion.service';
+import {
+  CATEGORIAS_PRODUCTO,
+  LINEAS_PRODUCCION,
+  UNIDADES,
+  etiquetaDe,
+  mapaCortas,
+} from '../estados';
 import {
   CategoriaProducto,
   LineaProduccion,
@@ -19,49 +27,20 @@ import {
   UnidadMedida,
 } from '../llamma.models';
 import { LlammaService } from '../llamma.service';
+import { ModalAccesibleDirective } from '../modal-accesible.directive';
 import { UiService } from '../ui.service';
 
-const LINEAS: { clave: LineaProduccion | ''; etiqueta: string }[] = [
-  { clave: '', etiqueta: 'Todas las líneas' },
-  { clave: 'gran-formato', etiqueta: 'Gran formato' },
-  { clave: 'textil', etiqueta: 'Textil' },
-  { clave: 'promocionales', etiqueta: 'Promocionales' },
-  { clave: 'papeleria', etiqueta: 'Papelería' },
+const LINEAS: { valor: LineaProduccion | ''; etiqueta: string }[] = [
+  { valor: '', etiqueta: 'Todas las líneas' },
+  ...LINEAS_PRODUCCION,
 ];
 
-const CATEGORIAS: { valor: CategoriaProducto; etiqueta: string }[] = [
-  { valor: 'display', etiqueta: 'Display' },
-  { valor: 'senaletica', etiqueta: 'Señalética' },
-  { valor: 'rotulacion', etiqueta: 'Rotulación' },
-  { valor: 'bastidor', etiqueta: 'Bastidor' },
-  { valor: 'textil', etiqueta: 'Textil' },
-  { valor: 'promocional', etiqueta: 'Promocional' },
-  { valor: 'papeleria', etiqueta: 'Papelería' },
-  { valor: 'otro', etiqueta: 'Otro' },
-];
-
-const UNIDADES: Record<UnidadMedida, string> = {
-  m2: 'm²',
-  ml: 'ml',
-  pieza: 'pieza',
-  hoja: 'hoja',
-  kg: 'kg',
-  litro: 'litro',
-};
-
-const UNIDADES_FORM: Array<{ valor: UnidadMedida; etiqueta: string }> = [
-  { valor: 'pieza', etiqueta: 'Pieza' },
-  { valor: 'm2', etiqueta: 'Metro cuadrado (m²)' },
-  { valor: 'ml', etiqueta: 'Metro lineal (ml)' },
-  { valor: 'hoja', etiqueta: 'Hoja' },
-  { valor: 'kg', etiqueta: 'Kilogramo' },
-  { valor: 'litro', etiqueta: 'Litro' },
-];
+const UNIDAD_CORTA = mapaCortas(UNIDADES);
 
 /** Catálogo público con gestión interna para admin y ventas. */
 @Component({
   selector: 'app-productos',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ModalAccesibleDirective],
   templateUrl: './productos.component.html',
   styleUrl: './productos.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,7 +48,9 @@ const UNIDADES_FORM: Array<{ valor: UnidadMedida; etiqueta: string }> = [
 export class ProductosComponent implements OnInit {
   private readonly service = inject(LlammaService);
   private readonly ui = inject(UiService);
+  private readonly confirmacion = inject(ConfirmacionService);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
   readonly auth = inject(AuthService);
 
   readonly productos = signal<ProductoPublico[]>([]);
@@ -80,8 +61,8 @@ export class ProductosComponent implements OnInit {
   readonly busqueda = signal('');
 
   readonly lineas = LINEAS;
-  readonly categorias = CATEGORIAS;
-  readonly unidadesForm = UNIDADES_FORM;
+  readonly categorias = CATEGORIAS_PRODUCTO;
+  readonly unidadesForm = UNIDADES;
 
   readonly puedeGestionar = computed(() => this.auth.tieneRol('admin', 'ventas'));
 
@@ -93,6 +74,7 @@ export class ProductosComponent implements OnInit {
   readonly editando = signal<ProductoApi | null>(null);
   readonly guardando = signal(false);
   readonly cambiandoId = signal<number | null>(null);
+  readonly imagenesConError = signal<ReadonlySet<number>>(new Set());
 
   readonly formulario = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.minLength(2)]],
@@ -102,6 +84,7 @@ export class ProductosComponent implements OnInit {
     precioBase: [0, [Validators.required, Validators.min(0)]],
     unidadVenta: ['pieza' as UnidadMedida, [Validators.required]],
     icono: ['bi-box-seam'],
+    imagenUrl: [''],
     publicado: [true],
     activo: [true],
   });
@@ -140,13 +123,15 @@ export class ProductosComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const termino = this.route.snapshot.queryParamMap.get('q');
+    if (termino) this.busqueda.set(termino);
     this.cargarPublico();
   }
 
-  cargarPublico(): void {
+  cargarPublico(refrescar = false): void {
     this.cargando.set(true);
     this.error.set(null);
-    this.service.listarProductosPublicos().subscribe({
+    this.service.listarProductosPublicos(refrescar).subscribe({
       next: (respuesta) => {
         this.productos.set(respuesta.items);
         this.cargando.set(false);
@@ -206,6 +191,7 @@ export class ProductosComponent implements OnInit {
       precioBase: 0,
       unidadVenta: 'pieza',
       icono: 'bi-box-seam',
+      imagenUrl: '',
       publicado: true,
       activo: true,
     });
@@ -222,6 +208,7 @@ export class ProductosComponent implements OnInit {
       precioBase: Number(producto.precioBase ?? 0),
       unidadVenta: producto.unidadVenta,
       icono: producto.icono ?? 'bi-box-seam',
+      imagenUrl: producto.imagenUrl ?? '',
       publicado: producto.publicado,
       activo: producto.activo,
     });
@@ -247,6 +234,7 @@ export class ProductosComponent implements OnInit {
       precioBase: Number(valores.precioBase),
       unidadVenta: valores.unidadVenta,
       icono: valores.icono.trim() || 'bi-box-seam',
+      imagenUrl: valores.imagenUrl.trim() || null,
       publicado: valores.publicado,
       activo: valores.activo,
     };
@@ -260,7 +248,7 @@ export class ProductosComponent implements OnInit {
         this.ui.exito(edicion ? 'Producto actualizado.' : 'Producto creado.');
         this.volverLista();
         this.cargarAdmin();
-        this.cargarPublico();
+        this.cargarPublico(true);
       },
       error: (error) =>
         this.ui.error(this.ui.mensajeDeError(error, 'No pudimos guardar el producto.')),
@@ -280,21 +268,23 @@ export class ProductosComponent implements OnInit {
               ? `${actualizado.nombre} ya aparece en el catálogo.`
               : `${actualizado.nombre} se ocultó del catálogo.`,
           );
-          this.cargarPublico();
+          this.cargarPublico(true);
         },
         error: (error) =>
           this.ui.error(this.ui.mensajeDeError(error, 'No pudimos cambiar la publicación.')),
       });
   }
 
-  alternarActivo(producto: ProductoApi): void {
+  async alternarActivo(producto: ProductoApi): Promise<void> {
     if (producto.activo) {
-      if (
-        !window.confirm(
-          `¿Dar de baja ${producto.nombre}? Se ocultará del catálogo pero conservará su historial.`,
-        )
-      )
-        return;
+      const confirmado = await this.confirmacion.confirmar({
+        titulo: 'Dar de baja producto',
+        mensaje: `¿Dar de baja ${producto.nombre}? Se ocultará del catálogo pero conservará su historial.`,
+        confirmar: 'Dar de baja',
+        peligro: true,
+      });
+      if (!confirmado) return;
+
       this.cambiandoId.set(producto.id);
       this.service
         .desactivarProducto(producto.id)
@@ -303,7 +293,7 @@ export class ProductosComponent implements OnInit {
           next: () => {
             this.ui.exito('Producto dado de baja.');
             this.cargarAdmin();
-            this.cargarPublico();
+            this.cargarPublico(true);
           },
           error: (error) =>
             this.ui.error(this.ui.mensajeDeError(error, 'No pudimos dar de baja el producto.')),
@@ -319,7 +309,7 @@ export class ProductosComponent implements OnInit {
         next: (actualizado) => {
           this.actualizarEnLista(actualizado);
           this.ui.exito('Producto reactivado.');
-          this.cargarPublico();
+          this.cargarPublico(true);
         },
         error: (error) =>
           this.ui.error(this.ui.mensajeDeError(error, 'No pudimos reactivar el producto.')),
@@ -327,9 +317,7 @@ export class ProductosComponent implements OnInit {
   }
 
   private actualizarEnLista(producto: ProductoApi): void {
-    this.admin.update((lista) =>
-      lista.map((fila) => (fila.id === producto.id ? producto : fila)),
-    );
+    this.admin.update((lista) => lista.map((fila) => (fila.id === producto.id ? producto : fila)));
   }
 
   moneda(valor: number): string {
@@ -341,14 +329,19 @@ export class ProductosComponent implements OnInit {
   }
 
   unidad(unidad: UnidadMedida): string {
-    return UNIDADES[unidad] ?? unidad;
+    return UNIDAD_CORTA[unidad] ?? unidad;
+  }
+
+  /** Si la foto no existe o está rota, la tarjeta vuelve al icono. */
+  marcarImagenRota(id: number): void {
+    this.imagenesConError.update((actuales) => new Set(actuales).add(id));
   }
 
   etiquetaLinea(linea: LineaProduccion | string): string {
-    return LINEAS.find((opcion) => opcion.clave === linea)?.etiqueta ?? linea;
+    return etiquetaDe(LINEAS, linea);
   }
 
   etiquetaCategoria(categoria: string): string {
-    return CATEGORIAS.find((opcion) => opcion.valor === categoria)?.etiqueta ?? categoria;
+    return etiquetaDe(CATEGORIAS_PRODUCTO, categoria);
   }
 }

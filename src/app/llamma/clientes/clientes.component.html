@@ -28,7 +28,9 @@
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
             </span>
-            <div><strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span></div>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
           </div>
         </div>
       }
@@ -45,7 +47,10 @@
             <div class="d-flex align-items-center gap-2">
               <span class="badge badge-soft-success">{{ total() }} cuentas</span>
               @if (cargando()) {
-                <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+                <span
+                  class="spinner-border spinner-border-sm text-primary"
+                  aria-hidden="true"
+                ></span>
               }
             </div>
           </div>
@@ -65,7 +70,11 @@
               </div>
             </div>
             <div class="col-6 col-lg-3">
-              <select class="form-select" aria-label="Filtrar por segmento" formControlName="segmento">
+              <select
+                class="form-select"
+                aria-label="Filtrar por segmento"
+                formControlName="segmento"
+              >
                 <option value="">Todos los segmentos</option>
                 @for (segmento of segmentos; track segmento.valor) {
                   <option [value]="segmento.valor">{{ segmento.etiqueta }}</option>
@@ -74,12 +83,21 @@
             </div>
             <div class="col-6 col-lg-3">
               <div class="d-flex gap-2">
-                <select class="form-select" aria-label="Filtrar por estado" formControlName="estado">
+                <select
+                  class="form-select"
+                  aria-label="Filtrar por estado"
+                  formControlName="estado"
+                >
                   <option value="">Todo estado</option>
                   <option value="activo">Activo</option>
                   <option value="inactivo">Inactivo</option>
                 </select>
-                <button class="btn btn-soft" type="button" aria-label="Limpiar filtros" (click)="limpiar()">
+                <button
+                  class="btn btn-soft"
+                  type="button"
+                  aria-label="Limpiar filtros"
+                  (click)="limpiar()"
+                >
                   <i class="bi bi-arrow-counterclockwise"></i>
                 </button>
               </div>
@@ -98,15 +116,18 @@
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle">
+              <caption class="visually-hidden">
+                Directorio de clientes
+              </caption>
               <thead>
                 <tr>
-                  <th>Cliente</th>
-                  <th>Segmento</th>
-                  <th>Contacto</th>
-                  <th class="text-center">Pedidos</th>
-                  <th>Alta</th>
-                  <th class="text-end">Total</th>
-                  <th>Estado</th>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Segmento</th>
+                  <th scope="col">Contacto</th>
+                  <th scope="col" class="text-center">Pedidos</th>
+                  <th scope="col">Alta</th>
+                  <th scope="col" class="text-end">Total</th>
+                  <th scope="col">Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -140,7 +161,10 @@
                     <td>{{ fechaCorta(cliente.fechaRegistro) }}</td>
                     <td class="text-end cell-main">{{ moneda(cliente.totalFacturado) }}</td>
                     <td>
-                      <span class="badge" [class]="cliente.activo ? 'badge-soft-success' : 'badge-soft-muted'">
+                      <span
+                        class="badge"
+                        [class]="cliente.activo ? 'badge-soft-success' : 'badge-soft-muted'"
+                      >
                         {{ cliente.activo ? 'Activo' : 'Inactivo' }}
                       </span>
                     </td>
@@ -162,17 +186,29 @@
             <nav aria-label="Paginación de clientes">
               <ul class="pagination pagination-sm mb-0">
                 <li class="page-item" [class.disabled]="pagina() <= 1">
-                  <button class="page-link" type="button" aria-label="Anterior" (click)="cargar(pagina() - 1)">
+                  <button
+                    class="page-link"
+                    type="button"
+                    aria-label="Anterior"
+                    (click)="cargar(pagina() - 1)"
+                  >
                     <i class="bi bi-chevron-left"></i>
                   </button>
                 </li>
                 @for (numero of listaPaginas(); track numero) {
                   <li class="page-item" [class.active]="numero === pagina()">
-                    <button class="page-link" type="button" (click)="cargar(numero)">{{ numero }}</button>
+                    <button class="page-link" type="button" (click)="cargar(numero)">
+                      {{ numero }}
+                    </button>
                   </li>
                 }
                 <li class="page-item" [class.disabled]="pagina() >= paginas()">
-                  <button class="page-link" type="button" aria-label="Siguiente" (click)="cargar(pagina() + 1)">
+                  <button
+                    class="page-link"
+                    type="button"
+                    aria-label="Siguiente"
+                    (click)="cargar(pagina() + 1)"
+                  >
                     <i class="bi bi-chevron-right"></i>
                   </button>
                 </li>
@@ -197,16 +233,24 @@
             </div>
 
             <ul class="profile-contact">
-              <li><i class="bi bi-building"></i> {{ cliente.empresa || 'Sin empresa registrada' }}</li>
+              <li>
+                <i class="bi bi-building"></i> {{ cliente.empresa || 'Sin empresa registrada' }}
+              </li>
               <li><i class="bi bi-envelope"></i> {{ cliente.correo }}</li>
               <li><i class="bi bi-telephone"></i> {{ cliente.telefono || 'Sin teléfono' }}</li>
               <li><i class="bi bi-geo-alt"></i> {{ cliente.direccion || 'Sin dirección' }}</li>
             </ul>
 
             <div class="profile-stats">
-              <div><strong>{{ cliente.totalPedidos ?? 0 }}</strong><span>Pedidos</span></div>
-              <div><strong>{{ moneda(cliente.totalFacturado) }}</strong><span>Facturado</span></div>
-              <div><strong>{{ ticket(cliente) }}</strong><span>Ticket</span></div>
+              <div>
+                <strong>{{ cliente.totalPedidos ?? 0 }}</strong><span>Pedidos</span>
+              </div>
+              <div>
+                <strong>{{ moneda(cliente.totalFacturado) }}</strong><span>Facturado</span>
+              </div>
+              <div>
+                <strong>{{ ticket(cliente) }}</strong><span>Ticket</span>
+              </div>
             </div>
 
             <div class="client-tags">
@@ -223,7 +267,11 @@
               </button>
             }
             @if (puedeDesactivar() && cliente.activo) {
-              <button class="btn btn-outline-ink w-100 mt-2" type="button" (click)="desactivar(cliente)">
+              <button
+                class="btn btn-outline-ink w-100 mt-2"
+                type="button"
+                (click)="desactivar(cliente)"
+              >
                 <i class="bi bi-person-dash"></i> Desactivar cliente
               </button>
             }
@@ -247,13 +295,19 @@
                   </div>
                 </div>
               } @empty {
-                <p class="text-muted mb-0 small">Este cliente todavía no tiene notas de seguimiento.</p>
+                <p class="text-muted mb-0 small">
+                  Este cliente todavía no tiene notas de seguimiento.
+                </p>
               }
             </div>
 
             @if (puedeGestionar()) {
               @if (!notaAbierta()) {
-                <button class="btn btn-outline-ink w-100 mt-3" type="button" (click)="notaAbierta.set(true)">
+                <button
+                  class="btn btn-outline-ink w-100 mt-3"
+                  type="button"
+                  (click)="notaAbierta.set(true)"
+                >
                   <i class="bi bi-journal-plus"></i> Agregar nota
                 </button>
               } @else {
@@ -262,13 +316,22 @@
                     class="form-control"
                     rows="2"
                     placeholder="Escribe una nota de seguimiento…"
+                    aria-label="Nota de seguimiento del cliente"
                     formControlName="nota"
                   ></textarea>
                   <div class="d-flex gap-2 mt-2">
-                    <button class="btn btn-brand btn-sm flex-grow-1" type="submit" [disabled]="notaForm.invalid">
+                    <button
+                      class="btn btn-brand btn-sm flex-grow-1"
+                      type="submit"
+                      [disabled]="notaForm.invalid"
+                    >
                       Guardar nota
                     </button>
-                    <button class="btn btn-outline-ink btn-sm" type="button" (click)="notaAbierta.set(false)">
+                    <button
+                      class="btn btn-outline-ink btn-sm"
+                      type="button"
+                      (click)="notaAbierta.set(false)"
+                    >
                       Cancelar
                     </button>
                   </div>
@@ -312,18 +375,31 @@
 </div>
 
 @if (formularioAbierto()) {
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarFormulario()"
+    style="z-index: 1055"
+  >
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <form [formGroup]="formulario" (ngSubmit)="guardar()">
           <div class="modal-header">
             <div>
-              <span class="panel-kicker">{{ editando() ? 'Editar cliente' : 'Alta de cliente' }}</span>
+              <span class="panel-kicker">{{
+                editando() ? 'Editar cliente' : 'Alta de cliente'
+              }}</span>
               <h2 class="modal-title h5 mb-0">
                 {{ editando() ? editando()!.nombre : 'Nuevo cliente' }}
               </h2>
             </div>
-            <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarFormulario()">
+            <button
+              class="btn btn-icon"
+              type="button"
+              aria-label="Cerrar"
+              (click)="cerrarFormulario()"
+            >
               <i class="bi bi-x-lg"></i>
             </button>
           </div>
@@ -343,7 +419,12 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label" for="clienteCorreo">Correo *</label>
-                <input id="clienteCorreo" type="email" class="form-control" formControlName="correo" />
+                <input
+                  id="clienteCorreo"
+                  type="email"
+                  class="form-control"
+                  formControlName="correo"
+                />
                 @if (formulario.controls.correo.invalid && formulario.controls.correo.touched) {
                   <small class="text-danger">Captura un correo válido.</small>
                 }
@@ -370,11 +451,21 @@
               </div>
               <div class="col-12">
                 <label class="form-label" for="clienteNotas">Notas</label>
-                <textarea id="clienteNotas" class="form-control" rows="3" formControlName="notas"></textarea>
+                <textarea
+                  id="clienteNotas"
+                  class="form-control"
+                  rows="3"
+                  formControlName="notas"
+                ></textarea>
               </div>
               <div class="col-12">
                 <div class="form-check form-switch">
-                  <input id="clienteActivo" class="form-check-input" type="checkbox" formControlName="activo" />
+                  <input
+                    id="clienteActivo"
+                    class="form-check-input"
+                    type="checkbox"
+                    formControlName="activo"
+                  />
                   <label class="form-check-label" for="clienteActivo">Cliente activo</label>
                 </div>
               </div>
@@ -382,7 +473,9 @@
           </div>
 
           <div class="modal-footer">
-            <button class="btn btn-outline-ink" type="button" (click)="cerrarFormulario()">Cancelar</button>
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarFormulario()">
+              Cancelar
+            </button>
             <button class="btn btn-brand" type="submit" [disabled]="guardando()">
               <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
               {{ guardando() ? 'Guardando…' : 'Guardar cliente' }}

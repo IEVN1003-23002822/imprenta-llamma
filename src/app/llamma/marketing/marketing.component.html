@@ -25,7 +25,9 @@
       <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
         <span class="flex-grow-1">{{ error() }}</span>
-        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">Reintentar</button>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
+          Reintentar
+        </button>
       </div>
     }
 
@@ -36,7 +38,9 @@
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
             </span>
-            <div><strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span></div>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
           </div>
         </div>
       }
@@ -53,7 +57,10 @@
             <div class="d-flex align-items-center gap-2">
               <span class="badge badge-soft-muted">{{ filtradas().length }} campañas</span>
               @if (cargando()) {
-                <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+                <span
+                  class="spinner-border spinner-border-sm text-primary"
+                  aria-hidden="true"
+                ></span>
               }
             </div>
           </div>
@@ -97,16 +104,19 @@
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle">
+              <caption class="visually-hidden">
+                Campañas registradas
+              </caption>
               <thead>
                 <tr>
-                  <th>Campaña</th>
-                  <th>Periodo</th>
-                  <th class="text-end">Inversión</th>
-                  <th class="text-end">Ingreso</th>
-                  <th class="text-end">ROI</th>
-                  <th>Estado</th>
+                  <th scope="col">Campaña</th>
+                  <th scope="col">Periodo</th>
+                  <th scope="col" class="text-end">Inversión</th>
+                  <th scope="col" class="text-end">Ingreso</th>
+                  <th scope="col" class="text-end">ROI</th>
+                  <th scope="col">Estado</th>
                   @if (puedeGestionar()) {
-                    <th class="text-end">Acciones</th>
+                    <th scope="col" class="text-end">Acciones</th>
                   }
                 </tr>
               </thead>
@@ -115,7 +125,10 @@
                   <tr>
                     <td>
                       <div class="campaign-cell">
-                        <span class="icon-tile icon-tile-sm" [class]="'icon-tile icon-tile-sm ' + tonoCanal(actividad.canal)">
+                        <span
+                          class="icon-tile icon-tile-sm"
+                          [class]="'icon-tile icon-tile-sm ' + tonoCanal(actividad.canal)"
+                        >
                           <i class="bi" [class]="'bi ' + iconoCanal(actividad.canal)"></i>
                         </span>
                         <div>
@@ -146,7 +159,10 @@
                           [attr.aria-label]="'Estado de ' + actividad.nombre"
                         >
                           @for (estado of estados; track estado.valor) {
-                            <option [value]="estado.valor" [selected]="estado.valor === actividad.estado">
+                            <option
+                              [value]="estado.valor"
+                              [selected]="estado.valor === actividad.estado"
+                            >
                               {{ estado.etiqueta }}
                             </option>
                           }
@@ -173,7 +189,10 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td [attr.colspan]="puedeGestionar() ? 7 : 6" class="text-center text-muted py-5">
+                    <td
+                      [attr.colspan]="puedeGestionar() ? 7 : 6"
+                      class="text-center text-muted py-5"
+                    >
                       <i class="bi bi-megaphone d-block fs-4 mb-2"></i>
                       No hay campañas con esos filtros.
                     </td>
@@ -188,17 +207,29 @@
             <nav aria-label="Paginación de campañas">
               <ul class="pagination pagination-sm mb-0">
                 <li class="page-item" [class.disabled]="pagina() <= 1">
-                  <button class="page-link" type="button" aria-label="Anterior" (click)="irA(pagina() - 1)">
+                  <button
+                    class="page-link"
+                    type="button"
+                    aria-label="Anterior"
+                    (click)="irA(pagina() - 1)"
+                  >
                     <i class="bi bi-chevron-left"></i>
                   </button>
                 </li>
                 @for (numero of listaPaginas(); track numero) {
                   <li class="page-item" [class.active]="numero === pagina()">
-                    <button class="page-link" type="button" (click)="irA(numero)">{{ numero }}</button>
+                    <button class="page-link" type="button" (click)="irA(numero)">
+                      {{ numero }}
+                    </button>
                   </li>
                 }
                 <li class="page-item" [class.disabled]="pagina() >= paginas()">
-                  <button class="page-link" type="button" aria-label="Siguiente" (click)="irA(pagina() + 1)">
+                  <button
+                    class="page-link"
+                    type="button"
+                    aria-label="Siguiente"
+                    (click)="irA(pagina() + 1)"
+                  >
                     <i class="bi bi-chevron-right"></i>
                   </button>
                 </li>
@@ -238,7 +269,10 @@
 
           <div class="quote-note">
             <i class="bi bi-info-circle"></i>
-            <span>El ingreso atribuido se calcula con el primer contacto registrado en cada pedido.</span>
+            <span
+              >El ingreso atribuido se calcula con el primer contacto registrado en cada
+              pedido.</span
+            >
           </div>
 
           <a class="btn btn-outline-ink w-100 mt-auto" routerLink="/clientes">
@@ -293,7 +327,10 @@
               <span class="panel-kicker">Presupuesto</span>
               <h2>Inversión vs. plan</h2>
             </div>
-            <span class="badge" [class]="presupuesto().porcentaje > 100 ? 'badge-soft-danger' : 'badge-soft-success'">
+            <span
+              class="badge"
+              [class]="presupuesto().porcentaje > 100 ? 'badge-soft-danger' : 'badge-soft-success'"
+            >
               {{ presupuesto().porcentaje }}% ejercido
             </span>
           </div>
@@ -343,18 +380,31 @@
 </div>
 
 @if (formularioAbierto()) {
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarFormulario()"
+    style="z-index: 1055"
+  >
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <form [formGroup]="formulario" (ngSubmit)="guardar()">
           <div class="modal-header">
             <div>
-              <span class="panel-kicker">{{ editando() ? 'Editar campaña' : 'Nueva campaña' }}</span>
+              <span class="panel-kicker">{{
+                editando() ? 'Editar campaña' : 'Nueva campaña'
+              }}</span>
               <h2 class="modal-title h5 mb-0">
                 {{ editando() ? editando()!.nombre : 'Registrar campaña' }}
               </h2>
             </div>
-            <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarFormulario()">
+            <button
+              class="btn btn-icon"
+              type="button"
+              aria-label="Cerrar"
+              (click)="cerrarFormulario()"
+            >
               <i class="bi bi-x-lg"></i>
             </button>
           </div>
@@ -386,7 +436,12 @@
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="campInicio">Inicio *</label>
-                <input id="campInicio" type="date" class="form-control" formControlName="fechaInicio" />
+                <input
+                  id="campInicio"
+                  type="date"
+                  class="form-control"
+                  formControlName="fechaInicio"
+                />
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="campFin">Fin</label>
@@ -394,15 +449,36 @@
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="campPresupuesto">Presupuesto</label>
-                <input id="campPresupuesto" type="number" min="0" step="0.01" class="form-control" formControlName="presupuesto" />
+                <input
+                  id="campPresupuesto"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="presupuesto"
+                />
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="campInversion">Inversión real</label>
-                <input id="campInversion" type="number" min="0" step="0.01" class="form-control" formControlName="inversionReal" />
+                <input
+                  id="campInversion"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="inversionReal"
+                />
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="campIngresos">Ingresos atribuidos</label>
-                <input id="campIngresos" type="number" min="0" step="0.01" class="form-control" formControlName="ingresosAtribuidos" />
+                <input
+                  id="campIngresos"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="ingresosAtribuidos"
+                />
               </div>
               <div class="col-12">
                 <label class="form-label" for="campDescripcion">Descripción</label>
@@ -425,7 +501,9 @@
           </div>
 
           <div class="modal-footer">
-            <button class="btn btn-outline-ink" type="button" (click)="cerrarFormulario()">Cancelar</button>
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarFormulario()">
+              Cancelar
+            </button>
             <button class="btn btn-brand" type="submit" [disabled]="guardando()">
               <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
               {{ guardando() ? 'Guardando…' : 'Guardar campaña' }}

@@ -11,29 +11,11 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../auth.service';
-import {
-  ActividadMarketingApi,
-  CanalMarketing,
-  EstadoActividadMarketing,
-} from '../llamma.models';
+import { CANALES_MARKETING, ESTADOS_ACTIVIDAD, badgeDe, etiquetaDe } from '../estados';
+import { ActividadMarketingApi, CanalMarketing, EstadoActividadMarketing } from '../llamma.models';
 import { LlammaService } from '../llamma.service';
+import { ModalAccesibleDirective } from '../modal-accesible.directive';
 import { UiService } from '../ui.service';
-
-const CANALES: Array<{ valor: CanalMarketing; etiqueta: string; icono: string; dot: string }> = [
-  { valor: 'redes-sociales', etiqueta: 'Redes sociales', icono: 'bi-camera', dot: 'dot-cyan' },
-  { valor: 'google-ads', etiqueta: 'Google Ads', icono: 'bi-google', dot: 'dot-yellow' },
-  { valor: 'correo', etiqueta: 'Email', icono: 'bi-envelope-paper', dot: 'dot-ink' },
-  { valor: 'punto-de-venta', etiqueta: 'Punto de venta', icono: 'bi-shop', dot: 'dot-magenta' },
-  { valor: 'referidos', etiqueta: 'Referidos', icono: 'bi-people', dot: 'dot-cyan' },
-  { valor: 'otro', etiqueta: 'Otro', icono: 'bi-three-dots', dot: 'dot-ink' },
-];
-
-const ESTADOS: Array<{ valor: EstadoActividadMarketing; etiqueta: string; badge: string }> = [
-  { valor: 'planeada', etiqueta: 'Planeación', badge: 'badge-soft-warning' },
-  { valor: 'activa', etiqueta: 'Activa', badge: 'badge-soft-cyan' },
-  { valor: 'finalizada', etiqueta: 'Finalizada', badge: 'badge-soft-success' },
-  { valor: 'cancelada', etiqueta: 'Cancelada', badge: 'badge-soft-danger' },
-];
 
 const TONO_CANAL: Record<string, string> = {
   'redes-sociales': 'icon-tile-cyan',
@@ -55,7 +37,7 @@ const FILL_CANAL: Record<string, string> = {
 
 @Component({
   selector: 'app-marketing',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ModalAccesibleDirective],
   templateUrl: './marketing.component.html',
   styleUrl: './marketing.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,8 +48,8 @@ export class MarketingComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly auth = inject(AuthService);
 
-  readonly canales = CANALES;
-  readonly estados = ESTADOS;
+  readonly canales = CANALES_MARKETING;
+  readonly estados = ESTADOS_ACTIVIDAD;
 
   readonly actividades = signal<ActividadMarketingApi[]>([]);
   readonly cargando = signal(true);
@@ -109,7 +91,9 @@ export class MarketingComponent implements OnInit {
     });
   });
 
-  readonly paginas = computed(() => Math.max(1, Math.ceil(this.filtradas().length / this.porPagina)));
+  readonly paginas = computed(() =>
+    Math.max(1, Math.ceil(this.filtradas().length / this.porPagina)),
+  );
 
   readonly visibles = computed(() => {
     const inicio = (this.pagina() - 1) * this.porPagina;
@@ -181,9 +165,7 @@ export class MarketingComponent implements OnInit {
   });
 
   readonly presupuesto = computed(() => {
-    const actividades = this.actividades().filter(
-      (actividad) => actividad.estado !== 'cancelada',
-    );
+    const actividades = this.actividades().filter((actividad) => actividad.estado !== 'cancelada');
     const plan = actividades.reduce((total, a) => total + Number(a.presupuesto ?? 0), 0);
     const ejercido = actividades.reduce((total, a) => total + Number(a.inversionReal ?? 0), 0);
     const disponible = Math.max(plan - ejercido, 0);
@@ -220,9 +202,12 @@ export class MarketingComponent implements OnInit {
       etiqueta: this.etiquetaCanal(canal),
       monto,
       porcentaje: Math.round((monto / total) * 100),
-      color: ['var(--llamma-cyan)', 'var(--llamma-magenta)', 'var(--llamma-yellow)', 'var(--llamma-carbon)'][
-        indice % 4
-      ],
+      color: [
+        'var(--llamma-cyan)',
+        'var(--llamma-magenta)',
+        'var(--llamma-yellow)',
+        'var(--llamma-carbon)',
+      ][indice % 4],
     }));
   });
 
@@ -384,15 +369,15 @@ export class MarketingComponent implements OnInit {
   }
 
   etiquetaCanal(canal: string): string {
-    return CANALES.find((fila) => fila.valor === canal)?.etiqueta ?? canal;
+    return etiquetaDe(CANALES_MARKETING, canal);
   }
 
   iconoCanal(canal: string): string {
-    return CANALES.find((fila) => fila.valor === canal)?.icono ?? 'bi-three-dots';
+    return CANALES_MARKETING.find((fila) => fila.valor === canal)?.icono ?? 'bi-three-dots';
   }
 
   dotCanal(canal: string): string {
-    return CANALES.find((fila) => fila.valor === canal)?.dot ?? 'dot-ink';
+    return CANALES_MARKETING.find((fila) => fila.valor === canal)?.dot ?? 'dot-ink';
   }
 
   tonoCanal(canal: string): string {
@@ -400,11 +385,11 @@ export class MarketingComponent implements OnInit {
   }
 
   etiquetaEstado(estado: string): string {
-    return ESTADOS.find((fila) => fila.valor === estado)?.etiqueta ?? estado;
+    return etiquetaDe(ESTADOS_ACTIVIDAD, estado);
   }
 
   claseEstado(estado: string): string {
-    return ESTADOS.find((fila) => fila.valor === estado)?.badge ?? 'badge-soft-muted';
+    return badgeDe(ESTADOS_ACTIVIDAD, estado);
   }
 
   claseRoi(roi: number): string {

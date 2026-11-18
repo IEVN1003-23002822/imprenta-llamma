@@ -28,7 +28,9 @@
       <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
         <span class="flex-grow-1">{{ error() }}</span>
-        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">Reintentar</button>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
+          Reintentar
+        </button>
       </div>
     }
 
@@ -50,7 +52,9 @@
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
             </span>
-            <div><strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span></div>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
           </div>
         </div>
       }
@@ -67,7 +71,10 @@
             <div class="d-flex align-items-center gap-2">
               <span class="badge badge-soft-cyan">{{ filtradas().length }} órdenes</span>
               @if (cargando()) {
-                <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+                <span
+                  class="spinner-border spinner-border-sm text-primary"
+                  aria-hidden="true"
+                ></span>
               }
             </div>
           </div>
@@ -103,14 +110,17 @@
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle">
+              <caption class="visually-hidden">
+                Órdenes de compra registradas
+              </caption>
               <thead>
                 <tr>
-                  <th>Folio</th>
-                  <th>Proveedor e insumo</th>
-                  <th>Entrega</th>
-                  <th class="text-end">Monto</th>
-                  <th>Estado</th>
-                  <th class="text-end">Acciones</th>
+                  <th scope="col">Folio</th>
+                  <th scope="col">Proveedor e insumo</th>
+                  <th scope="col">Entrega</th>
+                  <th scope="col" class="text-end">Monto</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" class="text-end">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -152,7 +162,12 @@
                         >
                           <i class="bi bi-eye"></i>
                         </button>
-                        @if (puedeGestionar() && (orden.estado === 'pendiente' || orden.estado === 'confirmada' || orden.estado === 'en-transito')) {
+                        @if (
+                          puedeGestionar() &&
+                          (orden.estado === 'pendiente' ||
+                            orden.estado === 'confirmada' ||
+                            orden.estado === 'en-transito')
+                        ) {
                           <button
                             class="btn btn-icon"
                             type="button"
@@ -184,17 +199,29 @@
             <nav aria-label="Paginación de órdenes de compra">
               <ul class="pagination pagination-sm mb-0">
                 <li class="page-item" [class.disabled]="pagina() <= 1">
-                  <button class="page-link" type="button" aria-label="Anterior" (click)="irA(pagina() - 1)">
+                  <button
+                    class="page-link"
+                    type="button"
+                    aria-label="Anterior"
+                    (click)="irA(pagina() - 1)"
+                  >
                     <i class="bi bi-chevron-left"></i>
                   </button>
                 </li>
                 @for (numero of listaPaginas(); track numero) {
                   <li class="page-item" [class.active]="numero === pagina()">
-                    <button class="page-link" type="button" (click)="irA(numero)">{{ numero }}</button>
+                    <button class="page-link" type="button" (click)="irA(numero)">
+                      {{ numero }}
+                    </button>
                   </li>
                 }
                 <li class="page-item" [class.disabled]="pagina() >= paginas()">
-                  <button class="page-link" type="button" aria-label="Siguiente" (click)="irA(pagina() + 1)">
+                  <button
+                    class="page-link"
+                    type="button"
+                    aria-label="Siguiente"
+                    (click)="irA(pagina() + 1)"
+                  >
                     <i class="bi bi-chevron-right"></i>
                   </button>
                 </li>
@@ -217,7 +244,10 @@
           <div>
             @for (sugerencia of sugerencias().slice(0, 4); track sugerencia.materia.id) {
               <div class="purchase-item">
-                <span class="icon-tile icon-tile-sm" [class]="'icon-tile icon-tile-sm ' + sugerencia.tono">
+                <span
+                  class="icon-tile icon-tile-sm"
+                  [class]="'icon-tile icon-tile-sm ' + sugerencia.tono"
+                >
                   <i class="bi" [class]="'bi ' + sugerencia.icono"></i>
                 </span>
                 <div>
@@ -227,7 +257,10 @@
                     {{ sugerencia.materia.proveedor || 'Sin proveedor' }}
                   </small>
                 </div>
-                <span class="badge" [class]="sugerencia.critico ? 'badge-soft-danger' : 'badge-soft-warning'">
+                <span
+                  class="badge"
+                  [class]="sugerencia.critico ? 'badge-soft-danger' : 'badge-soft-warning'"
+                >
                   {{ sugerencia.critico ? 'Urgente' : 'Esta semana' }}
                 </span>
               </div>
@@ -264,7 +297,10 @@
             </div>
             <div class="d-flex align-items-center gap-2">
               @if (cargandoCatalogos()) {
-                <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+                <span
+                  class="spinner-border spinner-border-sm text-primary"
+                  aria-hidden="true"
+                ></span>
               }
               <a class="panel-link mt-0" routerLink="/inventario">
                 Ver insumos <i class="bi bi-arrow-right"></i>
@@ -275,7 +311,9 @@
           <div class="supplier-list">
             @for (proveedor of proveedores(); track proveedor.id; let i = $index) {
               <div class="supplier-row">
-                <span class="avatar" [class]="'avatar ' + avatar(i)">{{ iniciales(proveedor.nombre) }}</span>
+                <span class="avatar" [class]="'avatar ' + avatar(i)">{{
+                  iniciales(proveedor.nombre)
+                }}</span>
                 <div class="flex-grow-1 min-w-0">
                   <strong>{{ proveedor.nombre }}</strong>
                   <small>
@@ -288,7 +326,10 @@
                     }
                   </small>
                 </div>
-                <span class="badge" [class]="proveedor.activo ? 'badge-soft-success' : 'badge-soft-muted'">
+                <span
+                  class="badge"
+                  [class]="proveedor.activo ? 'badge-soft-success' : 'badge-soft-muted'"
+                >
                   {{ proveedor.activo ? 'Activo' : 'Inactivo' }}
                 </span>
               </div>
@@ -320,10 +361,14 @@
                   <strong>{{ orden.proveedor || 'Sin proveedor' }}</strong>
                   <small>{{ orden.folio }} · {{ etiquetaItems(orden) }}</small>
                 </div>
-                <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
+                <span class="badge" [class]="claseEstado(orden.estado)">{{
+                  etiquetaEstado(orden.estado)
+                }}</span>
               </div>
             } @empty {
-              <p class="text-muted mb-0 small">No hay recepciones programadas para los próximos días.</p>
+              <p class="text-muted mb-0 small">
+                No hay recepciones programadas para los próximos días.
+              </p>
             }
           </div>
 
@@ -338,7 +383,13 @@
 </div>
 
 @if (ordenAbierta()) {
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarNueva()"
+    style="z-index: 1055"
+  >
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <form [formGroup]="ordenForm" (ngSubmit)="crearOrden()">
@@ -362,7 +413,9 @@
                     <option [value]="proveedor.id">{{ proveedor.nombre }}</option>
                   }
                 </select>
-                @if (ordenForm.controls.proveedorId.invalid && ordenForm.controls.proveedorId.touched) {
+                @if (
+                  ordenForm.controls.proveedorId.invalid && ordenForm.controls.proveedorId.touched
+                ) {
                   <small class="text-danger">Selecciona el proveedor de la orden.</small>
                 }
               </div>
@@ -378,7 +431,12 @@
               </div>
               <div class="col-6 col-md-4">
                 <label class="form-label" for="ocEntrega">Entrega estimada</label>
-                <input id="ocEntrega" type="date" class="form-control" formControlName="fechaEntrega" />
+                <input
+                  id="ocEntrega"
+                  type="date"
+                  class="form-control"
+                  formControlName="fechaEntrega"
+                />
               </div>
             </div>
 
@@ -391,20 +449,28 @@
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle mb-0">
+                <caption class="visually-hidden">
+                  Partidas de la nueva orden de compra
+                </caption>
                 <thead>
                   <tr>
-                    <th style="min-width: 14rem">Insumo</th>
-                    <th style="min-width: 7rem">Cantidad</th>
-                    <th style="min-width: 9rem">Precio unitario</th>
-                    <th class="text-end">Importe</th>
-                    <th></th>
+                    <th scope="col" style="min-width: 14rem">Insumo</th>
+                    <th scope="col" style="min-width: 7rem">Cantidad</th>
+                    <th scope="col" style="min-width: 9rem">Precio unitario</th>
+                    <th scope="col" class="text-end">Importe</th>
+                    <th scope="col"></th>
                   </tr>
                 </thead>
                 <tbody formArrayName="items">
                   @for (grupo of itemsArray.controls; track grupo; let i = $index) {
                     <tr [formGroupName]="i">
                       <td>
-                        <select class="form-select form-select-sm" formControlName="materiaPrimaId" (change)="actualizarPrecio(i)">
+                        <select
+                          class="form-select form-select-sm"
+                          formControlName="materiaPrimaId"
+                          [attr.aria-label]="'Insumo de la partida ' + (i + 1)"
+                          (change)="actualizarPrecio(i)"
+                        >
                           <option value="">Selecciona insumo…</option>
                           @for (materia of materias(); track materia.id) {
                             <option [value]="materia.id">{{ materia.nombre }}</option>
@@ -416,10 +482,24 @@
                         </small>
                       </td>
                       <td>
-                        <input type="number" min="0" step="0.01" class="form-control form-control-sm" formControlName="cantidad" />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          class="form-control form-control-sm"
+                          formControlName="cantidad"
+                          [attr.aria-label]="'Cantidad de la partida ' + (i + 1)"
+                        />
                       </td>
                       <td>
-                        <input type="number" min="0" step="0.01" class="form-control form-control-sm" formControlName="precioUnitario" />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          class="form-control form-control-sm"
+                          formControlName="precioUnitario"
+                          [attr.aria-label]="'Precio unitario de la partida ' + (i + 1)"
+                        />
                       </td>
                       <td class="text-end cell-main">{{ monedaExacta(importeItem(i)) }}</td>
                       <td class="text-end">
@@ -452,17 +532,29 @@
               </div>
               <div class="col-md-5">
                 <div class="order-totals">
-                  <div><span>Partidas</span><strong>{{ totalesFormulario().partidas }}</strong></div>
-                  <div><span>Subtotal</span><strong>{{ monedaExacta(totalesFormulario().subtotal) }}</strong></div>
-                  <div><span>IVA (16%)</span><strong>{{ monedaExacta(totalesFormulario().impuestos) }}</strong></div>
-                  <div class="order-totals-final"><span>Total</span><strong>{{ monedaExacta(totalesFormulario().total) }}</strong></div>
+                  <div>
+                    <span>Partidas</span><strong>{{ totalesFormulario().partidas }}</strong>
+                  </div>
+                  <div>
+                    <span>Subtotal</span
+                    ><strong>{{ monedaExacta(totalesFormulario().subtotal) }}</strong>
+                  </div>
+                  <div>
+                    <span>IVA (16%)</span
+                    ><strong>{{ monedaExacta(totalesFormulario().impuestos) }}</strong>
+                  </div>
+                  <div class="order-totals-final">
+                    <span>Total</span><strong>{{ monedaExacta(totalesFormulario().total) }}</strong>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="modal-footer">
-            <button class="btn btn-outline-ink" type="button" (click)="cerrarNueva()">Cancelar</button>
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarNueva()">
+              Cancelar
+            </button>
             <button class="btn btn-brand" type="submit" [disabled]="guardando()">
               <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
               {{ guardando() ? 'Creando orden…' : 'Crear orden de compra' }}
@@ -476,7 +568,13 @@
 }
 
 @if (detalle(); as orden) {
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarDetalle()"
+    style="z-index: 1055"
+  >
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
@@ -484,7 +582,9 @@
             <span class="panel-kicker">Orden de compra</span>
             <div class="d-flex flex-wrap align-items-center gap-2">
               <h2 class="modal-title h5 mb-0">{{ orden.folio }}</h2>
-              <span class="badge" [class]="claseEstado(orden.estado)">{{ etiquetaEstado(orden.estado) }}</span>
+              <span class="badge" [class]="claseEstado(orden.estado)">{{
+                etiquetaEstado(orden.estado)
+              }}</span>
             </div>
           </div>
           <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarDetalle()">
@@ -526,12 +626,15 @@
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle">
+              <caption class="visually-hidden">
+                Partidas de la orden de compra
+              </caption>
               <thead>
                 <tr>
-                  <th>Insumo</th>
-                  <th class="text-center">Cantidad</th>
-                  <th class="text-end">Precio</th>
-                  <th class="text-end">Importe</th>
+                  <th scope="col">Insumo</th>
+                  <th scope="col" class="text-center">Cantidad</th>
+                  <th scope="col" class="text-end">Precio</th>
+                  <th scope="col" class="text-end">Importe</th>
                 </tr>
               </thead>
               <tbody>
@@ -544,7 +647,9 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="4" class="text-center text-muted py-4">La orden no tiene partidas.</td>
+                    <td colspan="4" class="text-center text-muted py-4">
+                      La orden no tiene partidas.
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -552,9 +657,15 @@
           </div>
 
           <div class="order-totals mt-3">
-            <div><span>Subtotal</span><strong>{{ monedaExacta(orden.subtotal) }}</strong></div>
-            <div><span>IVA (16%)</span><strong>{{ monedaExacta(orden.impuestos) }}</strong></div>
-            <div class="order-totals-final"><span>Total</span><strong>{{ monedaExacta(orden.total) }}</strong></div>
+            <div>
+              <span>Subtotal</span><strong>{{ monedaExacta(orden.subtotal) }}</strong>
+            </div>
+            <div>
+              <span>IVA (16%)</span><strong>{{ monedaExacta(orden.impuestos) }}</strong>
+            </div>
+            <div class="order-totals-final">
+              <span>Total</span><strong>{{ monedaExacta(orden.total) }}</strong>
+            </div>
           </div>
 
           @if (orden.notas) {
@@ -563,10 +674,20 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-outline-ink" type="button" (click)="cerrarDetalle()">Cerrar</button>
+          <button class="btn btn-outline-ink" type="button" (click)="cerrarDetalle()">
+            Cerrar
+          </button>
           @if (puedeGestionar() && orden.estado !== 'recibida' && orden.estado !== 'cancelada') {
-            <button class="btn btn-brand" type="button" [disabled]="cambiandoEstado()" (click)="recibir(orden)">
-              <i class="bi" [class]="cambiandoEstado() ? 'bi-arrow-repeat spin' : 'bi-box-arrow-in-down'"></i>
+            <button
+              class="btn btn-brand"
+              type="button"
+              [disabled]="cambiandoEstado()"
+              (click)="recibir(orden)"
+            >
+              <i
+                class="bi"
+                [class]="cambiandoEstado() ? 'bi-arrow-repeat spin' : 'bi-box-arrow-in-down'"
+              ></i>
               {{ cambiandoEstado() ? 'Actualizando…' : 'Marcar como recibida' }}
             </button>
           }
@@ -578,7 +699,13 @@
 }
 
 @if (proveedorAbierto()) {
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarProveedor()"
+    style="z-index: 1055"
+  >
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <form [formGroup]="proveedorForm" (ngSubmit)="guardarProveedor()">
@@ -587,7 +714,12 @@
               <span class="panel-kicker">Directorio de compras</span>
               <h2 class="modal-title h5 mb-0">Nuevo proveedor</h2>
             </div>
-            <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarProveedor()">
+            <button
+              class="btn btn-icon"
+              type="button"
+              aria-label="Cerrar"
+              (click)="cerrarProveedor()"
+            >
               <i class="bi bi-x-lg"></i>
             </button>
           </div>
@@ -597,7 +729,9 @@
               <div class="col-12">
                 <label class="form-label" for="provNombre">Nombre o razón social *</label>
                 <input id="provNombre" class="form-control" formControlName="nombre" />
-                @if (proveedorForm.controls.nombre.invalid && proveedorForm.controls.nombre.touched) {
+                @if (
+                  proveedorForm.controls.nombre.invalid && proveedorForm.controls.nombre.touched
+                ) {
                   <small class="text-danger">Indica al menos dos caracteres.</small>
                 }
               </div>
@@ -612,21 +746,33 @@
               <div class="col-md-6">
                 <label class="form-label" for="provCorreo">Correo</label>
                 <input id="provCorreo" type="email" class="form-control" formControlName="correo" />
-                @if (proveedorForm.controls.correo.invalid && proveedorForm.controls.correo.touched) {
+                @if (
+                  proveedorForm.controls.correo.invalid && proveedorForm.controls.correo.touched
+                ) {
                   <small class="text-danger">Captura un correo válido.</small>
                 }
               </div>
               <div class="col-md-6">
                 <label class="form-label" for="provCondiciones">Condiciones de pago</label>
-                <input id="provCondiciones" class="form-control" formControlName="condicionesPago" placeholder="Crédito 30 días…" />
+                <input
+                  id="provCondiciones"
+                  class="form-control"
+                  formControlName="condicionesPago"
+                  placeholder="Crédito 30 días…"
+                />
               </div>
             </div>
           </div>
 
           <div class="modal-footer">
-            <button class="btn btn-outline-ink" type="button" (click)="cerrarProveedor()">Cancelar</button>
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarProveedor()">
+              Cancelar
+            </button>
             <button class="btn btn-brand" type="submit" [disabled]="guardandoProveedor()">
-              <i class="bi" [class]="guardandoProveedor() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+              <i
+                class="bi"
+                [class]="guardandoProveedor() ? 'bi-arrow-repeat spin' : 'bi-check2'"
+              ></i>
               {{ guardandoProveedor() ? 'Guardando…' : 'Guardar proveedor' }}
             </button>
           </div>

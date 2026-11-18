@@ -2,35 +2,70 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   OnInit,
   computed,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import { EXTENSIONES_ARCHIVO, MAX_BYTES_ARCHIVO } from '../estados';
 import { LlammaService } from '../llamma.service';
+import { CotizarComprobanteComponent } from './cotizar-comprobante/cotizar-comprobante.component';
+import { CotizarPasosComponent } from './cotizar-pasos/cotizar-pasos.component';
+import { CotizarResumenComponent } from './cotizar-resumen/cotizar-resumen.component';
 import {
-  EstadoSolicitud,
   ItemSolicitud,
-  MensajeChat,
   MetodoEntrega,
   ProductoPublico,
-  SeguimientoSolicitud,
   SegmentoCliente,
   SolicitudCotizacion,
 } from '../llamma.models';
 
-const EXTENSIONES = ['pdf', 'ai', 'psd', 'png', 'jpg', 'jpeg', 'svg', 'zip'];
-const MAX_BYTES = 25 * 1024 * 1024;
+const CLAVE_BORRADOR = 'llamma.cotizacion.borrador.v1';
+const DIAS_BORRADOR = 30;
+
+interface BorradorFormulario {
+  nombreCliente: string;
+  empresa: string;
+  correo: string;
+  telefono: string;
+  segmento: SegmentoCliente;
+  mensaje: string;
+  fechaDeseada: string;
+  metodoEntrega: MetodoEntrega;
+}
+
+interface ArchivoBorrador {
+  nombre: string;
+  tamano: number;
+  tipo: string;
+  modificado: number;
+}
+
+interface BorradorCotizacion {
+  version: 1;
+  guardadoEn: string;
+  paso: number;
+  form: BorradorFormulario;
+  carrito: ItemSolicitud[];
+  productoId: number | null;
+  cantidad: number;
+  especificaciones: string;
+  archivos: ArchivoBorrador[];
+}
 
 @Component({
   selector: 'app-cotizar',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    CotizarComprobanteComponent,
+    CotizarPasosComponent,
+    CotizarResumenComponent,
+  ],
   templateUrl: './cotizar.component.html',
   styleUrl: './cotizar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,17 +89,16 @@ export class CotizarComponent implements OnInit {
   readonly solicitudCreada = signal<SolicitudCotizacion | null>(null);
   readonly copiado = signal(false);
 
-  readonly seguimiento = signal<SeguimientoSolicitud | null>(null);
-  readonly buscando = signal(false);
-  readonly errorSeguimiento = signal<string | null>(null);
+  readonly paso = signal(1);
+  readonly borradorRecuperado = signal(false);
+  readonly archivosPendientes = signal<string[]>([]);
+  readonly pasos = [
+    { numero: 1, titulo: 'Contacto', detalle: 'Quién solicita' },
+    { numero: 2, titulo: 'Productos', detalle: 'Qué imprimimos' },
+    { numero: 3, titulo: 'Proyecto', detalle: 'Mensaje y entrega' },
+  ] as const;
 
-  readonly mensajes = signal<MensajeChat[]>([]);
-  readonly borrador = signal('');
-  readonly adjuntoChat = signal<File | null>(null);
-  readonly enviandoMensaje = signal(false);
-  readonly errorChat = signal<string | null>(null);
-  readonly descargandoAdjunto = signal<number | null>(null);
-  private readonly hiloChat = viewChild<ElementRef<HTMLDivElement>>('hiloChat');
+  private persistenciaActiva = false;
 
   readonly hoy = new Date().toISOString().slice(0, 10);
 
@@ -77,11 +111,6 @@ export class CotizarComponent implements OnInit {
     mensaje: ['', [Validators.required, Validators.minLength(20)]],
     fechaDeseada: [''],
     metodoEntrega: ['taller' as MetodoEntrega, [Validators.required]],
-  });
-
-  readonly seguimientoForm = this.fb.nonNullable.group({
-    folio: ['', [Validators.required]],
-    correo: ['', [Validators.required, Validators.email]],
   });
 
   readonly productoActual = computed(
@@ -112,13 +141,19 @@ export class CotizarComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.restaurarBorrador();
+    this.form.valueChanges.subscribe(() => this.guardarBorrador());
+    this.persistenciaActiva = true;
+
     this.service.listarProductosPublicos().subscribe({
       next: (respuesta) => {
         this.productos.set(respuesta.items);
         if (respuesta.items.length) {
           const solicitado = Number(this.route.snapshot.queryParamMap.get('producto'));
           const preseleccionado = respuesta.items.find((producto) => producto.id === solicitado);
-          this.productoId.set(preseleccionado?.id ?? respuesta.items[0].id);
+          this.productoId.update(
+            (actual) => actual ?? preseleccionado?.id ?? respuesta.items[0].id,
+          );
         }
       },
       error: () =>
@@ -126,18 +161,199 @@ export class CotizarComponent implements OnInit {
     });
   }
 
+  irAPaso(destino: number): void {
+    const objetivo = Math.min(Math.max(destino, 1), 3);
+    if (objetivo > this.paso() && this.contactoInvalido()) {
+      this.form.markAllAsTouched();
+      this.paso.set(1);
+      this.error.set('Completa tus datos de contacto para continuar.');
+      setTimeout(() => this.enfocarPrimerError());
+      return;
+    }
+    this.paso.set(objetivo);
+    this.error.set(null);
+    this.guardarBorrador();
+    this.enfocarPaso(objetivo);
+  }
+
+  pasoSiguiente(): void {
+    this.irAPaso(this.paso() + 1);
+  }
+
+  pasoAnterior(): void {
+    this.irAPaso(this.paso() - 1);
+  }
+
+  ocultarAvisoBorrador(): void {
+    this.borradorRecuperado.set(false);
+  }
+
+  descartarBorrador(): void {
+    this.limpiarBorradorGuardado();
+    this.borradorRecuperado.set(false);
+    this.archivosPendientes.set([]);
+    this.carrito.set([]);
+    this.archivos.set([]);
+    this.paso.set(1);
+    this.reiniciarFormulario();
+  }
+
+  private contactoInvalido(): boolean {
+    const { nombreCliente, correo, telefono } = this.form.controls;
+    return nombreCliente.invalid || correo.invalid || telefono.invalid;
+  }
+
+  private guardarBorrador(): void {
+    if (!this.persistenciaActiva || this.folio()) return;
+
+    // Sin datos capturados no hay nada que recuperar (y evita reescribir un
+    // borrador vacío justo después de descartarlo).
+    if (!this.hayContenido()) {
+      this.limpiarBorradorGuardado();
+      return;
+    }
+
+    const borrador: BorradorCotizacion = {
+      version: 1,
+      guardadoEn: new Date().toISOString(),
+      paso: this.paso(),
+      form: this.form.getRawValue(),
+      carrito: this.carrito(),
+      productoId: this.productoId(),
+      cantidad: this.cantidad(),
+      especificaciones: this.especificaciones(),
+      archivos: this.archivos().map((archivo) => ({
+        nombre: archivo.name,
+        tamano: archivo.size,
+        tipo: archivo.type,
+        modificado: archivo.lastModified,
+      })),
+    };
+
+    try {
+      localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(borrador));
+    } catch {
+      // Sin espacio o almacenamiento bloqueado: seguimos sin borrador.
+    }
+  }
+
+  private hayContenido(): boolean {
+    const { nombreCliente, correo, telefono, mensaje } = this.form.getRawValue();
+    return Boolean(
+      this.carrito().length ||
+      this.archivos().length ||
+      nombreCliente.trim() ||
+      correo.trim() ||
+      telefono.trim() ||
+      mensaje.trim(),
+    );
+  }
+
+  private restaurarBorrador(): void {
+    let crudo: string | null = null;
+    try {
+      crudo = localStorage.getItem(CLAVE_BORRADOR);
+    } catch {
+      return;
+    }
+    if (!crudo) return;
+
+    try {
+      const borrador = JSON.parse(crudo) as BorradorCotizacion;
+      const guardado = new Date(borrador?.guardadoEn ?? 0).getTime();
+      const vigente =
+        borrador?.version === 1 && Number.isFinite(guardado)
+          ? Date.now() - guardado <= DIAS_BORRADOR * 24 * 60 * 60 * 1000
+          : false;
+      if (!vigente) {
+        this.limpiarBorradorGuardado();
+        return;
+      }
+
+      const formulario = borrador.form ?? ({} as BorradorFormulario);
+      const contenido =
+        borrador.carrito?.length ||
+        borrador.archivos?.length ||
+        formulario.nombreCliente?.trim() ||
+        formulario.correo?.trim() ||
+        formulario.telefono?.trim() ||
+        formulario.mensaje?.trim();
+      if (!contenido) {
+        this.limpiarBorradorGuardado();
+        return;
+      }
+
+      this.form.patchValue(formulario);
+      this.carrito.set(borrador.carrito ?? []);
+      this.productoId.set(borrador.productoId ?? null);
+      this.cantidad.set(borrador.cantidad ?? 1);
+      this.especificaciones.set(borrador.especificaciones ?? '');
+      this.archivosPendientes.set((borrador.archivos ?? []).map((archivo) => archivo.nombre));
+      this.paso.set(Math.min(Math.max(borrador.paso ?? 1, 1), 3));
+      this.borradorRecuperado.set(true);
+    } catch {
+      this.limpiarBorradorGuardado();
+    }
+  }
+
+  private limpiarBorradorGuardado(): void {
+    try {
+      localStorage.removeItem(CLAVE_BORRADOR);
+    } catch {
+      // Almacenamiento no disponible: nada que limpiar.
+    }
+  }
+
+  private reiniciarFormulario(): void {
+    this.form.reset({
+      nombreCliente: '',
+      empresa: '',
+      correo: '',
+      telefono: '',
+      segmento: 'pyme',
+      mensaje: '',
+      fechaDeseada: '',
+      metodoEntrega: 'taller',
+    });
+  }
+
+  private enfocarPaso(paso: number): void {
+    setTimeout(() => {
+      const seccion = document.getElementById(`paso${paso}`);
+      seccion?.focus();
+      seccion?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  private enfocarPrimerError(): void {
+    const mapa: Array<[boolean, string]> = [
+      [this.form.controls.nombreCliente.invalid, 'cotNombre'],
+      [this.form.controls.correo.invalid, 'cotCorreo'],
+      [this.form.controls.telefono.invalid, 'cotTelefono'],
+      [this.form.controls.mensaje.invalid, 'cotMensaje'],
+    ];
+    const encontrado = mapa.find(([invalido]) => invalido);
+    if (!encontrado) return;
+    const campo = document.getElementById(encontrado[1]);
+    campo?.focus();
+    campo?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   cambiarProducto(evento: Event): void {
     const valor = Number((evento.target as HTMLSelectElement).value);
     this.productoId.set(Number.isNaN(valor) ? null : valor);
+    this.guardarBorrador();
   }
 
   cambiarCantidad(evento: Event): void {
     const valor = Number((evento.target as HTMLInputElement).value);
     this.cantidad.set(Number.isFinite(valor) && valor > 0 ? Math.floor(valor) : 1);
+    this.guardarBorrador();
   }
 
   cambiarEspecificaciones(evento: Event): void {
     this.especificaciones.set((evento.target as HTMLInputElement).value);
+    this.guardarBorrador();
   }
 
   agregarProducto(): void {
@@ -164,10 +380,12 @@ export class CotizarComponent implements OnInit {
     this.cantidad.set(1);
     this.especificaciones.set('');
     this.error.set(null);
+    this.guardarBorrador();
   }
 
   quitarProducto(indice: number): void {
     this.carrito.update((items) => items.filter((_, posicion) => posicion !== indice));
+    this.guardarBorrador();
   }
 
   agregarArchivos(evento: Event): void {
@@ -178,11 +396,11 @@ export class CotizarComponent implements OnInit {
     const validos: File[] = [];
     for (const archivo of seleccionados) {
       const extension = archivo.name.split('.').pop()?.toLowerCase() ?? '';
-      if (!EXTENSIONES.includes(extension)) {
+      if (!EXTENSIONES_ARCHIVO.includes(extension)) {
         this.error.set(`"${archivo.name}" no tiene un formato permitido.`);
         continue;
       }
-      if (archivo.size > MAX_BYTES) {
+      if (archivo.size > MAX_BYTES_ARCHIVO) {
         this.error.set(`"${archivo.name}" supera el límite de 25 MB.`);
         continue;
       }
@@ -191,12 +409,18 @@ export class CotizarComponent implements OnInit {
 
     if (validos.length) {
       this.archivos.update((actuales) => [...actuales, ...validos]);
+      const nombres = new Set(validos.map((archivo) => archivo.name));
+      this.archivosPendientes.update((pendientes) =>
+        pendientes.filter((nombre) => !nombres.has(nombre)),
+      );
       this.error.set(null);
+      this.guardarBorrador();
     }
   }
 
   quitarArchivo(indice: number): void {
     this.archivos.update((archivos) => archivos.filter((_, posicion) => posicion !== indice));
+    this.guardarBorrador();
   }
 
   enviar(): void {
@@ -204,11 +428,15 @@ export class CotizarComponent implements OnInit {
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.paso.set(1);
       this.error.set('Revisa los datos de contacto: nos falta información para responderte.');
+      setTimeout(() => this.enfocarPrimerError());
       return;
     }
     if (!this.carrito().length && this.form.controls.mensaje.value.trim().length < 20) {
+      this.paso.set(3);
       this.error.set('Agrega al menos un producto o describe tu proyecto con más detalle.');
+      setTimeout(() => this.enfocarPrimerError());
       return;
     }
 
@@ -234,6 +462,7 @@ export class CotizarComponent implements OnInit {
         next: (respuesta) => {
           this.folio.set(respuesta.folio);
           this.solicitudCreada.set(respuesta.solicitud);
+          this.limpiarBorradorGuardado();
           window.scrollTo({ top: 0, behavior: 'auto' });
         },
         error: (respuesta: HttpErrorResponse) => {
@@ -252,16 +481,11 @@ export class CotizarComponent implements OnInit {
     this.carrito.set([]);
     this.archivos.set([]);
     this.copiado.set(false);
-    this.form.reset({
-      nombreCliente: '',
-      empresa: '',
-      correo: '',
-      telefono: '',
-      segmento: 'pyme',
-      mensaje: '',
-      fechaDeseada: '',
-      metodoEntrega: 'taller',
-    });
+    this.paso.set(1);
+    this.borradorRecuperado.set(false);
+    this.archivosPendientes.set([]);
+    this.limpiarBorradorGuardado();
+    this.reiniciarFormulario();
   }
 
   copiarFolio(): void {
@@ -308,7 +532,9 @@ export class CotizarComponent implements OnInit {
       partidas.forEach((item, indice) => {
         const especificaciones = item.especificaciones ? ` · ${item.especificaciones}` : '';
         const precio = item.precioEstimado != null ? ` · ${this.moneda(item.precioEstimado)}` : '';
-        lineas.push(`${indice + 1}. ${item.nombreProducto} — ${item.cantidad}${especificaciones}${precio}`);
+        lineas.push(
+          `${indice + 1}. ${item.nombreProducto} — ${item.cantidad}${especificaciones}${precio}`,
+        );
       });
     } else {
       lineas.push('Sin partidas de catálogo: solicitud descrita en el mensaje.');
@@ -325,7 +551,7 @@ export class CotizarComponent implements OnInit {
       '',
       '------------------------------------------',
       'Los precios son referenciales y están sujetos a revisión de diseño.',
-      'Consulta el estatus de tu solicitud en /cotizar (sección Seguimiento)',
+      'Consulta el estatus de tu solicitud en /seguimiento del portal',
       `con el folio ${folio} y tu correo registrado.`,
     );
 
@@ -338,162 +564,6 @@ export class CotizarComponent implements OnInit {
     enlace.click();
     enlace.remove();
     URL.revokeObjectURL(url);
-  }
-
-  consultar(): void {
-    if (this.seguimientoForm.invalid) {
-      this.seguimientoForm.markAllAsTouched();
-      return;
-    }
-    const { folio, correo } = this.seguimientoForm.getRawValue();
-    this.buscando.set(true);
-    this.errorSeguimiento.set(null);
-    this.seguimiento.set(null);
-    this.mensajes.set([]);
-    this.borrador.set('');
-    this.adjuntoChat.set(null);
-    this.errorChat.set(null);
-
-    this.service
-      .consultarSolicitud(folio.trim(), correo.trim().toLowerCase())
-      .pipe(finalize(() => this.buscando.set(false)))
-      .subscribe({
-        next: (respuesta) => {
-          this.seguimiento.set(respuesta);
-          this.mensajes.set(respuesta.mensajes ?? []);
-          this.desplazarHilo();
-        },
-        error: (respuesta: HttpErrorResponse) => {
-          this.errorSeguimiento.set(
-            respuesta.status === 404
-              ? 'No encontramos una solicitud con ese folio y correo.'
-              : 'No pudimos consultar la solicitud. Intenta de nuevo.',
-          );
-        },
-      });
-  }
-
-  actualizarBorrador(evento: Event): void {
-    this.borrador.set((evento.target as HTMLTextAreaElement).value);
-  }
-
-  seleccionarAdjunto(evento: Event): void {
-    const input = evento.target as HTMLInputElement;
-    const archivo = input.files?.[0] ?? null;
-    input.value = '';
-
-    if (!archivo) return;
-    const extension = archivo.name.split('.').pop()?.toLowerCase() ?? '';
-    if (!EXTENSIONES.includes(extension)) {
-      this.errorChat.set(`"${archivo.name}" no tiene un formato permitido.`);
-      return;
-    }
-    if (archivo.size > MAX_BYTES) {
-      this.errorChat.set(`"${archivo.name}" supera el límite de 25 MB.`);
-      return;
-    }
-    this.adjuntoChat.set(archivo);
-    this.errorChat.set(null);
-  }
-
-  quitarAdjuntoChat(): void {
-    this.adjuntoChat.set(null);
-  }
-
-  enviarMensaje(): void {
-    const solicitud = this.seguimiento();
-    if (!solicitud || this.enviandoMensaje()) return;
-
-    const mensaje = this.borrador().trim();
-    const archivo = this.adjuntoChat();
-    if (!mensaje && !archivo) {
-      this.errorChat.set('Escribe un mensaje o adjunta un archivo de referencia.');
-      return;
-    }
-
-    const { correo } = this.seguimientoForm.getRawValue();
-    this.enviandoMensaje.set(true);
-    this.errorChat.set(null);
-
-    this.service
-      .enviarMensajePublico(solicitud.folio, correo.trim().toLowerCase(), mensaje, archivo)
-      .pipe(finalize(() => this.enviandoMensaje.set(false)))
-      .subscribe({
-        next: (respuesta) => {
-          this.mensajes.update((actuales) => [...actuales, respuesta.mensajeChat]);
-          this.borrador.set('');
-          this.adjuntoChat.set(null);
-          this.desplazarHilo();
-        },
-        error: (respuesta: HttpErrorResponse) => {
-          this.errorChat.set(
-            respuesta.status === 404
-              ? 'Tu folio y correo ya no coinciden. Vuelve a consultar la solicitud.'
-              : respuesta.error?.error || 'No pudimos enviar tu mensaje. Intenta de nuevo.',
-          );
-        },
-      });
-  }
-
-  refrescarChat(): void {
-    const solicitud = this.seguimiento();
-    if (!solicitud) return;
-    const { correo } = this.seguimientoForm.getRawValue();
-
-    this.service.listarMensajesPublicos(solicitud.folio, correo.trim().toLowerCase()).subscribe({
-      next: (respuesta) => {
-        this.mensajes.set(respuesta.items);
-        this.desplazarHilo();
-      },
-      error: () => this.errorChat.set('No pudimos actualizar la conversación.'),
-    });
-  }
-
-  descargarAdjuntoChat(mensaje: MensajeChat): void {
-    const solicitud = this.seguimiento();
-    if (!solicitud || !mensaje.adjunto) return;
-
-    const { correo } = this.seguimientoForm.getRawValue();
-    this.descargandoAdjunto.set(mensaje.id);
-    this.service
-      .descargarAdjuntoPublico(solicitud.folio, correo.trim().toLowerCase(), mensaje.id)
-      .pipe(finalize(() => this.descargandoAdjunto.set(null)))
-      .subscribe({
-        next: (blob) => {
-          const url = URL.createObjectURL(blob);
-          const enlace = document.createElement('a');
-          enlace.href = url;
-          enlace.download = mensaje.adjunto?.nombre || 'adjunto';
-          enlace.click();
-          URL.revokeObjectURL(url);
-        },
-        error: () => this.errorChat.set('No pudimos descargar el archivo adjunto.'),
-      });
-  }
-
-  fechaHoraChat(valor: string | null | undefined): string {
-    if (!valor) return '';
-    const fecha = new Date(valor);
-    if (Number.isNaN(fecha.getTime())) return valor;
-    return fecha.toLocaleString('es-MX', {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  tamanoChat(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  private desplazarHilo(): void {
-    setTimeout(() => {
-      const contenedor = this.hiloChat()?.nativeElement;
-      if (contenedor) contenedor.scrollTop = contenedor.scrollHeight;
-    });
   }
 
   moneda(valor: number): string {
@@ -521,17 +591,6 @@ export class CotizarComponent implements OnInit {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
-  etiquetaEstado(estado: EstadoSolicitud): string {
-    const etiquetas: Record<EstadoSolicitud, string> = {
-      nueva: 'Recibida',
-      'en-revision': 'En revisión',
-      cotizada: 'Cotizada',
-      convertida: 'Convertida a pedido',
-      descartada: 'Descartada',
-    };
-    return etiquetas[estado];
-  }
-
   etiquetaSegmento(segmento: SegmentoCliente | null | undefined): string {
     const etiquetas: Record<SegmentoCliente, string> = {
       particular: 'Particular',
@@ -553,16 +612,5 @@ export class CotizarComponent implements OnInit {
       instalacion: 'Instalación en sitio',
     };
     return metodo ? etiquetas[metodo] : 'Por confirmar';
-  }
-
-  claseEstado(estado: EstadoSolicitud): string {
-    const clases: Record<EstadoSolicitud, string> = {
-      nueva: 'badge-soft-cyan',
-      'en-revision': 'badge-soft-warning',
-      cotizada: 'badge-soft-magenta',
-      convertida: 'badge-soft-success',
-      descartada: 'badge-soft-muted',
-    };
-    return clases[estado];
   }
 }

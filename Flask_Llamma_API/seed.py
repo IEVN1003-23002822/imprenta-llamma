@@ -288,6 +288,7 @@ def seed_database() -> None:
             precio_base=definicion["precio"],
             unidad_venta=definicion["unidad"],
             icono=definicion["icono"],
+            imagen_url=definicion.get("imagen"),
         )
         receta_def = definicion["receta"]
         receta = Receta(

@@ -21,19 +21,30 @@ def create_app(config_object: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_object)
 
+    if not app.config.get("SECRET_KEY"):
+        raise RuntimeError(
+            "Falta SECRET_KEY. Defínela en el entorno antes de arrancar en producción."
+        )
+    if not app.config.get("ES_PRODUCCION"):
+        app.logger.warning(
+            "Llamma API en modo desarrollo (LLAMMA_ENV=%s). No exponer a internet.",
+            app.config.get("ENTORNO"),
+        )
+
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
     db.init_app(app)
 
     CORS(
         app,
-        resources={r"/api/*": {"origins": "*"}},
+        resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}},
         allow_headers=["Content-Type", "Authorization", "X-Auth-Token"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     )
 
     register_blueprints(app)
     _registrar_errores(app)
+    _registrar_cabeceras(app)
     _registrar_comandos(app)
 
     @app.get("/")
@@ -98,6 +109,29 @@ def _registrar_errores(app: Flask) -> None:
         raise error
 
 
+def _registrar_cabeceras(app: Flask) -> None:
+    """Cabeceras de seguridad básicas para todas las respuestas."""
+
+    @app.after_request
+    def cabeceras(respuesta):
+        respuesta.headers.setdefault("X-Content-Type-Options", "nosniff")
+        respuesta.headers.setdefault("X-Frame-Options", "DENY")
+        respuesta.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        respuesta.headers.setdefault(
+            "Permissions-Policy", "geolocation=(), microphone=(), camera=()"
+        )
+        respuesta.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+
+        if request.path.startswith("/api"):
+            respuesta.headers.setdefault("Cache-Control", "no-store")
+
+        if request.is_secure:
+            respuesta.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
+        return respuesta
+
+
 def _registrar_comandos(app: Flask) -> None:
     @app.cli.command("init-db")
     def init_db():
@@ -120,4 +154,4 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=app.config["DEBUG"])

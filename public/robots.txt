@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /dashboard
+Disallow: /solicitudes
+Disallow: /captura
+Disallow: /detalle
+Disallow: /consultas
+Disallow: /inventario
+Disallow: /abastecimiento
+Disallow: /produccion
+Disallow: /clientes
+Disallow: /marketing
+
+Sitemap: https://llamma.mx/sitemap.xml

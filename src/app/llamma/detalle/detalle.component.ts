@@ -13,41 +13,16 @@ import { finalize } from 'rxjs';
 
 import { AuthService } from '../auth.service';
 import {
-  ClienteApi,
-  EtapaProduccion,
-  PedidoApi,
-  PagoApi,
-  PrioridadPedido,
-} from '../llamma.models';
+  ESTADOS_PEDIDO,
+  ETAPAS_PRODUCCION,
+  PRIORIDADES,
+  badgeDe,
+  etiquetaDe,
+  iconoDe,
+} from '../estados';
+import { ClienteApi, PedidoApi, PagoApi } from '../llamma.models';
 import { LlammaService } from '../llamma.service';
 import { UiService } from '../ui.service';
-
-const ESTADOS: { valor: string; etiqueta: string }[] = [
-  { valor: 'cotizacion', etiqueta: 'Cotización' },
-  { valor: 'confirmado', etiqueta: 'Confirmado' },
-  { valor: 'en-produccion', etiqueta: 'En producción' },
-  { valor: 'listo', etiqueta: 'Listo' },
-  { valor: 'entregado', etiqueta: 'Entregado' },
-  { valor: 'cancelado', etiqueta: 'Cancelado' },
-];
-
-const PRIORIDADES: Record<PrioridadPedido, string> = {
-  baja: 'Prioridad baja',
-  media: 'Prioridad media',
-  alta: 'Prioridad alta',
-  urgente: 'Prioridad urgente',
-};
-
-const ETAPAS: Record<EtapaProduccion, { etiqueta: string; icono: string }> = {
-  diseno: { etiqueta: 'Diseño y preprensa', icono: 'bi-vector-pen' },
-  impresion: { etiqueta: 'Impresión', icono: 'bi-printer' },
-  laminado: { etiqueta: 'Laminado', icono: 'bi-layers' },
-  corte: { etiqueta: 'Corte', icono: 'bi-scissors' },
-  confeccion: { etiqueta: 'Confección', icono: 'bi-bag' },
-  armado: { etiqueta: 'Armado', icono: 'bi-tools' },
-  acabado: { etiqueta: 'Acabado', icono: 'bi-stars' },
-  entrega: { etiqueta: 'Entrega', icono: 'bi-box-seam' },
-};
 
 @Component({
   selector: 'app-detalle',
@@ -74,7 +49,7 @@ export class DetalleComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly mostrarPago = signal(false);
 
-  readonly estados = ESTADOS;
+  readonly estados = ESTADOS_PEDIDO;
   readonly puedeGestionar = computed(() => this.auth.tieneRol('admin', 'ventas'));
 
   readonly pagoForm = this.fb.nonNullable.group({
@@ -100,7 +75,8 @@ export class DetalleComponent implements OnInit {
       .sort((a, b) => a.id - b.id)
       .map((registro) => ({
         ...registro,
-        ...(ETAPAS[registro.etapa] ?? { etiqueta: registro.etapa, icono: 'bi-circle' }),
+        etiqueta: etiquetaDe(ETAPAS_PRODUCCION, registro.etapa),
+        icono: iconoDe(ETAPAS_PRODUCCION, registro.etapa),
         clase:
           registro.estado === 'completada'
             ? 'is-done'
@@ -199,7 +175,9 @@ export class DetalleComponent implements OnInit {
       .pipe(finalize(() => this.guardandoEstado.set(false)))
       .subscribe({
         next: () => {
-          this.pedido.update((actual) => (actual ? { ...actual, estado: estado as PedidoApi['estado'] } : actual));
+          this.pedido.update((actual) =>
+            actual ? { ...actual, estado: estado as PedidoApi['estado'] } : actual,
+          );
           this.pedidos.update((lista) =>
             lista.map((fila) =>
               fila.id === pedido.id ? { ...fila, estado: estado as PedidoApi['estado'] } : fila,
@@ -247,7 +225,9 @@ export class DetalleComponent implements OnInit {
             ),
           );
           this.mostrarPago.set(false);
-          this.ui.exito(`Pago registrado. Saldo pendiente: ${this.moneda(respuesta.pedido.saldo)}.`);
+          this.ui.exito(
+            `Pago registrado. Saldo pendiente: ${this.moneda(respuesta.pedido.saldo)}.`,
+          );
         },
         error: (error: HttpErrorResponse) => {
           this.ui.error(this.ui.mensajeDeError(error, 'No pudimos registrar el pago.'));
@@ -291,19 +271,11 @@ export class DetalleComponent implements OnInit {
   }
 
   etiquetaEstado(estado: string): string {
-    return ESTADOS.find((fila) => fila.valor === estado)?.etiqueta ?? estado;
+    return etiquetaDe(ESTADOS_PEDIDO, estado);
   }
 
   claseEstado(estado: string): string {
-    const mapa: Record<string, string> = {
-      cotizacion: 'badge-soft-cyan',
-      confirmado: 'badge-soft-warning',
-      'en-produccion': 'badge-soft-cyan',
-      listo: 'badge-soft-success',
-      entregado: 'badge-soft-success',
-      cancelado: 'badge-soft-danger',
-    };
-    return mapa[estado] ?? 'badge-soft-cyan';
+    return badgeDe(ESTADOS_PEDIDO, estado, 'badge-soft-cyan');
   }
 
   clasePrioridad(prioridad: string): string {
@@ -317,7 +289,9 @@ export class DetalleComponent implements OnInit {
   }
 
   etiquetaPrioridad(prioridad: string): string {
-    return PRIORIDADES[prioridad as PrioridadPedido] ?? `Prioridad ${prioridad}`;
+    return (
+      PRIORIDADES.find((fila) => fila.valor === prioridad)?.etiqueta ?? `Prioridad ${prioridad}`
+    );
   }
 
   iniciales(nombre: string | null | undefined): string {
@@ -334,7 +308,11 @@ export class DetalleComponent implements OnInit {
     const pedido = this.pedido();
     if (!pedido) return { titulo: 'Sin información', detalle: 'Selecciona una orden', ok: false };
     if (pedido.saldo <= 0.01) {
-      return { titulo: 'Pedido liquidado', detalle: `Pagado ${this.moneda(this.pagado())}`, ok: true };
+      return {
+        titulo: 'Pedido liquidado',
+        detalle: `Pagado ${this.moneda(this.pagado())}`,
+        ok: true,
+      };
     }
     if (this.pagado() > 0) {
       return {

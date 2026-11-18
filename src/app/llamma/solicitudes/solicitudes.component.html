@@ -10,7 +10,12 @@
         </p>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-outline-ink" type="button" (click)="cargar()" [disabled]="cargando()">
+        <button
+          class="btn btn-outline-ink"
+          type="button"
+          (click)="cargar()"
+          [disabled]="cargando()"
+        >
           <i class="bi bi-arrow-clockwise"></i> Actualizar
         </button>
         <a class="btn btn-brand" routerLink="/captura">
@@ -61,12 +66,12 @@
     <section class="panel-card mb-4">
       <div class="filter-row">
         <div class="inbox-tabs" role="tablist" aria-label="Filtrar solicitudes por estado">
-          @for (opcion of opciones; track opcion.clave) {
+          @for (opcion of opciones; track opcion.valor) {
             <button
               class="filter-chip"
               type="button"
-              [class.is-active]="estadoFiltro() === opcion.clave"
-              (click)="filtrarPor(opcion.clave)"
+              [class.is-active]="estadoFiltro() === opcion.valor"
+              (click)="filtrarPor(opcion.valor)"
             >
               {{ opcion.etiqueta }}
             </button>
@@ -80,16 +85,22 @@
               type="search"
               class="form-control"
               placeholder="Folio, cliente o correo..."
+              aria-label="Buscar solicitudes por folio, cliente o correo"
               [value]="texto()"
               (input)="actualizarTexto($event)"
               (keyup.enter)="buscar()"
-            >
+            />
           </div>
           <button class="btn btn-ink" type="button" (click)="buscar()">
             <i class="bi bi-funnel-fill"></i> Buscar
           </button>
           @if (hayFiltros()) {
-            <button class="btn btn-soft" type="button" aria-label="Limpiar filtros" (click)="limpiar()">
+            <button
+              class="btn btn-soft"
+              type="button"
+              aria-label="Limpiar filtros"
+              (click)="limpiar()"
+            >
               <i class="bi bi-arrow-counterclockwise"></i>
             </button>
           }
@@ -135,7 +146,9 @@
                   [class.is-active]="seleccionada()?.id === solicitud.id"
                   (click)="abrir(solicitud.id)"
                 >
-                  <span class="avatar avatar-magenta">{{ iniciales(solicitud.nombreCliente) }}</span>
+                  <span class="avatar avatar-magenta">{{
+                    iniciales(solicitud.nombreCliente)
+                  }}</span>
 
                   <span class="request-main">
                     <span class="request-top">
@@ -151,9 +164,18 @@
                       <span class="request-preview">{{ solicitud.mensaje }}</span>
                     }
                     <span class="request-meta">
-                      <span><i class="bi bi-box-seam"></i> {{ solicitud.totalItems ?? 0 }} partidas</span>
-                      <span><i class="bi bi-paperclip"></i> {{ solicitud.totalArchivos ?? 0 }} archivos</span>
-                      <span><i class="bi bi-calendar3"></i> {{ fechaHora(solicitud.fechaCreacion) }}</span>
+                      <span
+                        ><i class="bi bi-box-seam"></i>
+                        {{ solicitud.totalItems ?? 0 }} partidas</span
+                      >
+                      <span
+                        ><i class="bi bi-paperclip"></i>
+                        {{ solicitud.totalArchivos ?? 0 }} archivos</span
+                      >
+                      <span
+                        ><i class="bi bi-calendar3"></i>
+                        {{ fechaHora(solicitud.fechaCreacion) }}</span
+                      >
                     </span>
                   </span>
 
@@ -198,20 +220,33 @@
         }
 
         @if (detalleCargando()) {
-          <aside class="panel-card detail-panel detail-panel-open" role="region" aria-label="Detalle de la solicitud">
+          <aside
+            class="panel-card detail-panel detail-panel-open"
+            role="region"
+            aria-label="Detalle de la solicitud"
+          >
             <div class="inbox-loading">
               <i class="bi bi-arrow-repeat"></i>
               <span>Abriendo solicitud...</span>
             </div>
           </aside>
         } @else if (seleccionada(); as solicitud) {
-          <aside class="panel-card detail-panel detail-panel-open" role="region" aria-label="Detalle de la solicitud">
+          <aside
+            class="panel-card detail-panel detail-panel-open"
+            role="region"
+            aria-label="Detalle de la solicitud"
+          >
             <div class="detail-head">
               <div>
                 <span class="panel-kicker">Solicitud {{ solicitud.folio }}</span>
                 <h2>{{ solicitud.nombreCliente }}</h2>
               </div>
-              <button class="btn btn-icon" type="button" aria-label="Cerrar detalle" (click)="cerrarDetalle()">
+              <button
+                class="btn btn-icon"
+                type="button"
+                aria-label="Cerrar detalle"
+                (click)="cerrarDetalle()"
+              >
                 <i class="bi bi-x-lg"></i>
               </button>
             </div>
@@ -236,7 +271,10 @@
             </div>
 
             <div class="detail-contact">
-              <div><i class="bi bi-envelope"></i> <a [href]="'mailto:' + solicitud.correo">{{ solicitud.correo }}</a></div>
+              <div>
+                <i class="bi bi-envelope"></i>
+                <a [href]="'mailto:' + solicitud.correo">{{ solicitud.correo }}</a>
+              </div>
               @if (solicitud.telefono) {
                 <div><i class="bi bi-telephone"></i> {{ solicitud.telefono }}</div>
               }
@@ -257,8 +295,16 @@
               <a class="btn btn-sm btn-outline-ink" [href]="'mailto:' + solicitud.correo">
                 <i class="bi bi-envelope"></i> Correo
               </a>
-              <button class="btn btn-sm btn-outline-ink" type="button" (click)="copiarCorreo(solicitud.correo)">
-                <i class="bi" [class.bi-clipboard]="!correoCopiado()" [class.bi-clipboard-check]="correoCopiado()"></i>
+              <button
+                class="btn btn-sm btn-outline-ink"
+                type="button"
+                (click)="copiarCorreo(solicitud.correo)"
+              >
+                <i
+                  class="bi"
+                  [class.bi-clipboard]="!correoCopiado()"
+                  [class.bi-clipboard-check]="correoCopiado()"
+                ></i>
                 {{ correoCopiado() ? 'Copiado' : 'Copiar correo' }}
               </button>
             </div>
@@ -334,9 +380,14 @@
 
               <div #hiloChat class="chat-thread" role="log" aria-live="polite">
                 @for (mensaje of mensajes(); track mensaje.id) {
-                  <div class="chat-bubble" [class.chat-bubble-propio]="mensaje.remitenteTipo === 'interno'">
+                  <div
+                    class="chat-bubble"
+                    [class.chat-bubble-propio]="mensaje.remitenteTipo === 'interno'"
+                  >
                     <div class="chat-meta">
-                      <strong>{{ mensaje.remitenteTipo === 'interno' ? mensaje.autor : 'Cliente' }}</strong>
+                      <strong>{{
+                        mensaje.remitenteTipo === 'interno' ? mensaje.autor : 'Cliente'
+                      }}</strong>
                       <time>{{ fechaHora(mensaje.creadoEn) }}</time>
                     </div>
                     @if (mensaje.mensaje) {
@@ -372,7 +423,9 @@
               }
 
               <div class="chat-compose">
-                <label class="visually-hidden" for="chatInternoMensaje">Respuesta para el cliente</label>
+                <label class="visually-hidden" for="chatInternoMensaje"
+                  >Respuesta para el cliente</label
+                >
                 <textarea
                   id="chatInternoMensaje"
                   class="form-control"
@@ -391,12 +444,16 @@
                         hidden
                         accept=".pdf,.ai,.psd,.png,.jpg,.jpeg,.svg,.zip"
                         (change)="seleccionarAdjuntoChat($event)"
-                      >
+                      />
                     </label>
                     @if (adjuntoChat(); as archivo) {
                       <span class="chat-adjunto-chip">
                         {{ archivo.name }}
-                        <button type="button" aria-label="Quitar adjunto" (click)="quitarAdjuntoChat()">
+                        <button
+                          type="button"
+                          aria-label="Quitar adjunto"
+                          (click)="quitarAdjuntoChat()"
+                        >
                           <i class="bi bi-x"></i>
                         </button>
                       </span>
@@ -446,12 +503,22 @@
                   <span class="badge badge-soft-success">{{ moneda(cotizacion.total) }}</span>
                 </div>
                 <div class="conversion-totals">
-                  <div><span>Subtotal</span><strong>{{ moneda(cotizacion.subtotal) }}</strong></div>
-                  <div><span>IVA</span><strong>{{ moneda(cotizacion.impuestos) }}</strong></div>
-                  <div><span>Anticipo 50%</span><strong>{{ moneda(cotizacion.anticipo) }}</strong></div>
+                  <div>
+                    <span>Subtotal</span><strong>{{ moneda(cotizacion.subtotal) }}</strong>
+                  </div>
+                  <div>
+                    <span>IVA</span><strong>{{ moneda(cotizacion.impuestos) }}</strong>
+                  </div>
+                  <div>
+                    <span>Anticipo 50%</span><strong>{{ moneda(cotizacion.anticipo) }}</strong>
+                  </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                  <button class="btn btn-sm btn-brand" type="button" (click)="abrirCotizacion(cotizacion)">
+                  <button
+                    class="btn btn-sm btn-brand"
+                    type="button"
+                    (click)="abrirCotizacion(cotizacion)"
+                  >
                     <i class="bi bi-pencil-square"></i> Abrir en cotizador
                   </button>
                   <a class="btn btn-sm btn-outline-ink" routerLink="/detalle">
@@ -466,32 +533,51 @@
                   <strong>Esta solicitud ya está cotizada</strong>
                   <span>Abre la cotización para revisar partidas o convertirla en pedido.</span>
                 </div>
-                <button class="btn btn-sm btn-ink" type="button" (click)="abrirCotizacion({ id: solicitud.cotizacionId })">
+                <button
+                  class="btn btn-sm btn-ink"
+                  type="button"
+                  (click)="abrirCotizacion({ id: solicitud.cotizacionId })"
+                >
                   Abrir
                 </button>
               </div>
             } @else {
               <div class="detail-cta">
-                <button
-                  class="btn btn-brand w-100"
-                  type="button"
-                  [disabled]="accion() === 'convertir'"
-                  (click)="convertir()"
-                >
-                  @if (accion() === 'convertir') {
-                    <i class="bi bi-hourglass-split"></i> Generando cotización...
-                  } @else {
-                    <i class="bi bi-lightning-charge"></i> Convertir en cotización
-                  }
-                </button>
-                <button class="btn btn-outline-ink w-100" type="button" (click)="cotizarConDetalle()">
-                  <i class="bi bi-sliders"></i> Revisar partidas y precios
-                </button>
-                <p class="detail-note">
-                  <i class="bi bi-info-circle"></i>
-                  La conversión usa el estimado de las partidas. Si necesitas ajustar precios,
-                  revisa primero en el cotizador.
-                </p>
+                @if (sinPartidas()) {
+                  <button class="btn btn-brand w-100" type="button" (click)="cotizarConDetalle()">
+                    <i class="bi bi-sliders"></i> Revisar partidas y precios
+                  </button>
+                  <p class="detail-note">
+                    <i class="bi bi-info-circle"></i>
+                    La solicitud llegó solo con mensaje. Agrega las partidas en el cotizador para
+                    generar la cotización.
+                  </p>
+                } @else {
+                  <button
+                    class="btn btn-brand w-100"
+                    type="button"
+                    [disabled]="accion() === 'convertir'"
+                    (click)="convertir()"
+                  >
+                    @if (accion() === 'convertir') {
+                      <i class="bi bi-hourglass-split"></i> Generando cotización...
+                    } @else {
+                      <i class="bi bi-lightning-charge"></i> Convertir en cotización
+                    }
+                  </button>
+                  <button
+                    class="btn btn-outline-ink w-100"
+                    type="button"
+                    (click)="cotizarConDetalle()"
+                  >
+                    <i class="bi bi-sliders"></i> Revisar partidas y precios
+                  </button>
+                  <p class="detail-note">
+                    <i class="bi bi-info-circle"></i>
+                    La conversión usa el estimado de las partidas. Si necesitas ajustar precios,
+                    revisa primero en el cotizador.
+                  </p>
+                }
               </div>
             }
           </aside>

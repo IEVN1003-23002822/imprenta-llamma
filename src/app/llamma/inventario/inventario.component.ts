@@ -11,6 +11,8 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../auth.service';
+import { ConfirmacionService } from '../confirmacion.service';
+import { CATEGORIAS_MATERIA, TIPOS_MOVIMIENTO, UNIDADES } from '../estados';
 import {
   CategoriaMateriaPrima,
   MateriaPrimaApi,
@@ -20,40 +22,8 @@ import {
   UnidadMedida,
 } from '../llamma.models';
 import { LlammaService } from '../llamma.service';
+import { ModalAccesibleDirective } from '../modal-accesible.directive';
 import { UiService } from '../ui.service';
-
-const CATEGORIAS: { valor: CategoriaMateriaPrima; etiqueta: string; icono: string }[] = [
-  { valor: 'lona', etiqueta: 'Lonas', icono: 'bi-layers' },
-  { valor: 'vinil', etiqueta: 'Viniles', icono: 'bi-square' },
-  { valor: 'tinta', etiqueta: 'Tintas', icono: 'bi-droplet-half' },
-  { valor: 'papel', etiqueta: 'Papeles', icono: 'bi-file-earmark-text' },
-  { valor: 'herrajes', etiqueta: 'Herrajes', icono: 'bi-disc' },
-  { valor: 'estructura', etiqueta: 'Estructuras', icono: 'bi-bounding-box' },
-  { valor: 'lamina', etiqueta: 'Rígidos', icono: 'bi-grid-3x3' },
-  { valor: 'laminado', etiqueta: 'Acabados', icono: 'bi-arrow-repeat' },
-  { valor: 'adhesivo', etiqueta: 'Adhesivos', icono: 'bi-stickies' },
-  { valor: 'perfil', etiqueta: 'Perfiles', icono: 'bi-bounding-box-circles' },
-  { valor: 'textil', etiqueta: 'Textil', icono: 'bi-bag' },
-  { valor: 'promocional', etiqueta: 'Promocionales', icono: 'bi-gift' },
-  { valor: 'otro', etiqueta: 'Otros', icono: 'bi-box-seam' },
-];
-
-const UNIDADES: { valor: UnidadMedida; etiqueta: string; corta: string }[] = [
-  { valor: 'm2', etiqueta: 'Metro cuadrado (m²)', corta: 'm²' },
-  { valor: 'ml', etiqueta: 'Metro lineal (ml)', corta: 'ml' },
-  { valor: 'pieza', etiqueta: 'Pieza', corta: 'pza' },
-  { valor: 'hoja', etiqueta: 'Hoja', corta: 'hoja' },
-  { valor: 'kg', etiqueta: 'Kilogramo', corta: 'kg' },
-  { valor: 'litro', etiqueta: 'Litro', corta: 'L' },
-];
-
-const TIPOS_MOVIMIENTO: { valor: TipoMovimiento; etiqueta: string; signo: string }[] = [
-  { valor: 'entrada', etiqueta: 'Entrada', signo: '+' },
-  { valor: 'salida', etiqueta: 'Salida', signo: '−' },
-  { valor: 'ajuste', etiqueta: 'Ajuste de conteo', signo: '=' },
-  { valor: 'merma', etiqueta: 'Merma', signo: '−' },
-  { valor: 'devolucion', etiqueta: 'Devolución', signo: '+' },
-];
 
 const TONO_CATEGORIA: Record<string, string> = {
   lona: 'icon-tile-cyan',
@@ -84,7 +54,7 @@ interface EstadoStock {
 
 @Component({
   selector: 'app-inventario',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ModalAccesibleDirective],
   templateUrl: './inventario.component.html',
   styleUrl: './inventario.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -92,10 +62,11 @@ interface EstadoStock {
 export class InventarioComponent implements OnInit {
   private readonly service = inject(LlammaService);
   private readonly ui = inject(UiService);
+  private readonly confirmacion = inject(ConfirmacionService);
   private readonly fb = inject(FormBuilder);
   readonly auth = inject(AuthService);
 
-  readonly categorias = CATEGORIAS;
+  readonly categorias = CATEGORIAS_MATERIA;
   readonly unidades = UNIDADES;
   readonly tiposMovimiento = TIPOS_MOVIMIENTO;
 
@@ -157,7 +128,9 @@ export class InventarioComponent implements OnInit {
     });
   });
 
-  readonly paginas = computed(() => Math.max(1, Math.ceil(this.filtradas().length / this.porPagina)));
+  readonly paginas = computed(() =>
+    Math.max(1, Math.ceil(this.filtradas().length / this.porPagina)),
+  );
 
   readonly visibles = computed(() => {
     const inicio = (this.pagina() - 1) * this.porPagina;
@@ -227,7 +200,11 @@ export class InventarioComponent implements OnInit {
       .filter((materia) => this.estadoStock(materia).clave !== 'optimo')
       .map((materia) => {
         const estado = this.estadoStock(materia);
-        const objetivo = Math.max(materia.stockMaximo, materia.stockMinimo * 2, materia.stockActual);
+        const objetivo = Math.max(
+          materia.stockMaximo,
+          materia.stockMinimo * 2,
+          materia.stockActual,
+        );
         return {
           materia,
           estado,
@@ -373,19 +350,27 @@ export class InventarioComponent implements OnInit {
         this.cerrarFormulario();
         this.cargar();
       },
-      error: (error) => this.ui.error(this.ui.mensajeDeError(error, 'No pudimos guardar el insumo.')),
+      error: (error) =>
+        this.ui.error(this.ui.mensajeDeError(error, 'No pudimos guardar el insumo.')),
     });
   }
 
-  desactivar(materia: MateriaPrimaApi): void {
-    if (!window.confirm(`¿Dar de baja ${materia.nombre}? Su historial de movimientos se conserva.`))
-      return;
+  async desactivar(materia: MateriaPrimaApi): Promise<void> {
+    const confirmado = await this.confirmacion.confirmar({
+      titulo: 'Dar de baja insumo',
+      mensaje: `¿Dar de baja ${materia.nombre}? Su historial de movimientos se conserva.`,
+      confirmar: 'Dar de baja',
+      peligro: true,
+    });
+    if (!confirmado) return;
+
     this.service.desactivarMateria(materia.id).subscribe({
       next: () => {
         this.ui.exito('Insumo dado de baja.');
         this.cargar();
       },
-      error: (error) => this.ui.error(this.ui.mensajeDeError(error, 'No pudimos dar de baja el insumo.')),
+      error: (error) =>
+        this.ui.error(this.ui.mensajeDeError(error, 'No pudimos dar de baja el insumo.')),
     });
   }
 
@@ -445,7 +430,8 @@ export class InventarioComponent implements OnInit {
             )}.`,
           );
         },
-        error: (error) => this.ui.error(this.ui.mensajeDeError(error, 'No pudimos registrar el movimiento.')),
+        error: (error) =>
+          this.ui.error(this.ui.mensajeDeError(error, 'No pudimos registrar el movimiento.')),
       });
   }
 
@@ -527,7 +513,7 @@ export class InventarioComponent implements OnInit {
   }
 
   iconoCategoria(categoria: string): string {
-    return CATEGORIAS.find((fila) => fila.valor === categoria)?.icono ?? 'bi-box-seam';
+    return CATEGORIAS_MATERIA.find((fila) => fila.valor === categoria)?.icono ?? 'bi-box-seam';
   }
 
   tonoCategoria(categoria: string): string {
@@ -535,7 +521,7 @@ export class InventarioComponent implements OnInit {
   }
 
   etiquetaCategoria(categoria: string): string {
-    return CATEGORIAS.find((fila) => fila.valor === categoria)?.etiqueta ?? categoria;
+    return CATEGORIAS_MATERIA.find((fila) => fila.valor === categoria)?.etiqueta ?? categoria;
   }
 
   unidadCorta(unidad: string): string {

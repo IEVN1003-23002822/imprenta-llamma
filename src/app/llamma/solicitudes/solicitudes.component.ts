@@ -13,6 +13,13 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import {
+  ESTADOS_SOLICITUD,
+  EXTENSIONES_ARCHIVO,
+  MAX_BYTES_ARCHIVO,
+  badgeDe,
+  etiquetaDe,
+} from '../estados';
 import { LlammaService } from '../llamma.service';
 import { SolicitudesStore } from '../solicitudes.store';
 import {
@@ -23,22 +30,13 @@ import {
   SolicitudCotizacion,
 } from '../llamma.models';
 
-interface OpcionEstado {
-  clave: string;
-  etiqueta: string;
-}
-
-const OPCIONES_ESTADO: OpcionEstado[] = [
-  { clave: '', etiqueta: 'Todas' },
-  { clave: 'nueva', etiqueta: 'Nuevas' },
-  { clave: 'en-revision', etiqueta: 'En revisión' },
-  { clave: 'cotizada', etiqueta: 'Cotizadas' },
-  { clave: 'convertida', etiqueta: 'Convertidas' },
-  { clave: 'descartada', etiqueta: 'Descartadas' },
+const OPCIONES_ESTADO = [
+  { valor: '', etiqueta: 'Todas' },
+  ...ESTADOS_SOLICITUD.map((estado) => ({
+    valor: estado.valor,
+    etiqueta: estado.plural ?? estado.etiqueta,
+  })),
 ];
-
-const EXTENSIONES = ['pdf', 'ai', 'psd', 'png', 'jpg', 'jpeg', 'svg', 'zip'];
-const MAX_BYTES = 25 * 1024 * 1024;
 
 @Component({
   selector: 'app-solicitudes',
@@ -79,6 +77,11 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   readonly cotizacionCreada = signal<Cotizacion | null>(null);
   readonly correoCopiado = signal(false);
 
+  /** La solicitud llegó solo con mensaje: no hay partidas para estimar. */
+  readonly sinPartidas = computed(
+    () => !!this.seleccionada() && (this.seleccionada()?.itemsSolicitados?.length ?? 0) === 0,
+  );
+
   readonly mensajes = signal<MensajeChat[]>([]);
   readonly borradorChat = signal('');
   readonly adjuntoChat = signal<File | null>(null);
@@ -87,9 +90,7 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   readonly descargandoAdjunto = signal<number | null>(null);
   private readonly hiloChat = viewChild<ElementRef<HTMLDivElement>>('hiloChat');
 
-  readonly hayFiltros = computed(
-    () => this.estadoFiltro() !== '' || this.texto().trim() !== '',
-  );
+  readonly hayFiltros = computed(() => this.estadoFiltro() !== '' || this.texto().trim() !== '');
 
   readonly nuevoConteo = computed(() => this.store.resumen().nuevas);
 
@@ -243,7 +244,9 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
           this.seleccionada.update((actual) =>
             actual ? { ...actual, estado: actualizada.estado } : actual,
           );
-          this.aviso.set(`La solicitud ${solicitud.folio} pasó a "${this.etiquetaEstado(estado)}".`);
+          this.aviso.set(
+            `La solicitud ${solicitud.folio} pasó a "${this.etiquetaEstado(estado)}".`,
+          );
           this.recargarLista();
         },
         error: () => this.errorAccion.set('No pudimos actualizar el estado de la solicitud.'),
@@ -260,6 +263,13 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
     const solicitud = this.seleccionada();
     if (!solicitud || this.accion()) return;
 
+    if (this.sinPartidas()) {
+      this.errorAccion.set(
+        'Esta solicitud llegó solo con mensaje y no tiene partidas que cotizar. Usa «Revisar partidas y precios» para agregarlas.',
+      );
+      return;
+    }
+
     this.accion.set('convertir');
     this.errorAccion.set(null);
 
@@ -273,9 +283,7 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
         next: (cotizacion) => {
           this.cotizacionCreada.set(cotizacion);
           this.seleccionada.update((actual) =>
-            actual
-              ? { ...actual, estado: 'cotizada', cotizacionId: cotizacion.id }
-              : actual,
+            actual ? { ...actual, estado: 'cotizada', cotizacionId: cotizacion.id } : actual,
           );
           this.aviso.set(`Cotización ${cotizacion.folio} creada con el estimado de la solicitud.`);
           this.recargarLista();
@@ -331,11 +339,11 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
 
     if (!archivo) return;
     const extension = archivo.name.split('.').pop()?.toLowerCase() ?? '';
-    if (!EXTENSIONES.includes(extension)) {
+    if (!EXTENSIONES_ARCHIVO.includes(extension)) {
       this.errorChat.set(`"${archivo.name}" no tiene un formato permitido.`);
       return;
     }
-    if (archivo.size > MAX_BYTES) {
+    if (archivo.size > MAX_BYTES_ARCHIVO) {
       this.errorChat.set(`"${archivo.name}" supera el límite de 25 MB.`);
       return;
     }
@@ -474,25 +482,11 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   }
 
   etiquetaEstado(estado: EstadoSolicitud): string {
-    const etiquetas: Record<EstadoSolicitud, string> = {
-      nueva: 'Nueva',
-      'en-revision': 'En revisión',
-      cotizada: 'Cotizada',
-      convertida: 'Convertida',
-      descartada: 'Descartada',
-    };
-    return etiquetas[estado];
+    return etiquetaDe(ESTADOS_SOLICITUD, estado);
   }
 
   claseEstado(estado: EstadoSolicitud): string {
-    const clases: Record<EstadoSolicitud, string> = {
-      nueva: 'badge-soft-cyan',
-      'en-revision': 'badge-soft-warning',
-      cotizada: 'badge-soft-magenta',
-      convertida: 'badge-soft-success',
-      descartada: 'badge-soft-muted',
-    };
-    return clases[estado];
+    return badgeDe(ESTADOS_SOLICITUD, estado);
   }
 
   private recargarLista(): void {

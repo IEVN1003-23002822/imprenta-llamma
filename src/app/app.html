@@ -1,180 +1,331 @@
-<div class="ink-strip" aria-hidden="true"></div>
+<div class="app-shell">
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+  <div class="ink-strip" aria-hidden="true"></div>
 
-<nav class="navbar navbar-expand-lg navbar-dark navbar-llamma sticky-top">
-  <div class="container">
-    <a class="navbar-brand brand-lockup" routerLink="/" aria-label="Llamma, ir al inicio">
-      <img
-        class="brand-logo"
-        src="assets/images/logo-llamma.png"
-        alt="Imprenta Llamma Logo"
-        width="31"
-        height="44"
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-llamma sticky-top">
+    <div class="container">
+      <a class="navbar-brand brand-lockup" routerLink="/" aria-label="Llamma, ir al inicio">
+        <img
+          class="brand-logo"
+          src="assets/images/logo-llamma-128.webp"
+          srcset="assets/images/logo-llamma-128.webp 2x, assets/images/logo-llamma-256.webp 4x"
+          alt="Imprenta Llamma Logo"
+          width="31"
+          height="44"
+        />
+        <span class="brand-text">
+          <strong>LLAMMA</strong>
+          <small>Imprimimos tus ideas</small>
+        </span>
+      </a>
+
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#llammaNav"
+        aria-controls="llammaNav"
+        aria-expanded="false"
+        aria-label="Abrir menú de navegación"
       >
-      <span class="brand-text">
-        <strong>LLAMMA</strong>
-        <small>Imprimimos tus ideas</small>
-      </span>
-    </a>
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#llammaNav"
-      aria-controls="llammaNav"
-      aria-expanded="false"
-      aria-label="Abrir menú de navegación"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="llammaNav">
-      <ul class="navbar-nav mx-auto mb-3 mb-lg-0">
-        @if (!auth.autenticado()) {
-          <li class="nav-item">
-            <a
-              class="nav-link"
-              routerLink="/"
-              routerLinkActive="active"
-              [routerLinkActiveOptions]="{ exact: true }"
-              >Inicio</a
-            >
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/productos" routerLinkActive="active">Catálogo</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/cotizar" routerLinkActive="active"
-              >Solicitar cotización</a
-            >
-          </li>
-        } @else {
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link nav-link-badge" routerLink="/solicitudes" routerLinkActive="active">
-              Solicitudes
-              @if (store.resumen().nuevas > 0) {
-                <span class="nav-count" [attr.aria-label]="store.resumen().nuevas + ' solicitudes nuevas'">
-                  {{ store.resumen().nuevas }}
-                </span>
-              }
-            </a>
-          </li>
-          @if (auth.tieneRol('admin', 'ventas')) {
+      <div class="collapse navbar-collapse" id="llammaNav">
+        <ul class="navbar-nav mx-auto mb-3 mb-lg-0">
+          @if (!auth.autenticado()) {
             <li class="nav-item">
-              <a class="nav-link" routerLink="/captura" routerLinkActive="active">Cotizador</a>
+              <a
+                class="nav-link"
+                routerLink="/"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                [attr.aria-current]="esRuta('/') ? 'page' : null"
+                >Inicio</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                routerLink="/productos"
+                routerLinkActive="active"
+                [attr.aria-current]="esRuta('/productos') ? 'page' : null"
+                >Catálogo</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                routerLink="/cotizar"
+                routerLinkActive="active"
+                [attr.aria-current]="esRuta('/cotizar') ? 'page' : null"
+                >Solicitar cotización</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                routerLink="/seguimiento"
+                routerLinkActive="active"
+                [attr.aria-current]="esRuta('/seguimiento') ? 'page' : null"
+                >Seguimiento</a
+              >
+            </li>
+          } @else {
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                routerLink="/dashboard"
+                routerLinkActive="active"
+                [attr.aria-current]="esRuta('/dashboard') ? 'page' : null"
+                >Dashboard</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link nav-link-badge"
+                routerLink="/solicitudes"
+                routerLinkActive="active"
+                [attr.aria-current]="esRuta('/solicitudes') ? 'page' : null"
+              >
+                Solicitudes
+                @if (store.resumen().nuevas > 0) {
+                  <span
+                    class="nav-count"
+                    [attr.aria-label]="store.resumen().nuevas + ' solicitudes nuevas'"
+                  >
+                    {{ store.resumen().nuevas }}
+                  </span>
+                }
+              </a>
+            </li>
+            @if (auth.tieneRol('admin', 'ventas')) {
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  routerLink="/captura"
+                  routerLinkActive="active"
+                  [attr.aria-current]="esRuta('/captura') ? 'page' : null"
+                  >Cotizador</a
+                >
+              </li>
+            }
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Módulos
+              </a>
+              <ul class="dropdown-menu dropdown-menu-llamma">
+                @if (auth.tieneRol('admin', 'ventas', 'produccion')) {
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      routerLink="/detalle"
+                      [attr.aria-current]="esRuta('/detalle') ? 'page' : null"
+                      ><i class="bi bi-receipt"></i> Detalle de órdenes</a
+                    >
+                  </li>
+                }
+                <li>
+                  <a
+                    class="dropdown-item"
+                    routerLink="/consultas"
+                    [attr.aria-current]="esRuta('/consultas') ? 'page' : null"
+                    ><i class="bi bi-funnel"></i> Consultas</a
+                  >
+                </li>
+                @if (auth.tieneRol('admin', 'inventario', 'produccion')) {
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      routerLink="/inventario"
+                      [attr.aria-current]="esRuta('/inventario') ? 'page' : null"
+                      ><i class="bi bi-box-seam"></i> Inventario</a
+                    >
+                  </li>
+                }
+                @if (auth.tieneRol('admin', 'inventario')) {
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      routerLink="/abastecimiento"
+                      [attr.aria-current]="esRuta('/abastecimiento') ? 'page' : null"
+                      ><i class="bi bi-cart-plus"></i> Abastecimiento</a
+                    >
+                  </li>
+                }
+                @if (auth.tieneRol('admin', 'produccion')) {
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      routerLink="/produccion"
+                      [attr.aria-current]="esRuta('/produccion') ? 'page' : null"
+                      ><i class="bi bi-gear-wide-connected"></i> Producción</a
+                    >
+                  </li>
+                }
+                @if (auth.tieneRol('admin', 'ventas', 'marketing')) {
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      routerLink="/clientes"
+                      [attr.aria-current]="esRuta('/clientes') ? 'page' : null"
+                      ><i class="bi bi-people"></i> Clientes</a
+                    >
+                  </li>
+                }
+                @if (auth.tieneRol('admin', 'marketing')) {
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      routerLink="/marketing"
+                      [attr.aria-current]="esRuta('/marketing') ? 'page' : null"
+                      ><i class="bi bi-megaphone"></i> Marketing</a
+                    >
+                  </li>
+                }
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" routerLink="/" target="_self"
+                    ><i class="bi bi-globe2"></i> Ver sitio público</a
+                  >
+                </li>
+              </ul>
             </li>
           }
-          <li class="nav-item dropdown">
-            <a
-              class="nav-link dropdown-toggle"
-              href="#"
-              role="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              Módulos
-            </a>
-            <ul class="dropdown-menu dropdown-menu-llamma">
-              @if (auth.tieneRol('admin', 'ventas', 'produccion')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/detalle"
-                    ><i class="bi bi-receipt"></i> Detalle de órdenes</a
-                  >
-                </li>
-              }
-              <li>
-                <a class="dropdown-item" routerLink="/consultas"
-                  ><i class="bi bi-funnel"></i> Consultas</a
-                >
-              </li>
-              @if (auth.tieneRol('admin', 'inventario', 'produccion')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/inventario"
-                    ><i class="bi bi-box-seam"></i> Inventario</a
-                  >
-                </li>
-              }
-              @if (auth.tieneRol('admin', 'inventario')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/abastecimiento"
-                    ><i class="bi bi-cart-plus"></i> Abastecimiento</a
-                  >
-                </li>
-              }
-              @if (auth.tieneRol('admin', 'produccion')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/produccion"
-                    ><i class="bi bi-gear-wide-connected"></i> Producción</a
-                  >
-                </li>
-              }
-              @if (auth.tieneRol('admin', 'ventas', 'marketing')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/clientes"
-                    ><i class="bi bi-people"></i> Clientes</a
-                  >
-                </li>
-              }
-              @if (auth.tieneRol('admin', 'marketing')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/marketing"
-                    ><i class="bi bi-megaphone"></i> Marketing</a
-                  >
-                </li>
-              }
-              <li><hr class="dropdown-divider" /></li>
-              <li>
-                <a class="dropdown-item" routerLink="/" target="_self"
-                  ><i class="bi bi-globe2"></i> Ver sitio público</a
-                >
-              </li>
-            </ul>
-          </li>
-        }
-      </ul>
+        </ul>
 
-      <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-lg-center gap-2">
-        @if (!auth.autenticado()) {
-          <a class="btn btn-sm btn-outline-light-soft" routerLink="/login">
-            <i class="bi bi-shield-lock"></i> Acceso equipo
-          </a>
-        } @else {
-          <div class="user-chip">
-            <span class="user-avatar">{{ iniciales }}</span>
-            <span class="user-meta">
-              <strong>{{ auth.nombre() }}</strong>
-              <small>{{ auth.rol() }}</small>
-            </span>
-          </div>
-          <button class="btn btn-sm btn-outline-light-soft" type="button" (click)="cerrarSesion()">
-            <i class="bi bi-box-arrow-right"></i> Salir
-          </button>
-        }
+        <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-lg-center gap-2">
+          @if (!auth.autenticado()) {
+            <a class="btn btn-sm btn-outline-light-soft" routerLink="/login">
+              <i class="bi bi-shield-lock"></i> Acceso equipo
+            </a>
+          } @else {
+            <div class="user-chip">
+              <span class="user-avatar">{{ iniciales }}</span>
+              <span class="user-meta">
+                <strong>{{ auth.nombre() }}</strong>
+                <small>{{ auth.rol() }}</small>
+              </span>
+            </div>
+            <button
+              class="btn btn-sm btn-outline-light-soft"
+              type="button"
+              (click)="cerrarSesion()"
+            >
+              <i class="bi bi-box-arrow-right"></i> Salir
+            </button>
+          }
+        </div>
       </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<main class="app-main">
-  <router-outlet />
-</main>
+  <main id="contenido" class="app-main" tabindex="-1">
+    <router-outlet />
+  </main>
 
-<div class="toast-stack" aria-live="polite" aria-atomic="true">
-  @for (toast of ui.toasts(); track toast.id) {
-    <div class="app-toast" [class]="'app-toast app-toast-' + toast.tipo" role="status">
-      <i
-        class="bi"
-        [class.bi-check-circle-fill]="toast.tipo === 'success'"
-        [class.bi-exclamation-octagon-fill]="toast.tipo === 'error'"
-        [class.bi-info-circle-fill]="toast.tipo === 'info'"
-      ></i>
-      <span>{{ toast.mensaje }}</span>
-      <button type="button" aria-label="Cerrar notificación" (click)="ui.cerrar(toast.id)">
-        <i class="bi bi-x-lg"></i>
-      </button>
-    </div>
+  @if (!auth.autenticado()) {
+    <footer class="site-footer">
+      <div class="container">
+        <h2 class="visually-hidden">Información de Llamma</h2>
+
+        <div class="site-footer-grid">
+          <div class="site-footer-brand">
+            <span class="brand-lockup">
+              <img
+                class="brand-logo"
+                src="assets/images/logo-llamma-128.webp"
+                srcset="
+                  assets/images/logo-llamma-128.webp 2x,
+                  assets/images/logo-llamma-256.webp 4x
+                "
+                alt="Imprenta Llamma"
+                width="31"
+                height="44"
+              />
+              <span class="brand-text">
+                <strong>LLAMMA</strong>
+                <small>{{ site.lema }}</small>
+              </span>
+            </span>
+
+            <p>{{ site.descripcion }}</p>
+
+            <a class="btn btn-brand btn-sm" routerLink="/cotizar">
+              Cotizar mi proyecto <i class="bi bi-arrow-up-right"></i>
+            </a>
+          </div>
+
+          <nav class="site-footer-col" aria-label="Explorar el sitio">
+            <p class="site-footer-title">Explorar</p>
+            <a routerLink="/">Inicio</a>
+            <a routerLink="/productos">Catálogo</a>
+            <a routerLink="/cotizar">Solicitar cotización</a>
+            <a routerLink="/seguimiento">Seguimiento de solicitud</a>
+          </nav>
+
+          <nav class="site-footer-col" aria-label="Acceso del equipo">
+            <p class="site-footer-title">Equipo</p>
+            <a routerLink="/login">Acceso al panel</a>
+            <a routerLink="/aviso-privacidad">Aviso de privacidad</a>
+          </nav>
+
+          <div class="site-footer-col">
+            <p class="site-footer-title">Contacto</p>
+            <a [href]="'mailto:' + site.correo">
+              <i class="bi bi-envelope"></i> {{ site.correo }}
+            </a>
+            @if (site.telefono) {
+              <a [href]="'tel:' + site.telefono">
+                <i class="bi bi-telephone"></i> {{ site.telefono }}
+              </a>
+            }
+            @if (site.whatsapp) {
+              <a [href]="'https://wa.me/' + site.whatsapp" target="_blank" rel="noopener">
+                <i class="bi bi-whatsapp"></i> WhatsApp
+              </a>
+            }
+            @if (site.direccion) {
+              <span class="site-footer-text">
+                <i class="bi bi-geo-alt"></i> {{ site.direccion }}
+              </span>
+            }
+            @if (site.horario) {
+              <span class="site-footer-text"> <i class="bi bi-clock"></i> {{ site.horario }} </span>
+            }
+          </div>
+        </div>
+
+        <div class="site-footer-bottom">
+          <span>© {{ anio }} {{ site.nombre }}. Todos los derechos reservados.</span>
+          <span>Hecho en México · CMYK</span>
+        </div>
+      </div>
+    </footer>
   }
+
+  <div class="toast-stack" aria-live="polite" aria-atomic="true">
+    @for (toast of ui.toasts(); track toast.id) {
+      <div class="app-toast" [class]="'app-toast app-toast-' + toast.tipo" role="status">
+        <i
+          class="bi"
+          [class.bi-check-circle-fill]="toast.tipo === 'success'"
+          [class.bi-exclamation-octagon-fill]="toast.tipo === 'error'"
+          [class.bi-info-circle-fill]="toast.tipo === 'info'"
+        ></i>
+        <span>{{ toast.mensaje }}</span>
+        <button type="button" aria-label="Cerrar notificación" (click)="ui.cerrar(toast.id)">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    }
+  </div>
+
+  <app-confirmacion-dialog />
 </div>

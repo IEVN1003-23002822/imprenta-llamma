@@ -11,52 +11,28 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../auth.service';
+import { ConfirmacionService } from '../confirmacion.service';
 import {
-  MateriaPrimaApi,
-  OrdenCompraApi,
-  ProveedorApi,
-} from '../llamma.models';
+  CATEGORIAS_MATERIA,
+  COMPRAS_ABIERTAS,
+  ESTADOS_COMPRA,
+  UNIDADES,
+  badgeDe,
+  etiquetaDe,
+  mapaCortas,
+  mapaIconos,
+} from '../estados';
+import { MateriaPrimaApi, OrdenCompraApi, ProveedorApi } from '../llamma.models';
 import { LlammaService } from '../llamma.service';
+import { ModalAccesibleDirective } from '../modal-accesible.directive';
 import { UiService } from '../ui.service';
 
-const ESTADOS: { valor: string; etiqueta: string; badge: string }[] = [
-  { valor: 'pendiente', etiqueta: 'Pendiente', badge: 'badge-soft-muted' },
-  { valor: 'confirmada', etiqueta: 'Confirmada', badge: 'badge-soft-warning' },
-  { valor: 'en-transito', etiqueta: 'En tránsito', badge: 'badge-soft-cyan' },
-  { valor: 'recibida', etiqueta: 'Recibida', badge: 'badge-soft-success' },
-  { valor: 'cancelada', etiqueta: 'Cancelada', badge: 'badge-soft-danger' },
-];
-
-const ABIERTOS = new Set(['pendiente', 'confirmada', 'en-transito']);
-
-const ICONO_CATEGORIA: Record<string, string> = {
-  lona: 'bi-layers',
-  vinil: 'bi-square',
-  tinta: 'bi-droplet-half',
-  papel: 'bi-file-earmark-text',
-  herrajes: 'bi-disc',
-  estructura: 'bi-bounding-box',
-  lamina: 'bi-grid-3x3',
-  laminado: 'bi-arrow-repeat',
-  adhesivo: 'bi-stickies',
-  perfil: 'bi-bounding-box-circles',
-  textil: 'bi-bag',
-  promocional: 'bi-gift',
-  otro: 'bi-box-seam',
-};
-
-const UNIDADES: Record<string, string> = {
-  m2: 'm²',
-  ml: 'ml',
-  pieza: 'pza',
-  hoja: 'hoja',
-  kg: 'kg',
-  litro: 'L',
-};
+const ICONO_CATEGORIA = mapaIconos(CATEGORIAS_MATERIA);
+const UNIDAD_CORTA = mapaCortas(UNIDADES);
 
 @Component({
   selector: 'app-abastecimiento',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ModalAccesibleDirective],
   templateUrl: './abastecimiento.component.html',
   styleUrl: './abastecimiento.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,10 +40,11 @@ const UNIDADES: Record<string, string> = {
 export class AbastecimientoComponent implements OnInit {
   private readonly service = inject(LlammaService);
   private readonly ui = inject(UiService);
+  private readonly confirmacion = inject(ConfirmacionService);
   private readonly fb = inject(FormBuilder);
   readonly auth = inject(AuthService);
 
-  readonly estados = ESTADOS;
+  readonly estados = ESTADOS_COMPRA;
 
   readonly ordenes = signal<OrdenCompraApi[]>([]);
   readonly materias = signal<MateriaPrimaApi[]>([]);
@@ -116,7 +93,9 @@ export class AbastecimientoComponent implements OnInit {
     });
   });
 
-  readonly paginas = computed(() => Math.max(1, Math.ceil(this.filtradas().length / this.porPagina)));
+  readonly paginas = computed(() =>
+    Math.max(1, Math.ceil(this.filtradas().length / this.porPagina)),
+  );
 
   readonly visibles = computed(() => {
     const inicio = (this.pagina() - 1) * this.porPagina;
@@ -133,7 +112,7 @@ export class AbastecimientoComponent implements OnInit {
 
   readonly estadisticas = computed(() => {
     const ordenes = this.ordenes();
-    const abiertas = ordenes.filter((orden) => ABIERTOS.has(orden.estado));
+    const abiertas = ordenes.filter((orden) => COMPRAS_ABIERTAS.has(orden.estado));
     const comprometido = abiertas.reduce((total, orden) => total + Number(orden.total ?? 0), 0);
     const proveedoresActivos = this.proveedores().filter((proveedor) => proveedor.activo).length;
     const recibidas = ordenes.filter((orden) => orden.estado === 'recibida').length;
@@ -169,7 +148,11 @@ export class AbastecimientoComponent implements OnInit {
     this.materias()
       .filter((materia) => materia.bajoStock || materia.stockActual <= materia.stockMinimo)
       .map((materia) => {
-        const objetivo = Math.max(materia.stockMaximo, materia.stockMinimo * 2, materia.stockActual);
+        const objetivo = Math.max(
+          materia.stockMaximo,
+          materia.stockMinimo * 2,
+          materia.stockActual,
+        );
         const reposicion = Math.max(objetivo - materia.stockActual, 0);
         const critico =
           materia.stockActual <= 0 ||
@@ -187,7 +170,7 @@ export class AbastecimientoComponent implements OnInit {
 
   readonly recepciones = computed(() =>
     this.ordenes()
-      .filter((orden) => ABIERTOS.has(orden.estado) && orden.fechaEntrega)
+      .filter((orden) => COMPRAS_ABIERTAS.has(orden.estado) && orden.fechaEntrega)
       .sort((a, b) => String(a.fechaEntrega).localeCompare(String(b.fechaEntrega)))
       .slice(0, 5),
   );
@@ -396,14 +379,14 @@ export class AbastecimientoComponent implements OnInit {
     this.detalle.set(null);
   }
 
-  recibir(orden: OrdenCompraApi): void {
+  async recibir(orden: OrdenCompraApi): Promise<void> {
     const piezas = orden.items.length;
-    if (
-      !window.confirm(
-        `¿Marcar ${orden.folio} como recibida? Se sumarán ${piezas} partidas al inventario y se registrarán los movimientos de entrada.`,
-      )
-    )
-      return;
+    const confirmado = await this.confirmacion.confirmar({
+      titulo: `Recibir ${orden.folio}`,
+      mensaje: `¿Marcar ${orden.folio} como recibida? Se sumarán ${piezas} partidas al inventario y se registrarán los movimientos de entrada.`,
+      confirmar: 'Recibir orden',
+    });
+    if (!confirmado) return;
     this.cambiarEstadoOrden(orden, 'recibida');
   }
 
@@ -528,11 +511,11 @@ export class AbastecimientoComponent implements OnInit {
   }
 
   etiquetaEstado(estado: string): string {
-    return ESTADOS.find((fila) => fila.valor === estado)?.etiqueta ?? estado;
+    return etiquetaDe(ESTADOS_COMPRA, estado);
   }
 
   claseEstado(estado: string): string {
-    return ESTADOS.find((fila) => fila.valor === estado)?.badge ?? 'badge-soft-muted';
+    return badgeDe(ESTADOS_COMPRA, estado);
   }
 
   etiquetaItems(orden: OrdenCompraApi): string {
@@ -561,7 +544,7 @@ export class AbastecimientoComponent implements OnInit {
     const numero = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(
       Number(valor ?? 0),
     );
-    return unidad ? `${numero} ${UNIDADES[unidad] ?? unidad}` : numero;
+    return unidad ? `${numero} ${UNIDAD_CORTA[unidad] ?? unidad}` : numero;
   }
 
   iniciales(nombre: string | null | undefined): string {

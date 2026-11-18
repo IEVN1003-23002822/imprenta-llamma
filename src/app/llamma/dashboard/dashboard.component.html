@@ -14,7 +14,12 @@
           <i class="bi bi-calendar3"></i>
           {{ resumen() ? fechaCorta(resumen()!.pedidosRecientes[0]?.fechaPedido) : '—' }}
         </span>
-        <button class="btn btn-outline-ink" type="button" (click)="cargar()" [disabled]="cargando()">
+        <button
+          class="btn btn-outline-ink"
+          type="button"
+          (click)="cargar()"
+          [disabled]="cargando()"
+        >
           <i class="bi bi-arrow-clockwise" [class.spin]="cargando()"></i>
           {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
         </button>
@@ -25,7 +30,9 @@
       <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
         <span class="flex-grow-1">{{ error() }}</span>
-        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">Reintentar</button>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
+          Reintentar
+        </button>
       </div>
     }
 
@@ -42,8 +49,16 @@
           <article class="kpi-card h-100">
             <div class="d-flex align-items-start justify-content-between gap-2">
               <span class="icon-tile icon-tile-cyan"><i class="bi bi-currency-dollar"></i></span>
-              <span class="trend" [class.trend-up]="data.variacionVentas >= 0" [class.trend-down]="data.variacionVentas < 0">
-                <i class="bi" [class.bi-arrow-up-right]="data.variacionVentas >= 0" [class.bi-arrow-down-right]="data.variacionVentas < 0"></i>
+              <span
+                class="trend"
+                [class.trend-up]="data.variacionVentas >= 0"
+                [class.trend-down]="data.variacionVentas < 0"
+              >
+                <i
+                  class="bi"
+                  [class.bi-arrow-up-right]="data.variacionVentas >= 0"
+                  [class.bi-arrow-down-right]="data.variacionVentas < 0"
+                ></i>
                 {{ data.variacionVentas }}%
               </span>
             </div>
@@ -60,7 +75,9 @@
           <article class="kpi-card h-100">
             <div class="d-flex align-items-start justify-content-between gap-2">
               <span class="icon-tile icon-tile-magenta"><i class="bi bi-receipt-cutoff"></i></span>
-              <span class="trend trend-flat"><i class="bi bi-dot"></i> {{ data.pedidosPeriodo }} pedidos</span>
+              <span class="trend trend-flat"
+                ><i class="bi bi-dot"></i> {{ data.pedidosPeriodo }} pedidos</span
+              >
             </div>
             <p class="kpi-label">Ticket promedio</p>
             <h2 class="kpi-value">{{ moneda(data.ticketPromedio) }}</h2>
@@ -74,8 +91,12 @@
         <div class="col-sm-6 col-xl-3">
           <article class="kpi-card h-100">
             <div class="d-flex align-items-start justify-content-between gap-2">
-              <span class="icon-tile icon-tile-yellow"><i class="bi bi-gear-wide-connected"></i></span>
-              <span class="trend trend-flat"><i class="bi bi-dot"></i> {{ etapas().length }} etapas</span>
+              <span class="icon-tile icon-tile-yellow"
+                ><i class="bi bi-gear-wide-connected"></i
+              ></span>
+              <span class="trend trend-flat"
+                ><i class="bi bi-dot"></i> {{ etapas().length }} etapas</span
+              >
             </div>
             <p class="kpi-label">Órdenes en producción</p>
             <h2 class="kpi-value">{{ data.ordenesEnProduccion }}</h2>
@@ -89,11 +110,17 @@
         <div class="col-sm-6 col-xl-3">
           <article class="kpi-card h-100">
             <div class="d-flex align-items-start justify-content-between gap-2">
-              <span class="icon-tile icon-tile-danger"><i class="bi bi-exclamation-triangle"></i></span>
-              <span class="trend trend-down"><i class="bi bi-arrow-down-right"></i> {{ data.solicitudesNuevas }} nuevas</span>
+              <span class="icon-tile icon-tile-danger"
+                ><i class="bi bi-exclamation-triangle"></i
+              ></span>
+              <span class="trend trend-down"
+                ><i class="bi bi-arrow-down-right"></i> {{ data.solicitudesNuevas }} nuevas</span
+              >
             </div>
             <p class="kpi-label">Alertas de inventario</p>
-            <h2 class="kpi-value">{{ data.materiasPrimasBajoStock.toString().padStart(2, '0') }}</h2>
+            <h2 class="kpi-value">
+              {{ data.materiasPrimasBajoStock.toString().padStart(2, '0') }}
+            </h2>
             <div class="kpi-foot">
               <i class="bi bi-droplet-half text-magenta"></i>
               <span>{{ data.bajoStock[0]?.nombre ?? 'Sin alertas críticas' }}</span>
@@ -117,17 +144,33 @@
               <div class="chart-summary">
                 <strong>{{ moneda(data.ventasPeriodo) }}</strong>
                 <span>facturado este mes</span>
-                <span class="trend ms-auto" [class.trend-up]="data.variacionVentas >= 0" [class.trend-down]="data.variacionVentas < 0">
-                  <i class="bi" [class.bi-arrow-up-right]="data.variacionVentas >= 0" [class.bi-arrow-down-right]="data.variacionVentas < 0"></i>
+                <span
+                  class="trend ms-auto"
+                  [class.trend-up]="data.variacionVentas >= 0"
+                  [class.trend-down]="data.variacionVentas < 0"
+                >
+                  <i
+                    class="bi"
+                    [class.bi-arrow-up-right]="data.variacionVentas >= 0"
+                    [class.bi-arrow-down-right]="data.variacionVentas < 0"
+                  ></i>
                   {{ data.variacionVentas }}%
                 </span>
               </div>
 
-              <div class="bar-chart" role="img" aria-label="Ventas por línea de negocio en los últimos seis meses">
+              <div
+                class="bar-chart"
+                role="img"
+                aria-label="Ventas por línea de negocio en los últimos seis meses"
+              >
                 @for (linea of lineas(); track linea.linea) {
                   <div class="bar-group">
                     <div class="bar-set">
-                      <span class="bar" [style.--bar]="linea.porcentaje + '%'" [style.background]="linea.color"></span>
+                      <span
+                        class="bar"
+                        [style.--bar]="linea.porcentaje + '%'"
+                        [style.background]="linea.color"
+                      ></span>
                     </div>
                     <span class="bar-label">{{ linea.etiqueta }}</span>
                   </div>
@@ -143,7 +186,9 @@
                 }
               </div>
             } @else {
-              <p class="text-muted mb-0 py-4">Aún no hay pedidos con partidas de producto para graficar.</p>
+              <p class="text-muted mb-0 py-4">
+                Aún no hay pedidos con partidas de producto para graficar.
+              </p>
             }
           </article>
         </div>
@@ -170,7 +215,9 @@
                 <div class="stage-row">
                   <span class="stage-dot dot-cyan"></span>
                   <span>{{ etapa.etiqueta }}</span>
-                  <div class="stage-meter"><span [style.width]="etapa.porcentaje + '%'"></span></div>
+                  <div class="stage-meter">
+                    <span [style.width]="etapa.porcentaje + '%'"></span>
+                  </div>
                   <strong>{{ etapa.total }}</strong>
                 </div>
               } @empty {
@@ -193,17 +240,22 @@
                 <span class="panel-kicker">Últimos movimientos</span>
                 <h2>Órdenes recientes</h2>
               </div>
-              <a class="panel-link mt-0" routerLink="/detalle">Ver todas <i class="bi bi-arrow-right"></i></a>
+              <a class="panel-link mt-0" routerLink="/detalle"
+                >Ver todas <i class="bi bi-arrow-right"></i
+              ></a>
             </div>
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle">
+                <caption class="visually-hidden">
+                  Pedidos recientes
+                </caption>
                 <thead>
                   <tr>
-                    <th>Orden</th>
-                    <th>Cliente</th>
-                    <th>Estado</th>
-                    <th class="text-end">Total</th>
+                    <th scope="col">Orden</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -223,13 +275,17 @@
                         </div>
                       </td>
                       <td>
-                        <span class="badge" [class]="claseEstado(pedido.estado)">{{ etiquetaEstado(pedido.estado) }}</span>
+                        <span class="badge" [class]="claseEstado(pedido.estado)">{{
+                          etiquetaEstado(pedido.estado)
+                        }}</span>
                       </td>
                       <td class="text-end cell-main">{{ moneda(pedido.total) }}</td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="4" class="text-center text-muted py-4">Todavía no hay pedidos registrados.</td>
+                      <td colspan="4" class="text-center text-muted py-4">
+                        Todavía no hay pedidos registrados.
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -245,7 +301,9 @@
                 <span class="panel-kicker">Atención inmediata</span>
                 <h2>Alertas de inventario</h2>
               </div>
-              <span class="badge badge-soft-danger">{{ data.materiasPrimasBajoStock }} críticas</span>
+              <span class="badge badge-soft-danger"
+                >{{ data.materiasPrimasBajoStock }} críticas</span
+              >
             </div>
 
             <div class="alert-list">
@@ -256,13 +314,21 @@
                     <div class="d-flex align-items-center justify-content-between gap-2">
                       <strong>{{ materia.nombre }}</strong>
                       <span class="stock-text text-danger">
-                        {{ materia.stockActual }} / {{ materia.stockMinimo }} {{ materia.unidadMedida }}
+                        {{ materia.stockActual }} / {{ materia.stockMinimo }}
+                        {{ materia.unidadMedida }}
                       </span>
                     </div>
                     <div class="stock-track mt-2">
-                      <span class="stock-fill bg-danger" [style.width]="porcentajeStock(materia.stockActual, materia.stockMaximo) + '%'"></span>
+                      <span
+                        class="stock-fill bg-danger"
+                        [style.width]="
+                          porcentajeStock(materia.stockActual, materia.stockMaximo) + '%'
+                        "
+                      ></span>
                     </div>
-                    <small>Mínimo requerido: {{ materia.stockMinimo }} {{ materia.unidadMedida }}</small>
+                    <small
+                      >Mínimo requerido: {{ materia.stockMinimo }} {{ materia.unidadMedida }}</small
+                    >
                   </div>
                 </div>
               } @empty {

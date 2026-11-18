@@ -22,27 +22,35 @@ export class LoginComponent {
   readonly enviando = signal(false);
   readonly error = signal<string | null>(null);
   readonly mostrarPassword = signal(false);
+  readonly ayudaAcceso = signal(false);
 
   readonly form = this.fb.nonNullable.group({
-    correo: ['ana@llamma.mx', [Validators.required, Validators.email]],
-    password: ['llamma2026', [Validators.required, Validators.minLength(6)]],
-    recordarme: [true],
+    correo: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
+    recordarme: [false],
   });
+
+  constructor() {
+    if (this.route.snapshot.queryParamMap.get('expirada') === '1') {
+      this.error.set('Tu sesión expiró. Vuelve a iniciar sesión para continuar.');
+    }
+  }
 
   entrar(): void {
     if (this.enviando()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerError();
       return;
     }
 
     this.enviando.set(true);
     this.error.set(null);
 
-    const { correo, password } = this.form.getRawValue();
+    const { correo, password, recordarme } = this.form.getRawValue();
 
     this.auth
-      .login(correo.trim().toLowerCase(), password)
+      .login(correo.trim().toLowerCase(), password, recordarme)
       .pipe(finalize(() => this.enviando.set(false)))
       .subscribe({
         next: () => {
@@ -59,12 +67,18 @@ export class LoginComponent {
       });
   }
 
-  usarDemo(correo: string): void {
-    this.form.patchValue({ correo, password: 'llamma2026' });
-    this.entrar();
-  }
-
   alternarPassword(): void {
     this.mostrarPassword.update((valor) => !valor);
+  }
+
+  alternarAyuda(): void {
+    this.ayudaAcceso.update((valor) => !valor);
+  }
+
+  private enfocarPrimerError(): void {
+    const campo = this.form.controls.correo.invalid ? 'authEmail' : 'authPassword';
+    const elemento = document.getElementById(campo);
+    elemento?.focus();
+    elemento?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }

@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
 
 import {
   ActividadMarketingApi,
@@ -39,13 +39,25 @@ import {
 export class LlammaService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = '/api';
+  private catalogoPublico$: Observable<{ items: ProductoPublico[]; total: number }> | null = null;
 
   /* ------------------------------ Público ------------------------------ */
 
-  listarProductosPublicos(): Observable<{ items: ProductoPublico[]; total: number }> {
-    return this.http.get<{ items: ProductoPublico[]; total: number }>(
-      `${this.apiUrl}/public/productos`,
-    );
+  /**
+   * El catálogo público se comparte entre las vistas que lo muestran. La
+   * respuesta se reutiliza mientras haya suscriptores; las mutaciones del
+   * catálogo piden `refrescar = true` para invalidar la copia.
+   */
+  listarProductosPublicos(refrescar = false): Observable<{
+    items: ProductoPublico[];
+    total: number;
+  }> {
+    if (refrescar || !this.catalogoPublico$) {
+      this.catalogoPublico$ = this.http
+        .get<{ items: ProductoPublico[]; total: number }>(`${this.apiUrl}/public/productos`)
+        .pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    }
+    return this.catalogoPublico$;
   }
 
   crearSolicitud(payload: NuevaSolicitudPayload): Observable<{
@@ -167,10 +179,7 @@ export class LlammaService {
     });
   }
 
-  cambiarEstadoSolicitud(
-    id: number,
-    estado: EstadoSolicitud,
-  ): Observable<SolicitudCotizacion> {
+  cambiarEstadoSolicitud(id: number, estado: EstadoSolicitud): Observable<SolicitudCotizacion> {
     return this.http.patch<SolicitudCotizacion>(`${this.apiUrl}/solicitudes/${id}/estado`, {
       estado,
     });
@@ -180,7 +189,10 @@ export class LlammaService {
     id: number,
     body: { notas?: string; vigenciaDias?: number; estado?: string } = {},
   ): Observable<Cotizacion> {
-    return this.http.post<Cotizacion>(`${this.apiUrl}/solicitudes/${id}/convertir-cotizacion`, body);
+    return this.http.post<Cotizacion>(
+      `${this.apiUrl}/solicitudes/${id}/convertir-cotizacion`,
+      body,
+    );
   }
 
   /* ----------------------------- Cotizaciones -------------------------- */
@@ -222,12 +234,14 @@ export class LlammaService {
     return this.http.get<Cotizacion>(`${this.apiUrl}/cotizaciones/${id}`);
   }
 
-  listarCotizaciones(filtros: {
-    estado?: string;
-    q?: string;
-    page?: number;
-    perPage?: number;
-  } = {}): Observable<RespuestaPaginada<Cotizacion>> {
+  listarCotizaciones(
+    filtros: {
+      estado?: string;
+      q?: string;
+      page?: number;
+      perPage?: number;
+    } = {},
+  ): Observable<RespuestaPaginada<Cotizacion>> {
     let params = new HttpParams();
     if (filtros.estado) params = params.set('estado', filtros.estado);
     if (filtros.q) params = params.set('q', filtros.q);
@@ -279,14 +293,18 @@ export class LlammaService {
 
   /* -------------------------------- Clientes --------------------------- */
 
-  listarClientes(filtros: {
-    q?: string;
-    segmento?: string;
-    activo?: boolean;
-    page?: number;
-    perPage?: number;
-  } = {}): Observable<RespuestaPaginada<ClienteApi>> {
-    let params = new HttpParams().set('page', filtros.page ?? 1).set('perPage', filtros.perPage ?? 20);
+  listarClientes(
+    filtros: {
+      q?: string;
+      segmento?: string;
+      activo?: boolean;
+      page?: number;
+      perPage?: number;
+    } = {},
+  ): Observable<RespuestaPaginada<ClienteApi>> {
+    let params = new HttpParams()
+      .set('page', filtros.page ?? 1)
+      .set('perPage', filtros.perPage ?? 20);
     if (filtros.q) params = params.set('q', filtros.q);
     if (filtros.segmento) params = params.set('segmento', filtros.segmento);
     if (filtros.activo !== undefined) params = params.set('activo', filtros.activo ? '1' : '0');
@@ -311,13 +329,17 @@ export class LlammaService {
 
   /* -------------------------------- Pedidos ---------------------------- */
 
-  listarPedidos(filtros: {
-    estado?: string;
-    q?: string;
-    page?: number;
-    perPage?: number;
-  } = {}): Observable<RespuestaPaginada<PedidoApi>> {
-    let params = new HttpParams().set('page', filtros.page ?? 1).set('perPage', filtros.perPage ?? 20);
+  listarPedidos(
+    filtros: {
+      estado?: string;
+      q?: string;
+      page?: number;
+      perPage?: number;
+    } = {},
+  ): Observable<RespuestaPaginada<PedidoApi>> {
+    let params = new HttpParams()
+      .set('page', filtros.page ?? 1)
+      .set('perPage', filtros.perPage ?? 20);
     if (filtros.estado) params = params.set('estado', filtros.estado);
     if (filtros.q) params = params.set('q', filtros.q);
     return this.http.get<RespuestaPaginada<PedidoApi>>(`${this.apiUrl}/pedidos`, { params });
@@ -327,16 +349,18 @@ export class LlammaService {
     return this.http.get<PedidoApi>(`${this.apiUrl}/pedidos/${id}`);
   }
 
-  consultarPedidos(filtros: {
-    q?: string;
-    estado?: string;
-    linea?: string;
-    clienteId?: number;
-    desde?: string;
-    hasta?: string;
-    page?: number;
-    perPage?: number;
-  } = {}): Observable<ConsultaPedidosApi> {
+  consultarPedidos(
+    filtros: {
+      q?: string;
+      estado?: string;
+      linea?: string;
+      clienteId?: number;
+      desde?: string;
+      hasta?: string;
+      page?: number;
+      perPage?: number;
+    } = {},
+  ): Observable<ConsultaPedidosApi> {
     let params = new HttpParams()
       .set('page', filtros.page ?? 1)
       .set('perPage', filtros.perPage ?? 10);
@@ -347,7 +371,8 @@ export class LlammaService {
     if (filtros.desde) params = params.set('desde', filtros.desde);
     if (filtros.hasta) params = params.set('hasta', filtros.hasta);
     return this.http.get<ConsultaPedidosApi>(`${this.apiUrl}/consultas/pedidos`, { params });
-  }  cambiarEstadoPedido(id: number, estado: string): Observable<PedidoApi> {
+  }
+  cambiarEstadoPedido(id: number, estado: string): Observable<PedidoApi> {
     return this.http.patch<PedidoApi>(`${this.apiUrl}/pedidos/${id}/estado`, { estado });
   }
 
@@ -391,7 +416,9 @@ export class LlammaService {
   }
 
   desactivarMateria(id: number): Observable<{ mensaje: string; id: number }> {
-    return this.http.delete<{ mensaje: string; id: number }>(`${this.apiUrl}/materias-primas/${id}`);
+    return this.http.delete<{ mensaje: string; id: number }>(
+      `${this.apiUrl}/materias-primas/${id}`,
+    );
   }
 
   ajustarInventario(
@@ -404,12 +431,16 @@ export class LlammaService {
     );
   }
 
-  listarMovimientos(filtros: {
-    materiaPrimaId?: number;
-    page?: number;
-    perPage?: number;
-  } = {}): Observable<RespuestaPaginada<MovimientoApi>> {
-    let params = new HttpParams().set('page', filtros.page ?? 1).set('perPage', filtros.perPage ?? 30);
+  listarMovimientos(
+    filtros: {
+      materiaPrimaId?: number;
+      page?: number;
+      perPage?: number;
+    } = {},
+  ): Observable<RespuestaPaginada<MovimientoApi>> {
+    let params = new HttpParams()
+      .set('page', filtros.page ?? 1)
+      .set('perPage', filtros.perPage ?? 30);
     if (filtros.materiaPrimaId) params = params.set('materiaPrimaId', filtros.materiaPrimaId);
     return this.http.get<RespuestaPaginada<MovimientoApi>>(`${this.apiUrl}/movimientos`, {
       params,
@@ -424,9 +455,9 @@ export class LlammaService {
     return this.http.post<ProveedorApi>(`${this.apiUrl}/proveedores`, body);
   }
 
-  listarOrdenesCompra(filtros: { page?: number; perPage?: number } = {}): Observable<
-    RespuestaPaginada<OrdenCompraApi>
-  > {
+  listarOrdenesCompra(
+    filtros: { page?: number; perPage?: number } = {},
+  ): Observable<RespuestaPaginada<OrdenCompraApi>> {
     const params = new HttpParams()
       .set('page', filtros.page ?? 1)
       .set('perPage', filtros.perPage ?? 20);

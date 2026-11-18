@@ -10,13 +10,46 @@
         </p>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <button
-          class="btn btn-outline-ink"
-          type="button"
-          (click)="ui.info('Las consultas guardadas estarán disponibles en la siguiente versión.')"
-        >
+        <button class="btn btn-outline-ink" type="button" (click)="guardarConsulta()">
           <i class="bi bi-bookmark-plus"></i> Guardar consulta
         </button>
+        <div class="dropdown">
+          <button
+            class="btn btn-outline-ink dropdown-toggle"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            [disabled]="!consultasGuardadas().length"
+          >
+            <i class="bi bi-bookmarks"></i> Guardadas
+            @if (consultasGuardadas().length) {
+              <span class="badge badge-soft-muted ms-1">{{ consultasGuardadas().length }}</span>
+            }
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-llamma">
+            @for (consulta of consultasGuardadas(); track consulta.id) {
+              <li class="d-flex align-items-center gap-1 pe-1">
+                <button
+                  class="dropdown-item text-truncate"
+                  type="button"
+                  [title]="consulta.nombre"
+                  (click)="aplicarConsulta(consulta)"
+                >
+                  {{ consulta.nombre }}
+                </button>
+                <button
+                  class="btn btn-icon btn-icon-xs"
+                  type="button"
+                  aria-label="Eliminar consulta"
+                  title="Eliminar consulta"
+                  (click)="eliminarConsulta(consulta, $event)"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
         <button class="btn btn-brand" type="button" (click)="exportar()">
           <i class="bi bi-download"></i> Exportar resultados
         </button>
@@ -161,7 +194,9 @@
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
             </span>
-            <div><strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span></div>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
           </div>
         </div>
       }
@@ -178,27 +213,37 @@
             <div class="d-flex align-items-center gap-2">
               <span class="badge badge-soft-success">{{ resultado()?.total ?? 0 }} registros</span>
               @if (cargando()) {
-                <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+                <span
+                  class="spinner-border spinner-border-sm text-primary"
+                  aria-hidden="true"
+                ></span>
               }
             </div>
           </div>
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle">
+              <caption class="visually-hidden">
+                Resultados de la consulta
+              </caption>
               <thead>
                 <tr>
-                  <th>Orden</th>
-                  <th>Cliente</th>
-                  <th>Línea</th>
-                  <th>Estado</th>
-                  <th class="text-end">Total</th>
+                  <th scope="col">Orden</th>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Línea</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" class="text-end">Total</th>
                 </tr>
               </thead>
               <tbody>
                 @for (pedido of resultado()?.items ?? []; track pedido.id) {
                   <tr>
                     <td>
-                      <a class="order-id" [routerLink]="['/detalle']" [queryParams]="{ pedido: pedido.id }">
+                      <a
+                        class="order-id"
+                        [routerLink]="['/detalle']"
+                        [queryParams]="{ pedido: pedido.id }"
+                      >
                         #{{ pedido.folio }}
                       </a>
                       <div class="cell-muted">{{ fechaCorta(pedido.fechaPedido) }}</div>
@@ -210,7 +255,9 @@
                     <td>
                       <div class="d-flex flex-wrap gap-1">
                         @for (linea of pedido.lineas; track linea) {
-                          <span class="badge" [class]="claseLinea(linea)">{{ etiquetaLinea(linea) }}</span>
+                          <span class="badge" [class]="claseLinea(linea)">{{
+                            etiquetaLinea(linea)
+                          }}</span>
                         } @empty {
                           <span class="cell-muted">Sin línea</span>
                         }
@@ -241,17 +288,29 @@
               <nav aria-label="Paginación de consultas">
                 <ul class="pagination pagination-sm mb-0">
                   <li class="page-item" [class.disabled]="data.pagina <= 1">
-                    <button class="page-link" type="button" aria-label="Anterior" (click)="cargar(data.pagina - 1)">
+                    <button
+                      class="page-link"
+                      type="button"
+                      aria-label="Anterior"
+                      (click)="cargar(data.pagina - 1)"
+                    >
                       <i class="bi bi-chevron-left"></i>
                     </button>
                   </li>
                   @for (numero of paginas(); track numero) {
                     <li class="page-item" [class.active]="numero === data.pagina">
-                      <button class="page-link" type="button" (click)="cargar(numero)">{{ numero }}</button>
+                      <button class="page-link" type="button" (click)="cargar(numero)">
+                        {{ numero }}
+                      </button>
                     </li>
                   }
                   <li class="page-item" [class.disabled]="data.pagina >= data.paginas">
-                    <button class="page-link" type="button" aria-label="Siguiente" (click)="cargar(data.pagina + 1)">
+                    <button
+                      class="page-link"
+                      type="button"
+                      aria-label="Siguiente"
+                      (click)="cargar(data.pagina + 1)"
+                    >
                       <i class="bi bi-chevron-right"></i>
                     </button>
                   </li>
@@ -298,14 +357,18 @@
               <span class="panel-kicker">Ranking</span>
               <h2>Top clientes del periodo</h2>
             </div>
-            <a class="panel-link mt-0" routerLink="/clientes">Ver todos <i class="bi bi-arrow-right"></i></a>
+            <a class="panel-link mt-0" routerLink="/clientes"
+              >Ver todos <i class="bi bi-arrow-right"></i
+            ></a>
           </div>
 
           <div class="rank-list">
             @for (cliente of resultado()?.topClientes ?? []; track cliente.id; let i = $index) {
               <div class="rank-item">
                 <span class="rank-number">{{ (i + 1).toString().padStart(2, '0') }}</span>
-                <span class="avatar" [class]="'avatar ' + avatar(i)">{{ iniciales(cliente.nombre) }}</span>
+                <span class="avatar" [class]="'avatar ' + avatar(i)">{{
+                  iniciales(cliente.nombre)
+                }}</span>
                 <div class="flex-grow-1 min-w-0">
                   <strong>{{ cliente.nombre }}</strong>
                   <small>{{ cliente.pedidos }} pedidos</small>

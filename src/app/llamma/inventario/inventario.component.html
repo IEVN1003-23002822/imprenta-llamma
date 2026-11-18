@@ -28,7 +28,9 @@
       <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
         <span class="flex-grow-1">{{ error() }}</span>
-        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">Reintentar</button>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
+          Reintentar
+        </button>
       </div>
     }
 
@@ -42,7 +44,9 @@
             {{ resumenAlerta().nombres }} pueden detener la producción de esta semana.
           }
         </span>
-        <a routerLink="/abastecimiento">Generar orden de compra <i class="bi bi-arrow-right"></i></a>
+        <a routerLink="/abastecimiento"
+          >Generar orden de compra <i class="bi bi-arrow-right"></i
+        ></a>
       </div>
     } @else if (!cargando()) {
       <div class="inventory-alert is-ok">
@@ -62,7 +66,9 @@
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
             </span>
-            <div><strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span></div>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
           </div>
         </div>
       }
@@ -97,7 +103,11 @@
           </div>
         </div>
         <div class="col-6 col-lg-3">
-          <select class="form-select" aria-label="Filtrar por categoría" formControlName="categoria">
+          <select
+            class="form-select"
+            aria-label="Filtrar por categoría"
+            formControlName="categoria"
+          >
             <option value="">Todas las categorías</option>
             @for (categoria of categorias; track categoria.valor) {
               <option [value]="categoria.valor">{{ categoria.etiqueta }}</option>
@@ -121,17 +131,20 @@
 
       <div class="table-responsive">
         <table class="table table-llamma align-middle">
+          <caption class="visually-hidden">
+            Insumos en inventario
+          </caption>
           <thead>
             <tr>
-              <th>Insumo</th>
-              <th>Categoría</th>
-              <th class="text-end">Stock actual</th>
-              <th class="text-center">Mín / Máx</th>
-              <th>Nivel de stock</th>
-              <th class="text-end">Costo unitario</th>
-              <th>Estado</th>
+              <th scope="col">Insumo</th>
+              <th scope="col">Categoría</th>
+              <th scope="col" class="text-end">Stock actual</th>
+              <th scope="col" class="text-center">Mín / Máx</th>
+              <th scope="col">Nivel de stock</th>
+              <th scope="col" class="text-end">Costo unitario</th>
+              <th scope="col">Estado</th>
               @if (puedeGestionar()) {
-                <th class="text-end">Acciones</th>
+                <th scope="col" class="text-end">Acciones</th>
               }
             </tr>
           </thead>
@@ -141,12 +154,19 @@
               <tr>
                 <td>
                   <div class="product-cell">
-                    <span class="icon-tile icon-tile-sm" [class]="'icon-tile icon-tile-sm ' + tonoCategoria(materia.categoria)">
+                    <span
+                      class="icon-tile icon-tile-sm"
+                      [class]="'icon-tile icon-tile-sm ' + tonoCategoria(materia.categoria)"
+                    >
                       <i class="bi" [class]="'bi ' + iconoCategoria(materia.categoria)"></i>
                     </span>
                     <div>
                       <strong>{{ materia.nombre }}</strong>
-                      <small>{{ materia.proveedor ? 'Proveedor · ' + materia.proveedor : 'Sin proveedor asignado' }}</small>
+                      <small>{{
+                        materia.proveedor
+                          ? 'Proveedor · ' + materia.proveedor
+                          : 'Sin proveedor asignado'
+                      }}</small>
                     </div>
                   </div>
                 </td>
@@ -164,7 +184,11 @@
                       <span>{{ estado.etiqueta }}</span>
                     </div>
                     <div class="stock-track stock-track-lg">
-                      <span class="stock-fill" [class]="'stock-fill ' + estado.barra" [style.width]="estado.porcentaje + '%'"></span>
+                      <span
+                        class="stock-fill"
+                        [class]="'stock-fill ' + estado.barra"
+                        [style.width]="estado.porcentaje + '%'"
+                      ></span>
                     </div>
                   </div>
                 </td>
@@ -223,7 +247,12 @@
         <nav aria-label="Paginación del inventario">
           <ul class="pagination pagination-sm mb-0">
             <li class="page-item" [class.disabled]="pagina() <= 1">
-              <button class="page-link" type="button" aria-label="Anterior" (click)="irA(pagina() - 1)">
+              <button
+                class="page-link"
+                type="button"
+                aria-label="Anterior"
+                (click)="irA(pagina() - 1)"
+              >
                 <i class="bi bi-chevron-left"></i>
               </button>
             </li>
@@ -233,7 +262,12 @@
               </li>
             }
             <li class="page-item" [class.disabled]="pagina() >= paginas()">
-              <button class="page-link" type="button" aria-label="Siguiente" (click)="irA(pagina() + 1)">
+              <button
+                class="page-link"
+                type="button"
+                aria-label="Siguiente"
+                (click)="irA(pagina() + 1)"
+              >
                 <i class="bi bi-chevron-right"></i>
               </button>
             </li>
@@ -253,7 +287,9 @@
             @if (cargandoMovimientos()) {
               <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
             } @else {
-              <span class="badge badge-soft-muted">{{ movimientosRecientes().length }} registros</span>
+              <span class="badge badge-soft-muted"
+                >{{ movimientosRecientes().length }} registros</span
+              >
             }
           </div>
 
@@ -261,18 +297,26 @@
             @for (movimiento of movimientosRecientes(); track movimiento.id) {
               @let estilo = claseMovimiento(movimiento.tipo);
               <div class="movement-row">
-                <span class="icon-tile icon-tile-sm" [class]="'icon-tile icon-tile-sm ' + estilo.tono">
+                <span
+                  class="icon-tile icon-tile-sm"
+                  [class]="'icon-tile icon-tile-sm ' + estilo.tono"
+                >
                   <i class="bi" [class]="'bi ' + estilo.icono"></i>
                 </span>
                 <div class="flex-grow-1">
-                  <strong>{{ etiquetaTipo(movimiento.tipo) }} · {{ movimiento.materiaPrima }}</strong>
+                  <strong
+                    >{{ etiquetaTipo(movimiento.tipo) }} · {{ movimiento.materiaPrima }}</strong
+                  >
                   <small>
-                    {{ movimiento.motivo || movimiento.referencia || (movimiento.usuario || 'Sistema') }}
+                    {{
+                      movimiento.motivo || movimiento.referencia || movimiento.usuario || 'Sistema'
+                    }}
                     · {{ fechaHora(movimiento.fecha) }}
                   </small>
                 </div>
                 <span class="movement-amount" [class]="'movement-amount ' + estilo.monto">
-                  {{ signoTipo(movimiento.tipo) }}{{ cantidad(movimiento.cantidad, movimiento.unidadMedida) }}
+                  {{ signoTipo(movimiento.tipo)
+                  }}{{ cantidad(movimiento.cantidad, movimiento.unidadMedida) }}
                 </span>
               </div>
             } @empty {
@@ -297,7 +341,10 @@
           <div>
             @for (sugerencia of sugerencias().slice(0, 5); track sugerencia.materia.id) {
               <div class="purchase-item">
-                <span class="icon-tile icon-tile-sm" [class]="'icon-tile icon-tile-sm ' + tonoCategoria(sugerencia.materia.categoria)">
+                <span
+                  class="icon-tile icon-tile-sm"
+                  [class]="'icon-tile icon-tile-sm ' + tonoCategoria(sugerencia.materia.categoria)"
+                >
                   <i class="bi" [class]="'bi ' + sugerencia.icono"></i>
                 </span>
                 <div>
@@ -307,7 +354,14 @@
                     {{ sugerencia.materia.proveedor || 'Sin proveedor' }}
                   </small>
                 </div>
-                <span class="badge" [class]="sugerencia.estado.clave === 'critico' ? 'badge-soft-danger' : 'badge-soft-warning'">
+                <span
+                  class="badge"
+                  [class]="
+                    sugerencia.estado.clave === 'critico'
+                      ? 'badge-soft-danger'
+                      : 'badge-soft-warning'
+                  "
+                >
                   {{ sugerencia.estado.clave === 'critico' ? 'Urgente' : 'Esta semana' }}
                 </span>
               </div>
@@ -328,18 +382,31 @@
 </div>
 
 @if (formularioAbierto()) {
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarFormulario()"
+    style="z-index: 1055"
+  >
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <form [formGroup]="formulario" (ngSubmit)="guardar()">
           <div class="modal-header">
             <div>
-              <span class="panel-kicker">{{ editando() ? 'Editar insumo' : 'Alta de insumo' }}</span>
+              <span class="panel-kicker">{{
+                editando() ? 'Editar insumo' : 'Alta de insumo'
+              }}</span>
               <h2 class="modal-title h5 mb-0">
                 {{ editando() ? editando()!.nombre : 'Nuevo insumo' }}
               </h2>
             </div>
-            <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarFormulario()">
+            <button
+              class="btn btn-icon"
+              type="button"
+              aria-label="Cerrar"
+              (click)="cerrarFormulario()"
+            >
               <i class="bi bi-x-lg"></i>
             </button>
           </div>
@@ -380,25 +447,55 @@
               </div>
               <div class="col-6 col-md-3">
                 <label class="form-label" for="insumoActual">Stock actual</label>
-                <input id="insumoActual" type="number" min="0" step="0.01" class="form-control" formControlName="stockActual" />
+                <input
+                  id="insumoActual"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="stockActual"
+                />
               </div>
               <div class="col-6 col-md-3">
                 <label class="form-label" for="insumoMinimo">Stock mínimo</label>
-                <input id="insumoMinimo" type="number" min="0" step="0.01" class="form-control" formControlName="stockMinimo" />
+                <input
+                  id="insumoMinimo"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="stockMinimo"
+                />
               </div>
               <div class="col-6 col-md-3">
                 <label class="form-label" for="insumoMaximo">Stock máximo</label>
-                <input id="insumoMaximo" type="number" min="0" step="0.01" class="form-control" formControlName="stockMaximo" />
+                <input
+                  id="insumoMaximo"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="stockMaximo"
+                />
               </div>
               <div class="col-6 col-md-3">
                 <label class="form-label" for="insumoCosto">Costo unitario</label>
-                <input id="insumoCosto" type="number" min="0" step="0.01" class="form-control" formControlName="costoUnitario" />
+                <input
+                  id="insumoCosto"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="costoUnitario"
+                />
               </div>
             </div>
           </div>
 
           <div class="modal-footer">
-            <button class="btn btn-outline-ink" type="button" (click)="cerrarFormulario()">Cancelar</button>
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarFormulario()">
+              Cancelar
+            </button>
             <button class="btn btn-brand" type="submit" [disabled]="guardando()">
               <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
               {{ guardando() ? 'Guardando…' : 'Guardar insumo' }}
@@ -412,7 +509,13 @@
 }
 
 @if (ajusteAbierto()) {
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1055">
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarAjuste()"
+    style="z-index: 1055"
+  >
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <form [formGroup]="ajusteForm" (ngSubmit)="registrarMovimiento()">
@@ -447,18 +550,35 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label" for="movCantidad">Cantidad *</label>
-                <input id="movCantidad" type="number" min="0" step="0.01" class="form-control" formControlName="cantidad" />
+                <input
+                  id="movCantidad"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="cantidad"
+                />
                 @if (ajusteForm.controls.cantidad.invalid && ajusteForm.controls.cantidad.touched) {
                   <small class="text-danger">Captura una cantidad mayor a cero.</small>
                 }
               </div>
               <div class="col-12">
                 <label class="form-label" for="movReferencia">Referencia</label>
-                <input id="movReferencia" class="form-control" formControlName="referencia" placeholder="Orden de compra, folio, proveedor…" />
+                <input
+                  id="movReferencia"
+                  class="form-control"
+                  formControlName="referencia"
+                  placeholder="Orden de compra, folio, proveedor…"
+                />
               </div>
               <div class="col-12">
                 <label class="form-label" for="movMotivo">Motivo</label>
-                <input id="movMotivo" class="form-control" formControlName="motivo" placeholder="Compra, consumo de producción, conteo físico…" />
+                <input
+                  id="movMotivo"
+                  class="form-control"
+                  formControlName="motivo"
+                  placeholder="Compra, consumo de producción, conteo físico…"
+                />
               </div>
             </div>
 
@@ -466,7 +586,9 @@
               <div class="movement-preview mt-3">
                 <div>
                   <span>Stock actual</span>
-                  <strong>{{ cantidad(previa.materia.stockActual, previa.materia.unidadMedida) }}</strong>
+                  <strong>{{
+                    cantidad(previa.materia.stockActual, previa.materia.unidadMedida)
+                  }}</strong>
                 </div>
                 <i class="bi bi-arrow-right"></i>
                 <div>
@@ -476,15 +598,21 @@
               </div>
               <p class="text-muted small mb-0 mt-2">
                 <i class="bi bi-info-circle"></i>
-                Usa <strong>Ajuste de conteo</strong> para fijar el stock final; entrada, salida, merma y
-                devolución operan como suma o resta.
+                Usa <strong>Ajuste de conteo</strong> para fijar el stock final; entrada, salida,
+                merma y devolución operan como suma o resta.
               </p>
             }
           </div>
 
           <div class="modal-footer">
-            <button class="btn btn-outline-ink" type="button" (click)="cerrarAjuste()">Cancelar</button>
-            <button class="btn btn-brand" type="submit" [disabled]="ajustando() || !vistaPreviaAjuste()">
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarAjuste()">
+              Cancelar
+            </button>
+            <button
+              class="btn btn-brand"
+              type="submit"
+              [disabled]="ajustando() || !vistaPreviaAjuste()"
+            >
               <i class="bi" [class]="ajustando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
               {{ ajustando() ? 'Registrando…' : 'Registrar movimiento' }}
             </button>

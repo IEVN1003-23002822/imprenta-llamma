@@ -1,0 +1,360 @@
+<div class="module-page seguimiento-page">
+  <div class="container">
+    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+      <div class="page-brand">
+        <img
+          class="page-brand-logo"
+          src="assets/images/logo-llamma-128.webp"
+          srcset="assets/images/logo-llamma-128.webp 2x, assets/images/logo-llamma-256.webp 4x"
+          alt="Imprenta Llamma Logo"
+          width="38"
+          height="54"
+        />
+        <div>
+          <span class="eyebrow">Portal de clientes</span>
+          <h1>Sigue tu solicitud.</h1>
+          <p class="page-lead">
+            Consulta el avance de tu cotización y conversa con nuestro equipo. Solo necesitas el
+            folio que te entregamos al enviar la solicitud y el correo con el que la registraste.
+          </p>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-brand" routerLink="/cotizar">
+          <i class="bi bi-pencil-square"></i> Nueva solicitud
+        </a>
+        <a class="btn btn-outline-ink" routerLink="/productos">
+          <i class="bi bi-grid-3x3-gap"></i> Ver catálogo
+        </a>
+      </div>
+    </header>
+
+    <section class="panel-card tracking-card" aria-labelledby="tituloConsulta">
+      <div class="panel-head flex-wrap">
+        <div>
+          <span class="panel-kicker">Seguimiento</span>
+          <h2 id="tituloConsulta">Consulta el estatus de tu solicitud</h2>
+        </div>
+        <span class="badge badge-soft-muted">Folio + correo</span>
+      </div>
+
+      <form
+        [formGroup]="seguimientoForm"
+        (ngSubmit)="consultar()"
+        class="row g-3 align-items-end"
+        novalidate
+      >
+        <div class="col-md-5">
+          <label class="form-label" for="segFolio">Folio de solicitud</label>
+          <input
+            id="segFolio"
+            type="text"
+            class="form-control"
+            formControlName="folio"
+            placeholder="SOL-2026-001"
+            autocomplete="off"
+            aria-describedby="segFolioAyuda"
+            [attr.aria-invalid]="
+              seguimientoForm.controls.folio.touched && seguimientoForm.controls.folio.invalid
+            "
+            [class.is-invalid]="
+              seguimientoForm.controls.folio.touched && seguimientoForm.controls.folio.invalid
+            "
+          />
+          @if (seguimientoForm.controls.folio.touched && seguimientoForm.controls.folio.invalid) {
+            <span class="field-error" id="segFolioAyuda">Escribe el folio de tu solicitud.</span>
+          } @else {
+            <span class="field-hint" id="segFolioAyuda"
+              >Lo encuentras en el comprobante o en el correo de confirmación.</span
+            >
+          }
+        </div>
+        <div class="col-md-5">
+          <label class="form-label" for="segCorreo">Correo registrado</label>
+          <input
+            id="segCorreo"
+            type="email"
+            class="form-control"
+            formControlName="correo"
+            placeholder="nombre&#64;empresa.mx"
+            autocomplete="email"
+            aria-describedby="segCorreoAyuda"
+            [attr.aria-invalid]="
+              seguimientoForm.controls.correo.touched && seguimientoForm.controls.correo.invalid
+            "
+            [class.is-invalid]="
+              seguimientoForm.controls.correo.touched && seguimientoForm.controls.correo.invalid
+            "
+          />
+          @if (seguimientoForm.controls.correo.touched && seguimientoForm.controls.correo.invalid) {
+            <span class="field-error" id="segCorreoAyuda"
+              >Ingresa el mismo correo con el que registraste la solicitud.</span
+            >
+          } @else {
+            <span class="field-hint" id="segCorreoAyuda"
+              >Debe coincidir exactamente con el correo de la solicitud.</span
+            >
+          }
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-ink w-100" type="submit" [disabled]="buscando()">
+            @if (buscando()) {
+              <i class="bi bi-hourglass-split"></i>
+            } @else {
+              <i class="bi bi-search"></i>
+            }
+            Buscar
+          </button>
+        </div>
+      </form>
+
+      @if (errorSeguimiento()) {
+        <div class="request-error mt-3" role="alert">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>{{ errorSeguimiento() }}</span>
+        </div>
+      }
+    </section>
+
+    @if (seguimiento(); as solicitud) {
+      <div class="row g-4">
+        <div class="col-xl-7">
+          <section
+            id="resultadoSeguimiento"
+            class="panel-card tracking-result-card"
+            tabindex="-1"
+            aria-labelledby="tituloResultado"
+          >
+            <div class="tracking-head">
+              <div>
+                <span class="panel-kicker">Solicitud {{ solicitud.folio }}</span>
+                <h2 id="tituloResultado">{{ solicitud.nombreCliente }}</h2>
+              </div>
+              <span class="badge" [class]="claseEstado(solicitud.estado)">
+                {{ etiquetaEstado(solicitud.estado) }}
+              </span>
+            </div>
+
+            <div class="tracking-grid">
+              <div>
+                <span>Recibida</span>
+                <strong>{{ fecha(solicitud.fechaCreacion) }}</strong>
+              </div>
+              <div>
+                <span>Entrega deseada</span>
+                <strong>{{ fecha(solicitud.fechaDeseada) }}</strong>
+              </div>
+              <div>
+                <span>Partidas</span>
+                <strong>{{ solicitud.items.length }}</strong>
+              </div>
+              <div>
+                <span>Última actualización</span>
+                <strong>{{ fecha(solicitud.actualizadoEn) }}</strong>
+              </div>
+            </div>
+
+            @if (solicitud.mensaje) {
+              <p class="tracking-message">{{ solicitud.mensaje }}</p>
+            }
+
+            @if (solicitud.items.length) {
+              <div class="tracking-items">
+                <span class="panel-kicker">Partidas de la solicitud</span>
+                <ul>
+                  @for (item of solicitud.items; track $index) {
+                    <li>
+                      <strong>{{ item.cantidad }} × {{ item.nombreProducto }}</strong>
+                      <span>{{ item.especificaciones || 'Especificaciones por confirmar' }}</span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (solicitud.archivos.length) {
+              <p class="tracking-files">
+                <i class="bi bi-paperclip"></i>
+                {{ solicitud.archivos.length }}
+                {{
+                  solicitud.archivos.length === 1
+                    ? 'archivo de referencia'
+                    : 'archivos de referencia'
+                }}
+                recibidos.
+              </p>
+            }
+
+            @if (solicitud.cotizacion) {
+              <div class="tracking-quote">
+                <i class="bi bi-file-earmark-check"></i>
+                <div>
+                  <strong>Cotización {{ solicitud.cotizacion.folio }}</strong>
+                  <span>
+                    {{ moneda(solicitud.cotizacion.total) }} · estado
+                    {{ solicitud.cotizacion.estado }}
+                  </span>
+                </div>
+              </div>
+            }
+          </section>
+        </div>
+
+        <div class="col-xl-5">
+          <section class="panel-card chat-card" aria-labelledby="tituloChat">
+            <div class="chat-head">
+              <div>
+                <span class="panel-kicker">Chat de la solicitud</span>
+                <h2 id="tituloChat">Conversación con el equipo</h2>
+              </div>
+              <button class="btn btn-sm btn-outline-ink" type="button" (click)="refrescarChat()">
+                <i class="bi bi-arrow-clockwise"></i> Actualizar
+              </button>
+            </div>
+
+            <div
+              #hiloChat
+              class="chat-thread"
+              role="log"
+              aria-live="polite"
+              aria-label="Mensajes de la solicitud"
+            >
+              @for (mensaje of mensajes(); track mensaje.id) {
+                <div
+                  class="chat-bubble"
+                  [class.chat-bubble-propio]="mensaje.remitenteTipo === 'cliente'"
+                >
+                  <div class="chat-meta">
+                    <strong>{{
+                      mensaje.remitenteTipo === 'cliente' ? 'Tú' : mensaje.autor
+                    }}</strong>
+                    <time>{{ fechaHoraChat(mensaje.creadoEn) }}</time>
+                  </div>
+                  @if (mensaje.mensaje) {
+                    <p>{{ mensaje.mensaje }}</p>
+                  }
+                  @if (mensaje.adjunto) {
+                    <button
+                      class="chat-file"
+                      type="button"
+                      [disabled]="descargandoAdjunto() === mensaje.id"
+                      (click)="descargarAdjuntoChat(mensaje)"
+                    >
+                      <i class="bi bi-paperclip"></i>
+                      <span class="chat-file-name">{{ mensaje.adjunto.nombre }}</span>
+                      <small>{{ tamanoChat(mensaje.adjunto.tamanoBytes) }}</small>
+                      <i class="bi bi-download"></i>
+                      <span class="visually-hidden">Descargar {{ mensaje.adjunto.nombre }}</span>
+                    </button>
+                  }
+                </div>
+              } @empty {
+                <p class="chat-empty">
+                  <i class="bi bi-chat-dots"></i>
+                  Aún no hay mensajes. Escríbenos si necesitas aclarar algo de tu solicitud.
+                </p>
+              }
+            </div>
+
+            @if (errorChat()) {
+              <div class="request-error" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ errorChat() }}</span>
+              </div>
+            }
+
+            <div class="chat-compose">
+              <label class="visually-hidden" for="chatPublicoMensaje"
+                >Mensaje para el equipo de Llamma</label
+              >
+              <textarea
+                id="chatPublicoMensaje"
+                class="form-control"
+                rows="2"
+                maxlength="4000"
+                placeholder="Escribe tu mensaje..."
+                aria-describedby="chatAyuda"
+                [value]="borrador()"
+                (input)="actualizarBorrador($event)"
+              ></textarea>
+              <div class="chat-compose-actions">
+                <div class="chat-adjunto">
+                  <label class="btn btn-sm btn-outline-ink mb-0">
+                    <i class="bi bi-paperclip"></i> Adjuntar
+                    <input
+                      type="file"
+                      hidden
+                      accept=".pdf,.ai,.psd,.png,.jpg,.jpeg,.svg,.zip"
+                      (change)="seleccionarAdjunto($event)"
+                    />
+                  </label>
+                  @if (adjuntoChat(); as archivo) {
+                    <span class="chat-adjunto-chip">
+                      {{ archivo.name }}
+                      <button
+                        type="button"
+                        aria-label="Quitar adjunto"
+                        (click)="quitarAdjuntoChat()"
+                      >
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </span>
+                  }
+                </div>
+                <button
+                  class="btn btn-ink btn-sm"
+                  type="button"
+                  [disabled]="enviandoMensaje()"
+                  (click)="enviarMensaje()"
+                >
+                  @if (enviandoMensaje()) {
+                    <i class="bi bi-hourglass-split"></i> Enviando...
+                  } @else {
+                    <i class="bi bi-send"></i> Enviar
+                  }
+                </button>
+              </div>
+              <small class="chat-hint" id="chatAyuda">
+                Adjuntos permitidos: PDF, AI, PSD, PNG, JPG, SVG o ZIP (máx. 25 MB).
+              </small>
+            </div>
+          </section>
+        </div>
+      </div>
+    } @else {
+      <section class="panel-card tracking-help" aria-labelledby="tituloAyuda">
+        <div class="panel-head">
+          <div>
+            <span class="panel-kicker">Antes de consultar</span>
+            <h2 id="tituloAyuda">¿Cómo funciona el seguimiento?</h2>
+          </div>
+        </div>
+        <ol class="tracking-steps">
+          <li>
+            <span class="step-number">01</span>
+            <div>
+              <strong>Ten a la mano tu folio</strong>
+              <p>
+                Empieza con SOL- y aparece en el comprobante que descargaste al enviar tu solicitud.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="step-number">02</span>
+            <div>
+              <strong>Usa el correo exacto</strong>
+              <p>Por seguridad solo mostramos la solicitud si el folio y el correo coinciden.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-number">03</span>
+            <div>
+              <strong>Consulta y conversa</strong>
+              <p>Verás el estatus, la cotización y podrás enviar mensajes o archivos al equipo.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+    }
+  </div>
+</div>

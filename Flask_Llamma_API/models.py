@@ -213,6 +213,7 @@ class Producto(TimestampMixin, db.Model):
     precio_base = db.Column(db.Numeric(12, 2), default=0, nullable=False)
     unidad_venta = db.Column(db.String(20), default="pieza", nullable=False)
     icono = db.Column(db.String(60), default="bi-box-seam")
+    imagen_url = db.Column(db.String(300))
     publicado = db.Column(db.Boolean, default=True, nullable=False)
     activo = db.Column(db.Boolean, default=True, nullable=False)
 
@@ -233,6 +234,7 @@ class Producto(TimestampMixin, db.Model):
             "precioBase": float(self.precio_base or 0),
             "unidadVenta": self.unidad_venta,
             "icono": self.icono,
+            "imagenUrl": self.imagen_url,
             "activo": self.activo,
         }
         if not publico:

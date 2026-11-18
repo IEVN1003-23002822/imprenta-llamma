@@ -1,0 +1,95 @@
+<!--
+  Documento base alineado a la LFPDPPP. Antes de publicar, validar el texto y
+  los datos del responsable con asesoría legal.
+-->
+<div class="module-page legal-page">
+  <div class="container">
+    <a class="legal-back" routerLink="/"> <i class="bi bi-arrow-left"></i> Volver al inicio </a>
+
+    <article class="panel-card">
+      <span class="panel-kicker">Información legal</span>
+      <h1>Aviso de privacidad</h1>
+      <p class="legal-updated">Última actualización: {{ actualizado }}</p>
+
+      <p>
+        En {{ site.nombre }} nos importa que sepas qué hacemos con tus datos. Este aviso explica qué
+        información recabamos cuando solicitas una cotización, consultas el estatus de tu solicitud
+        o te comunicas con nuestro equipo.
+      </p>
+
+      <h2>1. Responsable de los datos</h2>
+      <p>
+        {{ site.nombre }}, imprenta y estudio de producción, es responsable del tratamiento de los
+        datos personales que nos proporcionas a través de este sitio. Para cualquier asunto
+        relacionado con tu información puedes escribir a
+        <a [href]="'mailto:' + site.correo">{{ site.correo }}</a>.
+      </p>
+
+      <h2>2. Datos que recabamos</h2>
+      <ul>
+        <li>Datos de contacto: nombre, empresa, correo electrónico y teléfono.</li>
+        <li>Datos de tu proyecto: productos, cantidades, especificaciones y fecha deseada.</li>
+        <li>Archivos que adjuntas como referencia (PDF, AI, PSD, imágenes o ZIP).</li>
+        <li>Mensajes que intercambias con nuestro equipo en el seguimiento de la solicitud.</li>
+      </ul>
+      <p>
+        No solicitamos datos personales sensibles. Los campos marcados como obligatorios son
+        necesarios para atender tu solicitud; sin ellos no podríamos cotizar tu proyecto.
+      </p>
+
+      <h2>3. Para qué usamos tus datos</h2>
+      <ul>
+        <li>Elaborar y enviarte tu cotización.</li>
+        <li>Contactarte para aclarar detalles del proyecto y dar seguimiento a tu solicitud.</li>
+        <li>Producir y entregar los materiales solicitados.</li>
+        <li>Llevar el control interno de pedidos, pagos y atención al cliente.</li>
+      </ul>
+      <p>
+        No usamos tus datos para publicidad de terceros ni los vendemos. Solo los compartimos con
+        proveedores tecnológicos que nos ayudan a operar el sitio y el correo, bajo obligaciones de
+        confidencialidad, o cuando una autoridad competente lo requiera.
+      </p>
+
+      <h2>4. Almacenamiento en tu navegador</h2>
+      <p>
+        Este sitio usa almacenamiento local del navegador para mantener la sesión del equipo
+        interno, recordar tus consultas guardadas y conservar la sesión si marcas «Recordarme». No
+        utilizamos cookies publicitarias ni de seguimiento entre sitios.
+      </p>
+
+      <h2>5. Conservación y seguridad</h2>
+      <p>
+        Conservamos tu información mientras exista una relación comercial o mientras sea necesaria
+        para atender tu solicitud, salvo que la ley exija otro plazo. El acceso al sistema interno
+        está restringido por roles y las sesiones del equipo expiran automáticamente.
+      </p>
+
+      <h2>6. Tus derechos</h2>
+      <p>
+        Puedes solicitar el acceso, rectificación, cancelación u oposición al tratamiento de tus
+        datos escribiendo a
+        <a [href]="'mailto:' + site.correo">{{ site.correo }}</a>, indicando tu nombre, el correo
+        con el que registraste la solicitud y el folio correspondiente. Responderemos en los plazos
+        que marca la legislación aplicable.
+      </p>
+
+      <h2>7. Cambios a este aviso</h2>
+      <p>
+        Si modificamos este aviso, publicaremos la versión actualizada en esta misma página con su
+        fecha de actualización.
+      </p>
+
+      <hr />
+
+      <p class="legal-foot">
+        <i class="bi bi-envelope"></i>
+        ¿Dudas sobre tu información?
+        <a [href]="'mailto:' + site.correo">Escríbenos a {{ site.correo }}</a
+        >.
+      </p>
+      <p class="legal-foot legal-copy">
+        © {{ anio }} {{ site.nombre }}. Todos los derechos reservados.
+      </p>
+    </article>
+  </div>
+</div>

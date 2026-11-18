@@ -1,27 +1,28 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import { ESTADOS_PEDIDO, LINEAS_PRODUCCION, etiquetaDe } from '../estados';
 import { ClienteApi, ConsultaPedidosApi, LineaProduccion } from '../llamma.models';
 import { LlammaService } from '../llamma.service';
 import { UiService } from '../ui.service';
 
 const LINEAS: { valor: LineaProduccion | ''; etiqueta: string }[] = [
   { valor: '', etiqueta: 'Todas las líneas' },
-  { valor: 'gran-formato', etiqueta: 'Gran formato' },
-  { valor: 'textil', etiqueta: 'Textil' },
-  { valor: 'promocionales', etiqueta: 'Promocionales' },
-  { valor: 'papeleria', etiqueta: 'Papelería' },
+  ...LINEAS_PRODUCCION,
 ];
 
 const ESTADOS = [
   { valor: '', etiqueta: 'Todo estado' },
-  { valor: 'confirmado', etiqueta: 'Confirmado' },
-  { valor: 'en-produccion', etiqueta: 'En producción' },
-  { valor: 'listo', etiqueta: 'Listo' },
-  { valor: 'entregado', etiqueta: 'Entregado' },
-  { valor: 'cancelado', etiqueta: 'Cancelado' },
+  ...ESTADOS_PEDIDO.filter((estado) => estado.valor !== 'cotizacion'),
 ];
 
 const COLORES_LINEA: Record<string, string> = {
@@ -31,12 +32,23 @@ const COLORES_LINEA: Record<string, string> = {
   papeleria: 'fill-ink',
 };
 
-const ETIQUETAS_LINEA: Record<string, string> = {
-  'gran-formato': 'Gran formato',
-  textil: 'Textil',
-  promocionales: 'Promocionales',
-  papeleria: 'Papelería',
-};
+const CONSULTAS_KEY = 'llamma.consultas.v1';
+const MAX_CONSULTAS = 12;
+
+interface FiltrosConsulta {
+  desde: string;
+  hasta: string;
+  clienteId: string;
+  linea: string;
+  estado: string;
+  q: string;
+}
+
+interface ConsultaGuardada {
+  id: string;
+  nombre: string;
+  filtros: FiltrosConsulta;
+}
 
 @Component({
   selector: 'app-consultas',
@@ -58,6 +70,7 @@ export class ConsultasComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly rangoActivo = signal('mes');
   readonly pagina = signal(1);
+  readonly consultasGuardadas = signal<ConsultaGuardada[]>(this.leerConsultas());
 
   readonly form = this.fb.nonNullable.group({
     desde: [this.primerDiaMes()],
@@ -103,7 +116,7 @@ export class ConsultasComponent implements OnInit {
     const maximo = Math.max(1, ...filas.map((fila) => fila.total));
     return filas.map((fila) => ({
       ...fila,
-      etiqueta: ETIQUETAS_LINEA[fila.linea] ?? fila.linea,
+      etiqueta: etiquetaDe(LINEAS_PRODUCCION, fila.linea),
       clase: COLORES_LINEA[fila.linea] ?? 'fill-ink',
       porcentaje: Math.max(6, Math.round((fila.total / maximo) * 100)),
     }));
@@ -194,6 +207,39 @@ export class ConsultasComponent implements OnInit {
     this.cargar(1);
   }
 
+  guardarConsulta(): void {
+    const filtros: FiltrosConsulta = this.form.getRawValue();
+    const actuales = this.consultasGuardadas();
+    const yaExiste = actuales.some(
+      (consulta) => JSON.stringify(consulta.filtros) === JSON.stringify(filtros),
+    );
+    if (yaExiste) {
+      this.ui.info('Esa combinación de filtros ya está guardada.');
+      return;
+    }
+
+    const consulta: ConsultaGuardada = {
+      id: `${Date.now()}`,
+      nombre: this.nombreConsulta(filtros),
+      filtros,
+    };
+    this.escribirConsultas([consulta, ...actuales].slice(0, MAX_CONSULTAS));
+    this.ui.exito(`Consulta guardada: ${consulta.nombre}.`);
+  }
+
+  aplicarConsulta(consulta: ConsultaGuardada): void {
+    this.form.reset({ ...consulta.filtros });
+    this.rangoActivo.set('personalizado');
+    this.cargar(1);
+    this.ui.exito(`Consulta aplicada: ${consulta.nombre}.`);
+  }
+
+  eliminarConsulta(consulta: ConsultaGuardada, evento: Event): void {
+    evento.stopPropagation();
+    this.escribirConsultas(this.consultasGuardadas().filter((fila) => fila.id !== consulta.id));
+    this.ui.exito('Consulta eliminada.');
+  }
+
   exportar(): void {
     const resultado = this.resultado();
     if (!resultado?.items.length) {
@@ -207,7 +253,7 @@ export class ConsultasComponent implements OnInit {
         pedido.folio,
         pedido.fechaPedido,
         pedido.cliente ?? '',
-        pedido.lineas.map((linea) => ETIQUETAS_LINEA[linea] ?? linea).join(' / '),
+        pedido.lineas.map((linea) => etiquetaDe(LINEAS_PRODUCCION, linea)).join(' / '),
         this.etiquetaEstado(pedido.estado),
         String(pedido.total),
       ]),
@@ -249,7 +295,7 @@ export class ConsultasComponent implements OnInit {
   }
 
   etiquetaLinea(linea: string): string {
-    return ETIQUETAS_LINEA[linea] ?? linea;
+    return etiquetaDe(LINEAS_PRODUCCION, linea);
   }
 
   iniciales(nombre: string): string {
@@ -280,10 +326,59 @@ export class ConsultasComponent implements OnInit {
     return `Mostrando ${inicio}–${fin} de ${data.total} resultados`;
   }
 
-  fechaCorta(valor: string | null | undefined): string {    if (!valor) return 'Sin fecha';
+  fechaCorta(valor: string | null | undefined): string {
+    if (!valor) return 'Sin fecha';
     const fecha = new Date(valor.length > 10 ? valor : `${valor}T00:00:00`);
     if (Number.isNaN(fecha.getTime())) return 'Sin fecha';
     return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  private nombreConsulta(filtros: FiltrosConsulta): string {
+    const partes: string[] = [];
+    const termino = filtros.q.trim();
+    if (termino) partes.push(`“${termino}”`);
+    const linea = LINEAS.find((opcion) => opcion.valor === filtros.linea);
+    if (linea?.valor) partes.push(linea.etiqueta);
+    const estado = ESTADOS.find((opcion) => opcion.valor === filtros.estado);
+    if (estado?.valor) partes.push(estado.etiqueta);
+    if (filtros.clienteId) {
+      const cliente = this.clientes().find((fila) => String(fila.id) === filtros.clienteId);
+      if (cliente) partes.push(cliente.nombre);
+    }
+    if (filtros.desde || filtros.hasta) {
+      partes.push(`${this.fechaCorta(filtros.desde)} – ${this.fechaCorta(filtros.hasta)}`);
+    }
+    return partes.join(' · ') || 'Todos los pedidos';
+  }
+
+  private leerConsultas(): ConsultaGuardada[] {
+    try {
+      const bruto = localStorage.getItem(CONSULTAS_KEY);
+      if (!bruto) return [];
+      const lista = JSON.parse(bruto) as unknown;
+      if (!Array.isArray(lista)) return [];
+      return lista.filter((fila): fila is ConsultaGuardada => {
+        if (!fila || typeof fila !== 'object') return false;
+        const consulta = fila as ConsultaGuardada;
+        return (
+          typeof consulta.id === 'string' &&
+          typeof consulta.nombre === 'string' &&
+          !!consulta.filtros &&
+          typeof consulta.filtros === 'object'
+        );
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  private escribirConsultas(lista: ConsultaGuardada[]): void {
+    this.consultasGuardadas.set(lista);
+    try {
+      localStorage.setItem(CONSULTAS_KEY, JSON.stringify(lista));
+    } catch {
+      /* almacenamiento no disponible */
+    }
   }
 
   private hoy(): string {
@@ -299,4 +394,3 @@ export class ConsultasComponent implements OnInit {
     return fecha.toISOString().slice(0, 10);
   }
 }
-

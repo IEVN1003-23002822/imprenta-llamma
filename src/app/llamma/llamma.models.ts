@@ -37,47 +37,24 @@ export type CategoriaProducto =
   | 'otro';
 
 export type EstadoPedido =
-  | 'cotizacion'
-  | 'confirmado'
-  | 'en-produccion'
-  | 'listo'
-  | 'entregado'
-  | 'cancelado';
+  'cotizacion' | 'confirmado' | 'en-produccion' | 'listo' | 'entregado' | 'cancelado';
 
 export type PrioridadPedido = 'baja' | 'media' | 'alta' | 'urgente';
 
 export type TipoMovimiento = 'entrada' | 'salida' | 'ajuste' | 'merma' | 'devolucion';
 
 export type EtapaProduccion =
-  | 'diseno'
-  | 'impresion'
-  | 'laminado'
-  | 'corte'
-  | 'confeccion'
-  | 'armado'
-  | 'acabado'
-  | 'entrega';
+  'diseno' | 'impresion' | 'laminado' | 'corte' | 'confeccion' | 'armado' | 'acabado' | 'entrega';
 
 export type EstadoProduccion = 'pendiente' | 'en-proceso' | 'pausada' | 'completada' | 'rechazada';
 
 export type RolUsuario = 'admin' | 'ventas' | 'produccion' | 'inventario' | 'marketing';
 
 export type SegmentoCliente =
-  | 'corporativo'
-  | 'pyme'
-  | 'escolar'
-  | 'gobierno'
-  | 'eventos'
-  | 'particular'
-  | 'otro';
+  'corporativo' | 'pyme' | 'escolar' | 'gobierno' | 'eventos' | 'particular' | 'otro';
 
 export type CanalMarketing =
-  | 'redes-sociales'
-  | 'google-ads'
-  | 'correo'
-  | 'punto-de-venta'
-  | 'referidos'
-  | 'otro';
+  'redes-sociales' | 'google-ads' | 'correo' | 'punto-de-venta' | 'referidos' | 'otro';
 
 export type EstadoActividadMarketing = 'planeada' | 'activa' | 'finalizada' | 'cancelada';
 
@@ -127,6 +104,7 @@ export interface Producto {
   precioBase: number;
   unidadVenta: UnidadMedida;
   recetaId?: Identificador;
+  imagenUrl?: string | null;
   activo: boolean;
 }
 
@@ -256,12 +234,7 @@ export type MetodoEntrega = 'taller' | 'domicilio' | 'paqueteria' | 'instalacion
 export type OrigenSolicitud = 'web' | 'whatsapp' | 'mostrador' | 'referido';
 
 export type EstadoCotizacion =
-  | 'borrador'
-  | 'enviada'
-  | 'aprobada'
-  | 'rechazada'
-  | 'vencida'
-  | 'convertida';
+  'borrador' | 'enviada' | 'aprobada' | 'rechazada' | 'vencida' | 'convertida';
 
 export type TipoPago = 'anticipo' | 'saldo' | 'abono';
 
@@ -383,6 +356,7 @@ export interface ProductoPublico {
   precioBase: number;
   unidadVenta: UnidadMedida;
   icono?: string;
+  imagenUrl?: string | null;
 }
 
 export interface ItemCotizacion {
@@ -427,7 +401,6 @@ export interface NuevaSolicitudPayload {
   archivos?: File[];
 }
 
-
 /* ---------------------------------------------------------------------------
  * Contratos de la API interna (ERP)
  * ------------------------------------------------------------------------- */
@@ -457,6 +430,7 @@ export interface ProductoApi {
   precioBase: number;
   unidadVenta: UnidadMedida;
   icono?: string;
+  imagenUrl?: string | null;
   publicado: boolean;
   activo: boolean;
   tieneReceta?: boolean;
