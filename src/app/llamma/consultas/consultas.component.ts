@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   OnInit,
   computed,
   inject,
@@ -71,6 +72,7 @@ export class ConsultasComponent implements OnInit {
   readonly rangoActivo = signal('mes');
   readonly pagina = signal(1);
   readonly consultasGuardadas = signal<ConsultaGuardada[]>(this.leerConsultas());
+  readonly menuGuardadas = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     desde: [this.primerDiaMes()],
@@ -230,8 +232,25 @@ export class ConsultasComponent implements OnInit {
   aplicarConsulta(consulta: ConsultaGuardada): void {
     this.form.reset({ ...consulta.filtros });
     this.rangoActivo.set('personalizado');
+    this.menuGuardadas.set(false);
     this.cargar(1);
     this.ui.exito(`Consulta aplicada: ${consulta.nombre}.`);
+  }
+
+  alternarGuardadas(evento: Event): void {
+    evento.stopPropagation();
+    this.menuGuardadas.update((abierto) => !abierto);
+  }
+
+  @HostListener('document:click', ['$event'])
+  cerrarGuardadas(evento: Event): void {
+    const objetivo = evento.target as Element | null;
+    if (!objetivo?.closest('.dropdown')) this.menuGuardadas.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  cerrarConEscape(): void {
+    this.menuGuardadas.set(false);
   }
 
   eliminarConsulta(consulta: ConsultaGuardada, evento: Event): void {

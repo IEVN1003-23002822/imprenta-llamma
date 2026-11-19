@@ -1,6 +1,6 @@
 <div class="module-page captura-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div>
         <span class="eyebrow">Cotizador interno</span>
         <h1>{{ modoExistente() ? 'Revisa y convierte.' : 'Captura tu cotización.' }}</h1>
@@ -45,7 +45,7 @@
     @if (pedidoCreado()) {
       <section class="panel-card capture-success">
         <span class="success-mark"><i class="bi bi-check2-circle"></i></span>
-        <div class="flex-grow-1">
+        <div class="grow">
           <span class="panel-kicker">Pedido en producción</span>
           <h2>{{ pedidoCreado() }}</h2>
           <p>
@@ -53,7 +53,7 @@
             las recetas y la orden ya aparece en el tablero de producción.
           </p>
         </div>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2">
           <a class="btn btn-brand btn-sm" routerLink="/detalle">
             <i class="bi bi-receipt"></i> Ver órdenes
           </a>
@@ -80,7 +80,7 @@
       @if (creada() && !pedidoCreado() && cotizacion(); as cot) {
         <section class="panel-card capture-created">
           <span class="success-mark"><i class="bi bi-file-earmark-check"></i></span>
-          <div class="flex-grow-1">
+          <div class="grow">
             <span class="panel-kicker">Cotización guardada</span>
             <h2>{{ cot.folio }}</h2>
             <p>
@@ -97,11 +97,11 @@
         </section>
       }
 
-      <div class="row g-4">
-        <div class="col-xl-8">
-          <section class="panel-card mb-4">
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 xl:col-span-8">
+          <section class="panel-card mb-6">
             <div class="panel-head">
-              <div class="d-flex align-items-center gap-3">
+              <div class="flex items-center gap-4">
                 <span class="step-number">01</span>
                 <div>
                   <span class="panel-kicker">Cotización {{ cotizacion()?.folio }}</span>
@@ -149,15 +149,15 @@
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle">
-                <caption class="visually-hidden">
+                <caption class="sr-only">
                   Partidas de la cotización
                 </caption>
                 <thead>
                   <tr>
                     <th scope="col">Producto</th>
                     <th scope="col" class="text-center">Cant.</th>
-                    <th scope="col" class="text-end">P. unitario</th>
-                    <th scope="col" class="text-end">Importe</th>
+                    <th scope="col" class="text-right">P. unitario</th>
+                    <th scope="col" class="text-right">Importe</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -170,8 +170,8 @@
                         </div>
                       </td>
                       <td class="text-center">{{ item.cantidad }}</td>
-                      <td class="text-end">{{ moneda(item.precioUnitario) }}</td>
-                      <td class="text-end cell-main">{{ moneda(item.importe) }}</td>
+                      <td class="text-right">{{ moneda(item.precioUnitario) }}</td>
+                      <td class="text-right cell-main">{{ moneda(item.importe) }}</td>
                     </tr>
                   } @empty {
                     <tr>
@@ -186,7 +186,7 @@
           </section>
         </div>
 
-        <div class="col-xl-4 summary-sidebar">
+        <div class="col-span-12 xl:col-span-4 summary-sidebar">
           <aside class="quote-summary">
             <div class="quote-summary-head">
               <span>Resumen de cotización</span>
@@ -235,7 +235,7 @@
               </div>
 
               <button
-                class="btn btn-brand w-100"
+                class="btn btn-brand w-full"
                 type="button"
                 [disabled]="convirtiendo()"
                 (click)="convertirAPedido()"
@@ -257,7 +257,7 @@
             }
 
             <button
-              class="btn btn-outline-ink w-100 mt-2"
+              class="btn btn-outline-ink w-full mt-2"
               type="button"
               (click)="nuevaCotizacion()"
             >
@@ -271,7 +271,7 @@
             </p>
           </aside>
 
-          <div class="help-card mt-4">
+          <div class="help-card mt-6">
             <i class="bi bi-headset"></i>
             <div>
               <strong>¿Necesitas ayuda?</strong>
@@ -282,10 +282,10 @@
         </div>
       </div>
     } @else {
-      <div class="row g-4">
-        <div class="col-xl-8">
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 xl:col-span-8">
           @if (solicitud(); as origen) {
-            <div class="quote-note mb-4">
+            <div class="quote-note mb-6">
               <i class="bi bi-inbox"></i>
               <span>
                 Cotizando la solicitud <strong>{{ origen.folio }}</strong> de
@@ -295,9 +295,9 @@
           }
 
           <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
-            <section class="panel-card mb-4">
+            <section class="panel-card mb-6">
               <div class="panel-head">
-                <div class="d-flex align-items-center gap-3">
+                <div class="flex items-center gap-4">
                   <span class="step-number">01</span>
                   <div>
                     <span class="panel-kicker">Información general</span>
@@ -307,8 +307,8 @@
                 <span class="badge badge-soft-muted">Borrador</span>
               </div>
 
-              <div class="row g-3">
-                <div class="col-md-6">
+              <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12 md:col-span-6">
                   <label class="form-label" for="clienteNombre">Nombre del contacto</label>
                   <input
                     id="clienteNombre"
@@ -334,7 +334,7 @@
                     >
                   }
                 </div>
-                <div class="col-md-6">
+                <div class="col-span-12 md:col-span-6">
                   <label class="form-label" for="clienteEmpresa">Empresa o marca</label>
                   <input
                     id="clienteEmpresa"
@@ -344,7 +344,7 @@
                     placeholder="Ej. Estudio Nómada"
                   />
                 </div>
-                <div class="col-md-6">
+                <div class="col-span-12 md:col-span-6">
                   <label class="form-label" for="clienteCorreo">Correo electrónico</label>
                   <input
                     id="clienteCorreo"
@@ -370,7 +370,7 @@
                     >
                   }
                 </div>
-                <div class="col-md-6">
+                <div class="col-span-12 md:col-span-6">
                   <label class="form-label" for="clienteTelefono">Teléfono</label>
                   <input
                     id="clienteTelefono"
@@ -396,7 +396,7 @@
                     >
                   }
                 </div>
-                <div class="col-md-6">
+                <div class="col-span-12 md:col-span-6">
                   <label class="form-label" for="clienteRfc">RFC / Razón social</label>
                   <input
                     id="clienteRfc"
@@ -406,7 +406,7 @@
                     placeholder="RFC con homoclave"
                   />
                 </div>
-                <div class="col-md-6">
+                <div class="col-span-12 md:col-span-6">
                   <label class="form-label" for="clienteSegmento">Segmento</label>
                   <select id="clienteSegmento" class="form-select" formControlName="segmento">
                     <option value="particular">Particular</option>
@@ -417,7 +417,7 @@
                     <option value="gobierno">Gobierno</option>
                   </select>
                 </div>
-                <div class="col-12">
+                <div class="col-span-12">
                   <label class="form-label" for="clienteDireccion">Dirección de entrega</label>
                   <input
                     id="clienteDireccion"
@@ -430,9 +430,9 @@
               </div>
             </section>
 
-            <section class="panel-card mb-4">
+            <section class="panel-card mb-6">
               <div class="panel-head">
-                <div class="d-flex align-items-center gap-3">
+                <div class="flex items-center gap-4">
                   <span class="step-number">02</span>
                   <div>
                     <span class="panel-kicker">Configuración de partida</span>
@@ -442,8 +442,8 @@
                 <span class="badge badge-soft-cyan">{{ partidas().length }} partidas</span>
               </div>
 
-              <div class="row g-3 align-items-end">
-                <div class="col-md-4">
+              <div class="grid grid-cols-12 gap-4 items-end">
+                <div class="col-span-12 md:col-span-4">
                   <label class="form-label" for="productoSelect">Producto terminado</label>
                   <select
                     id="productoSelect"
@@ -457,7 +457,7 @@
                     }
                   </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-span-12 md:col-span-4">
                   <label class="form-label" for="productoDescripcion">Concepto</label>
                   <input
                     id="productoDescripcion"
@@ -468,7 +468,7 @@
                     (input)="cambiarDescripcion($event)"
                   />
                 </div>
-                <div class="col-md-4">
+                <div class="col-span-12 md:col-span-4">
                   <label class="form-label" for="productoEspecificaciones">Especificaciones</label>
                   <input
                     id="productoEspecificaciones"
@@ -479,7 +479,7 @@
                     (input)="cambiarEspecificaciones($event)"
                   />
                 </div>
-                <div class="col-4 col-md-2">
+                <div class="col-span-4 md:col-span-2">
                   <label class="form-label" for="productoCantidad">Cantidad</label>
                   <input
                     id="productoCantidad"
@@ -491,7 +491,7 @@
                     (input)="cambiarCantidad($event)"
                   />
                 </div>
-                <div class="col-4 col-md-3">
+                <div class="col-span-4 md:col-span-3">
                   <label class="form-label" for="productoPrecio">Precio unitario</label>
                   <input
                     id="productoPrecio"
@@ -503,12 +503,12 @@
                     (input)="cambiarPrecio($event)"
                   />
                 </div>
-                <div class="col-4 col-md-3">
-                  <button class="btn btn-ink w-100" type="button" (click)="agregarPartida()">
+                <div class="col-span-4 md:col-span-3">
+                  <button class="btn btn-ink w-full" type="button" (click)="agregarPartida()">
                     <i class="bi bi-plus-lg"></i> Agregar
                   </button>
                 </div>
-                <div class="col-md-4">
+                <div class="col-span-12 md:col-span-4">
                   <div class="capture-line-total">
                     <span>Importe de la línea</span>
                     <strong>{{ moneda(cantidad() * precio()) }}</strong>
@@ -525,7 +525,7 @@
               </div>
             </section>
 
-            <section class="panel-card mb-4">
+            <section class="panel-card mb-6">
               <div class="panel-head">
                 <div>
                   <span class="panel-kicker">Partidas de la cotización</span>
@@ -538,15 +538,15 @@
 
               <div class="table-responsive">
                 <table class="table table-llamma align-middle">
-                  <caption class="visually-hidden">
+                  <caption class="sr-only">
                     Partidas de la cotización existente
                   </caption>
                   <thead>
                     <tr>
                       <th scope="col">Producto</th>
                       <th scope="col" class="text-center capture-col-qty">Cant.</th>
-                      <th scope="col" class="text-end capture-col-price">P. unitario</th>
-                      <th scope="col" class="text-end">Importe</th>
+                      <th scope="col" class="text-right capture-col-price">P. unitario</th>
+                      <th scope="col" class="text-right">Importe</th>
                       <th scope="col"></th>
                     </tr>
                   </thead>
@@ -572,7 +572,7 @@
                         </td>
                         <td>
                           <input
-                            class="form-control form-control-sm text-end"
+                            class="form-control form-control-sm text-right"
                             type="number"
                             min="0"
                             step="0.01"
@@ -581,8 +581,8 @@
                             [attr.aria-label]="'Precio unitario de ' + item.descripcion"
                           />
                         </td>
-                        <td class="text-end cell-main">{{ moneda(item.importe) }}</td>
-                        <td class="text-end">
+                        <td class="text-right cell-main">{{ moneda(item.importe) }}</td>
+                        <td class="text-right">
                           <button
                             class="btn btn-icon"
                             type="button"
@@ -615,7 +615,7 @@
 
             <section class="panel-card">
               <div class="panel-head">
-                <div class="d-flex align-items-center gap-3">
+                <div class="flex items-center gap-4">
                   <span class="step-number">03</span>
                   <div>
                     <span class="panel-kicker">Condiciones comerciales</span>
@@ -624,8 +624,8 @@
                 </div>
               </div>
 
-              <div class="row g-3">
-                <div class="col-md-4">
+              <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12 md:col-span-4">
                   <label class="form-label" for="vigenciaDias">Vigencia (días)</label>
                   <input
                     id="vigenciaDias"
@@ -642,7 +642,7 @@
                     "
                   />
                 </div>
-                <div class="col-md-8">
+                <div class="col-span-12 md:col-span-8">
                   <label class="form-label" for="cotizacionNotas">Notas para el cliente</label>
                   <textarea
                     id="cotizacionNotas"
@@ -657,7 +657,7 @@
           </form>
         </div>
 
-        <div class="col-xl-4 summary-sidebar">
+        <div class="col-span-12 xl:col-span-4 summary-sidebar">
           <aside class="quote-summary">
             <div class="quote-summary-head">
               <span>Resumen de cotización</span>
@@ -709,7 +709,7 @@
             </div>
 
             <button
-              class="btn btn-brand w-100"
+              class="btn btn-brand w-full"
               type="button"
               [disabled]="guardando()"
               (click)="guardar()"
@@ -728,7 +728,7 @@
             </p>
           </aside>
 
-          <div class="help-card mt-4">
+          <div class="help-card mt-6">
             <i class="bi bi-headset"></i>
             <div>
               <strong>¿Necesitas ayuda?</strong>

@@ -1,6 +1,6 @@
 <div class="module-page dashboard-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div>
         <span class="eyebrow">Panel ejecutivo</span>
         <h1>Buenos días, equipo Llamma.</h1>
@@ -9,7 +9,7 @@
           atención esta semana.
         </p>
       </div>
-      <div class="d-flex flex-wrap align-items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <span class="date-chip">
           <i class="bi bi-calendar3"></i>
           {{ resumen() ? fechaCorta(resumen()!.pedidosRecientes[0]?.fechaPedido) : '—' }}
@@ -27,9 +27,9 @@
     </header>
 
     @if (error()) {
-      <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+      <div class="alert alert-danger flex items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
-        <span class="flex-grow-1">{{ error() }}</span>
+        <span class="grow">{{ error() }}</span>
         <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
           Reintentar
         </button>
@@ -37,17 +37,17 @@
     }
 
     @if (cargando() && !resumen()) {
-      <div class="panel-card text-center py-5">
-        <span class="spinner-border text-primary" role="status" aria-hidden="true"></span>
-        <p class="mt-3 mb-0 text-muted">Cargando indicadores del taller…</p>
+      <div class="panel-card text-center py-12">
+        <span class="spinner-border text-llamma-cyan-deep" role="status" aria-hidden="true"></span>
+        <p class="mt-4 mb-0 text-llamma-muted">Cargando indicadores del taller…</p>
       </div>
     }
 
     @if (resumen(); as data) {
-      <div class="row g-4 mb-4">
-        <div class="col-sm-6 col-xl-3">
-          <article class="kpi-card h-100">
-            <div class="d-flex align-items-start justify-content-between gap-2">
+      <div class="grid grid-cols-12 gap-6 mb-6">
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+          <article class="kpi-card h-full">
+            <div class="flex items-start justify-between gap-2">
               <span class="icon-tile icon-tile-cyan"><i class="bi bi-currency-dollar"></i></span>
               <span
                 class="trend"
@@ -71,9 +71,9 @@
           </article>
         </div>
 
-        <div class="col-sm-6 col-xl-3">
-          <article class="kpi-card h-100">
-            <div class="d-flex align-items-start justify-content-between gap-2">
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+          <article class="kpi-card h-full">
+            <div class="flex items-start justify-between gap-2">
               <span class="icon-tile icon-tile-magenta"><i class="bi bi-receipt-cutoff"></i></span>
               <span class="trend trend-flat"
                 ><i class="bi bi-dot"></i> {{ data.pedidosPeriodo }} pedidos</span
@@ -88,9 +88,9 @@
           </article>
         </div>
 
-        <div class="col-sm-6 col-xl-3">
-          <article class="kpi-card h-100">
-            <div class="d-flex align-items-start justify-content-between gap-2">
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+          <article class="kpi-card h-full">
+            <div class="flex items-start justify-between gap-2">
               <span class="icon-tile icon-tile-yellow"
                 ><i class="bi bi-gear-wide-connected"></i
               ></span>
@@ -107,9 +107,9 @@
           </article>
         </div>
 
-        <div class="col-sm-6 col-xl-3">
-          <article class="kpi-card h-100">
-            <div class="d-flex align-items-start justify-content-between gap-2">
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+          <article class="kpi-card h-full">
+            <div class="flex items-start justify-between gap-2">
               <span class="icon-tile icon-tile-danger"
                 ><i class="bi bi-exclamation-triangle"></i
               ></span>
@@ -129,9 +129,9 @@
         </div>
       </div>
 
-      <div class="row g-4 mb-4">
-        <div class="col-xl-8">
-          <article class="panel-card h-100">
+      <div class="grid grid-cols-12 gap-6 mb-6">
+        <div class="col-span-12 xl:col-span-8">
+          <article class="panel-card h-full">
             <div class="panel-head">
               <div>
                 <span class="panel-kicker">Rendimiento</span>
@@ -186,15 +186,15 @@
                 }
               </div>
             } @else {
-              <p class="text-muted mb-0 py-4">
+              <p class="text-llamma-muted mb-0 py-6">
                 Aún no hay pedidos con partidas de producto para graficar.
               </p>
             }
           </article>
         </div>
 
-        <div class="col-xl-4">
-          <article class="panel-card h-100 d-flex flex-column">
+        <div class="col-span-12 xl:col-span-4">
+          <article class="panel-card h-full flex flex-col">
             <div class="panel-head">
               <div>
                 <span class="panel-kicker">Taller</span>
@@ -221,7 +221,7 @@
                   <strong>{{ etapa.total }}</strong>
                 </div>
               } @empty {
-                <p class="text-muted mb-0">El tablero está vacío: no hay órdenes activas.</p>
+                <p class="text-llamma-muted mb-0">El tablero está vacío: no hay órdenes activas.</p>
               }
             </div>
 
@@ -232,9 +232,9 @@
         </div>
       </div>
 
-      <div class="row g-4">
-        <div class="col-xl-7">
-          <article class="panel-card h-100">
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 xl:col-span-7">
+          <article class="panel-card h-full">
             <div class="panel-head">
               <div>
                 <span class="panel-kicker">Últimos movimientos</span>
@@ -247,7 +247,7 @@
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle">
-                <caption class="visually-hidden">
+                <caption class="sr-only">
                   Pedidos recientes
                 </caption>
                 <thead>
@@ -255,7 +255,7 @@
                     <th scope="col">Orden</th>
                     <th scope="col">Cliente</th>
                     <th scope="col">Estado</th>
-                    <th scope="col" class="text-end">Total</th>
+                    <th scope="col" class="text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -279,11 +279,11 @@
                           etiquetaEstado(pedido.estado)
                         }}</span>
                       </td>
-                      <td class="text-end cell-main">{{ moneda(pedido.total) }}</td>
+                      <td class="text-right cell-main">{{ moneda(pedido.total) }}</td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="4" class="text-center text-muted py-4">
+                      <td colspan="4" class="text-center text-llamma-muted py-6">
                         Todavía no hay pedidos registrados.
                       </td>
                     </tr>
@@ -294,8 +294,8 @@
           </article>
         </div>
 
-        <div class="col-xl-5">
-          <article class="panel-card h-100 d-flex flex-column">
+        <div class="col-span-12 xl:col-span-5">
+          <article class="panel-card h-full flex flex-col">
             <div class="panel-head">
               <div>
                 <span class="panel-kicker">Atención inmediata</span>
@@ -310,17 +310,17 @@
               @for (materia of data.bajoStock; track materia.id) {
                 <div class="alert-row">
                   <span class="icon-tile icon-tile-danger"><i class="bi bi-box-seam"></i></span>
-                  <div class="flex-grow-1 min-w-0">
-                    <div class="d-flex align-items-center justify-content-between gap-2">
+                  <div class="grow min-w-0">
+                    <div class="flex items-center justify-between gap-2">
                       <strong>{{ materia.nombre }}</strong>
-                      <span class="stock-text text-danger">
+                      <span class="stock-text text-red-600">
                         {{ materia.stockActual }} / {{ materia.stockMinimo }}
                         {{ materia.unidadMedida }}
                       </span>
                     </div>
                     <div class="stock-track mt-2">
                       <span
-                        class="stock-fill bg-danger"
+                        class="stock-fill bg-red-600"
                         [style.width]="
                           porcentajeStock(materia.stockActual, materia.stockMaximo) + '%'
                         "
@@ -332,7 +332,7 @@
                   </div>
                 </div>
               } @empty {
-                <p class="text-muted mb-0">Todo el inventario está por encima del mínimo.</p>
+                <p class="text-llamma-muted mb-0">Todo el inventario está por encima del mínimo.</p>
               }
             </div>
 

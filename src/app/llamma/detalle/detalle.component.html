@@ -1,6 +1,6 @@
 <div class="module-page detalle-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div>
         <span class="eyebrow">Órdenes y seguimiento</span>
         <h1>Detalle de órdenes.</h1>
@@ -9,7 +9,7 @@
           estado de entrega en una sola vista.
         </p>
       </div>
-      <div class="d-flex flex-wrap align-items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <span class="date-chip">
           <i class="bi bi-calendar3"></i>
           {{ pedido() ? fechaCorta(pedido()!.fechaPedido) : 'Sin fecha' }}
@@ -36,7 +36,7 @@
       >
       <div class="order-switcher-list">
         @if (cargandoLista()) {
-          <span class="text-muted small d-inline-flex align-items-center gap-2">
+          <span class="text-llamma-muted small inline-flex items-center gap-2">
             <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Cargando…
           </span>
         } @else {
@@ -50,16 +50,16 @@
               #{{ fila.folio }} <span>{{ etiquetaEstado(fila.estado) }}</span>
             </button>
           } @empty {
-            <span class="text-muted small">No hay órdenes registradas todavía.</span>
+            <span class="text-llamma-muted small">No hay órdenes registradas todavía.</span>
           }
         }
       </div>
     </div>
 
     @if (error()) {
-      <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+      <div class="alert alert-danger flex items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
-        <span class="flex-grow-1">{{ error() }}</span>
+        <span class="grow">{{ error() }}</span>
         <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargarLista()">
           Reintentar
         </button>
@@ -67,21 +67,21 @@
     }
 
     @if (cargandoDetalle() && !pedido()) {
-      <div class="panel-card text-center py-5">
-        <span class="spinner-border text-primary" role="status" aria-hidden="true"></span>
-        <p class="mt-3 mb-0 text-muted">Cargando la orden…</p>
+      <div class="panel-card text-center py-12">
+        <span class="spinner-border text-llamma-cyan-deep" role="status" aria-hidden="true"></span>
+        <p class="mt-4 mb-0 text-llamma-muted">Cargando la orden…</p>
       </div>
     }
 
     @if (pedido(); as orden) {
-      <div class="row g-4">
-        <div class="col-xl-8">
-          <section class="panel-card mb-4">
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 xl:col-span-8">
+          <section class="panel-card mb-6">
             <div class="order-head">
               <span class="order-emblem"><i class="bi bi-receipt"></i></span>
-              <div class="flex-grow-1 min-w-0">
+              <div class="grow min-w-0">
                 <span class="panel-kicker">Orden de producción</span>
-                <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                   <h2 class="order-title">#{{ orden.folio }}</h2>
                   <span class="badge" [class]="claseEstado(orden.estado)">{{
                     etiquetaEstado(orden.estado)
@@ -91,7 +91,7 @@
                   }}</span>
                 </div>
               </div>
-              <div class="d-flex flex-wrap align-items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <button
                   class="btn btn-icon"
                   type="button"
@@ -117,8 +117,8 @@
               </div>
             </div>
 
-            <div class="row g-3 order-meta">
-              <div class="col-sm-6 col-lg-3">
+            <div class="grid grid-cols-12 gap-4 order-meta">
+              <div class="col-span-12 sm:col-span-6 lg:col-span-3">
                 <div class="order-meta-item">
                   <span>Cliente</span>
                   <strong>{{ cliente()?.nombre ?? orden.cliente ?? 'Mostrador' }}</strong>
@@ -130,7 +130,7 @@
                   </small>
                 </div>
               </div>
-              <div class="col-sm-6 col-lg-3">
+              <div class="col-span-12 sm:col-span-6 lg:col-span-3">
                 <div class="order-meta-item">
                   <span>Fecha de alta</span>
                   <strong>{{ fechaCorta(orden.fechaPedido) }}</strong>
@@ -143,7 +143,7 @@
                   </small>
                 </div>
               </div>
-              <div class="col-sm-6 col-lg-3">
+              <div class="col-span-12 sm:col-span-6 lg:col-span-3">
                 <div class="order-meta-item">
                   <span>Entrega comprometida</span>
                   <strong>{{ fechaCorta(orden.fechaEntrega) }}</strong>
@@ -152,7 +152,7 @@
                   }}</small>
                 </div>
               </div>
-              <div class="col-sm-6 col-lg-3">
+              <div class="col-span-12 sm:col-span-6 lg:col-span-3">
                 <div class="order-meta-item">
                   <span>Responsable</span>
                   <strong>{{ orden.ordenProduccion?.responsable || 'Sin asignar' }}</strong>
@@ -168,7 +168,7 @@
             </div>
           </section>
 
-          <section class="panel-card mb-4">
+          <section class="panel-card mb-6">
             <div class="panel-head">
               <div>
                 <span class="panel-kicker">Partidas del pedido</span>
@@ -181,7 +181,7 @@
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle">
-                <caption class="visually-hidden">
+                <caption class="sr-only">
                   Partidas del pedido
                 </caption>
                 <thead>
@@ -189,8 +189,8 @@
                     <th scope="col">Producto</th>
                     <th scope="col">Especificación</th>
                     <th scope="col" class="text-center">Cant.</th>
-                    <th scope="col" class="text-end">P. unitario</th>
-                    <th scope="col" class="text-end">Importe</th>
+                    <th scope="col" class="text-right">P. unitario</th>
+                    <th scope="col" class="text-right">Importe</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -218,12 +218,12 @@
                         </div>
                       </td>
                       <td class="text-center">{{ item.cantidad }}</td>
-                      <td class="text-end">{{ moneda(item.precioUnitario) }}</td>
-                      <td class="text-end cell-main">{{ moneda(item.importe) }}</td>
+                      <td class="text-right">{{ moneda(item.precioUnitario) }}</td>
+                      <td class="text-right cell-main">{{ moneda(item.importe) }}</td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="5" class="text-center text-muted py-4">
+                      <td colspan="5" class="text-center text-llamma-muted py-6">
                         Esta orden no tiene partidas registradas.
                       </td>
                     </tr>
@@ -274,12 +274,12 @@
                   </div>
                 </li>
               } @empty {
-                <li class="text-muted">Aún no hay etapas registradas para esta orden.</li>
+                <li class="text-llamma-muted">Aún no hay etapas registradas para esta orden.</li>
               }
             </ol>
 
             @if (controles().length) {
-              <div class="panel-head mt-4">
+              <div class="panel-head mt-6">
                 <div>
                   <span class="panel-kicker">Control de calidad</span>
                   <h2>Revisiones de la orden</h2>
@@ -287,7 +287,7 @@
               </div>
               <div class="table-responsive">
                 <table class="table table-llamma align-middle mb-0">
-                  <caption class="visually-hidden">
+                  <caption class="sr-only">
                     Controles de calidad del pedido
                   </caption>
                   <thead>
@@ -295,7 +295,7 @@
                       <th scope="col">Criterio</th>
                       <th scope="col">Resultado</th>
                       <th scope="col">Revisó</th>
-                      <th scope="col" class="text-end">Fecha</th>
+                      <th scope="col" class="text-right">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -316,7 +316,7 @@
                           </span>
                         </td>
                         <td>{{ control.revisadoPor || '—' }}</td>
-                        <td class="text-end cell-muted">{{ fechaHora(control.fecha) }}</td>
+                        <td class="text-right cell-muted">{{ fechaHora(control.fecha) }}</td>
                       </tr>
                     }
                   </tbody>
@@ -326,8 +326,8 @@
           </section>
         </div>
 
-        <div class="col-xl-4 summary-sidebar">
-          <aside class="order-summary mb-4">
+        <div class="col-span-12 xl:col-span-4 summary-sidebar">
+          <aside class="order-summary mb-6">
             <div class="quote-summary-head">
               <span>Resumen del pedido</span>
               <span class="badge" [class]="claseEstado(orden.estado)">{{
@@ -388,14 +388,14 @@
 
             @if (puedeGestionar() && orden.saldo > 0.01) {
               @if (!mostrarPago()) {
-                <button class="btn btn-brand w-100" type="button" (click)="abrirPago()">
+                <button class="btn btn-brand w-full" type="button" (click)="abrirPago()">
                   <i class="bi bi-cash-coin"></i> Registrar pago
                 </button>
               } @else {
                 <form class="mt-2" [formGroup]="pagoForm" (ngSubmit)="registrarPago()">
-                  <div class="row g-2">
-                    <div class="col-6">
-                      <label class="form-label small fw-semibold" for="pago-tipo">Tipo</label>
+                  <div class="grid grid-cols-12 gap-2">
+                    <div class="col-span-6">
+                      <label class="form-label small font-semibold" for="pago-tipo">Tipo</label>
                       <select
                         id="pago-tipo"
                         class="form-select form-select-sm"
@@ -406,8 +406,8 @@
                         <option value="saldo">Liquidación</option>
                       </select>
                     </div>
-                    <div class="col-6">
-                      <label class="form-label small fw-semibold" for="pago-metodo">Método</label>
+                    <div class="col-span-6">
+                      <label class="form-label small font-semibold" for="pago-metodo">Método</label>
                       <select
                         id="pago-metodo"
                         class="form-select form-select-sm"
@@ -419,8 +419,8 @@
                         <option value="cheque">Cheque</option>
                       </select>
                     </div>
-                    <div class="col-6">
-                      <label class="form-label small fw-semibold" for="pago-monto">Monto</label>
+                    <div class="col-span-6">
+                      <label class="form-label small font-semibold" for="pago-monto">Monto</label>
                       <input
                         id="pago-monto"
                         class="form-control form-control-sm"
@@ -430,11 +430,11 @@
                         formControlName="monto"
                       />
                       @if (pagoForm.controls.monto.invalid && pagoForm.controls.monto.touched) {
-                        <small class="text-danger">Indica un monto mayor a cero.</small>
+                        <small class="text-red-600">Indica un monto mayor a cero.</small>
                       }
                     </div>
-                    <div class="col-6">
-                      <label class="form-label small fw-semibold" for="pago-referencia"
+                    <div class="col-span-6">
+                      <label class="form-label small font-semibold" for="pago-referencia"
                         >Referencia</label
                       >
                       <input
@@ -446,9 +446,9 @@
                       />
                     </div>
                   </div>
-                  <div class="d-flex gap-2 mt-2">
+                  <div class="flex gap-2 mt-2">
                     <button
-                      class="btn btn-brand btn-sm flex-grow-1"
+                      class="btn btn-brand btn-sm grow"
                       type="submit"
                       [disabled]="registrandoPago()"
                     >
@@ -471,23 +471,23 @@
             }
 
             @if (pagos().length) {
-              <div class="mt-3">
+              <div class="mt-4">
                 <span class="panel-kicker">Pagos registrados</span>
                 <div class="pago-list mt-2">
                   @for (pago of pagos(); track pago.id) {
-                    <div class="d-flex align-items-start justify-content-between gap-2">
+                    <div class="flex items-start justify-between gap-2">
                       <div>
-                        <strong class="small text-capitalize"
+                        <strong class="small capitalize"
                           >{{ pago.tipo }} · {{ pago.metodo }}</strong
                         >
-                        <small class="d-block text-muted">
+                        <small class="block text-llamma-muted">
                           {{ fechaHora(pago.fechaPago) }}
                           @if (pago.referencia) {
                             · {{ pago.referencia }}
                           }
                         </small>
                       </div>
-                      <span class="fw-semibold small">{{ moneda(pago.monto) }}</span>
+                      <span class="font-semibold small">{{ moneda(pago.monto) }}</span>
                     </div>
                   }
                 </div>
@@ -495,7 +495,7 @@
             }
           </aside>
 
-          <section class="panel-card mb-4">
+          <section class="panel-card mb-6">
             <div class="panel-head">
               <div>
                 <span class="panel-kicker">Logística</span>
@@ -546,7 +546,7 @@
                   <span class="icon-tile icon-tile-sm icon-tile-magenta"
                     ><i class="bi bi-file-earmark-image"></i
                   ></span>
-                  <div class="flex-grow-1 min-w-0">
+                  <div class="grow min-w-0">
                     <strong>{{ archivo.nombre }}</strong>
                     <small>{{ archivo.descripcion }}</small>
                   </div>
@@ -561,7 +561,7 @@
                   </a>
                 </div>
               } @empty {
-                <p class="text-muted mb-0 small">
+                <p class="text-llamma-muted mb-0 small">
                   Esta orden no tiene archivos adjuntos. Los diseños se cargan desde la solicitud.
                 </p>
               }

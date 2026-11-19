@@ -1,6 +1,6 @@
 <div class="module-page productos-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div class="page-brand">
         <img
           class="page-brand-logo"
@@ -20,7 +20,7 @@
           </p>
         </div>
       </div>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2">
         <a class="btn btn-brand" routerLink="/cotizar">
           <i class="bi bi-send"></i> Solicitar cotización
         </a>
@@ -36,7 +36,7 @@
       </div>
     </header>
 
-    <section class="panel-card mb-4">
+    <section class="panel-card mb-6">
       <div class="catalog-toolbar">
         <div class="catalog-tabs" role="tablist" aria-label="Filtrar por línea de producción">
           @for (opcion of lineas; track opcion.valor) {
@@ -66,7 +66,7 @@
     </section>
 
     @if (error()) {
-      <div class="catalog-error mb-4" role="alert">
+      <div class="catalog-error mb-6" role="alert">
         <i class="bi bi-exclamation-triangle-fill"></i>
         <span>{{ error() }}</span>
       </div>
@@ -152,7 +152,7 @@
 
 @if (gestionAbierta()) {
   <div
-    class="modal fade show d-block"
+    class="modal fade show block"
     tabindex="-1"
     appModalAccesible
     (cerrar)="cerrarGestion()"
@@ -163,7 +163,7 @@
         <div class="modal-header">
           <div>
             <span class="panel-kicker">Catálogo interno</span>
-            <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <h2 class="modal-title h5 mb-0">
                 {{
                   vista() === 'formulario'
@@ -183,8 +183,8 @@
 
         <div class="modal-body">
           @if (vista() === 'lista') {
-            <div class="row g-2 align-items-center mb-3">
-              <div class="col-lg-6">
+            <div class="grid grid-cols-12 gap-2 items-center mb-4">
+              <div class="col-span-12 lg:col-span-6">
                 <div class="input-group">
                   <span class="input-group-text"><i class="bi bi-search"></i></span>
                   <input
@@ -198,7 +198,7 @@
                 </div>
               </div>
               <div
-                class="col-lg-6 d-flex flex-wrap align-items-center justify-content-lg-end gap-2"
+                class="col-span-12 lg:col-span-6 flex flex-wrap items-center lg:justify-end gap-2"
               >
                 <span class="badge badge-soft-success"
                   >{{ resumenAdmin().publicados }} publicados</span
@@ -217,7 +217,7 @@
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle">
-                <caption class="visually-hidden">
+                <caption class="sr-only">
                   Catálogo de productos
                 </caption>
                 <thead>
@@ -225,9 +225,9 @@
                     <th scope="col">Producto</th>
                     <th scope="col">Categoría</th>
                     <th scope="col">Línea</th>
-                    <th scope="col" class="text-end">Precio base</th>
+                    <th scope="col" class="text-right">Precio base</th>
                     <th scope="col">Estado</th>
-                    <th scope="col" class="text-end">Acciones</th>
+                    <th scope="col" class="text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -246,12 +246,12 @@
                       </td>
                       <td>{{ etiquetaCategoria(producto.categoria) }}</td>
                       <td>{{ etiquetaLinea(producto.lineaProduccion) }}</td>
-                      <td class="text-end cell-main">
+                      <td class="text-right cell-main">
                         {{ moneda(producto.precioBase) }}
                         <small class="cell-muted"> / {{ unidad(producto.unidadVenta) }}</small>
                       </td>
                       <td>
-                        <div class="d-flex flex-wrap gap-1">
+                        <div class="flex flex-wrap gap-1">
                           <span
                             class="badge"
                             [class]="producto.activo ? 'badge-soft-success' : 'badge-soft-danger'"
@@ -269,8 +269,8 @@
                           }
                         </div>
                       </td>
-                      <td class="text-end">
-                        <div class="d-inline-flex gap-1">
+                      <td class="text-right">
+                        <div class="inline-flex gap-1">
                           <button
                             class="btn btn-icon"
                             type="button"
@@ -315,8 +315,8 @@
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="6" class="text-center text-muted py-5">
-                        <i class="bi bi-box-seam d-block fs-4 mb-2"></i>
+                      <td colspan="6" class="text-center text-llamma-muted py-12">
+                        <i class="bi bi-box-seam block text-2xl mb-2"></i>
                         {{
                           cargandoAdmin()
                             ? 'Cargando productos…'
@@ -330,15 +330,15 @@
             </div>
           } @else {
             <form [formGroup]="formulario" (ngSubmit)="guardar()" id="productoForm">
-              <div class="row g-3">
-                <div class="col-md-7">
+              <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12 md:col-span-7">
                   <label class="form-label" for="prodNombre">Nombre *</label>
                   <input id="prodNombre" class="form-control" formControlName="nombre" />
                   @if (formulario.controls.nombre.invalid && formulario.controls.nombre.touched) {
-                    <small class="text-danger">Indica al menos dos caracteres.</small>
+                    <small class="text-red-600">Indica al menos dos caracteres.</small>
                   }
                 </div>
-                <div class="col-md-5">
+                <div class="col-span-12 md:col-span-5">
                   <label class="form-label" for="prodCategoria">Categoría</label>
                   <select id="prodCategoria" class="form-select" formControlName="categoria">
                     @for (categoria of categorias; track categoria.valor) {
@@ -346,7 +346,7 @@
                     }
                   </select>
                 </div>
-                <div class="col-12">
+                <div class="col-span-12">
                   <label class="form-label" for="prodDescripcion">Descripción</label>
                   <textarea
                     id="prodDescripcion"
@@ -355,7 +355,7 @@
                     formControlName="descripcion"
                   ></textarea>
                 </div>
-                <div class="col-md-4">
+                <div class="col-span-12 md:col-span-4">
                   <label class="form-label" for="prodLinea">Línea de producción</label>
                   <select id="prodLinea" class="form-select" formControlName="lineaProduccion">
                     @for (linea of lineas; track linea.valor) {
@@ -365,7 +365,7 @@
                     }
                   </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-span-12 md:col-span-4">
                   <label class="form-label" for="prodPrecio">Precio base</label>
                   <input
                     id="prodPrecio"
@@ -376,7 +376,7 @@
                     formControlName="precioBase"
                   />
                 </div>
-                <div class="col-md-4">
+                <div class="col-span-12 md:col-span-4">
                   <label class="form-label" for="prodUnidad">Unidad de venta</label>
                   <select id="prodUnidad" class="form-select" formControlName="unidadVenta">
                     @for (unidad of unidadesForm; track unidad.valor) {
@@ -384,7 +384,7 @@
                     }
                   </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-span-12 md:col-span-4">
                   <label class="form-label" for="prodIcono">Icono (Bootstrap Icons)</label>
                   <input
                     id="prodIcono"
@@ -393,7 +393,7 @@
                     placeholder="bi-box-seam"
                   />
                 </div>
-                <div class="col-md-8">
+                <div class="col-span-12 md:col-span-8">
                   <label class="form-label" for="prodImagen">Foto del producto (opcional)</label>
                   <input
                     id="prodImagen"
@@ -407,7 +407,7 @@
                     la tarjeta del catálogo.
                   </small>
                 </div>
-                <div class="col-md-6 d-flex flex-wrap align-items-center gap-3 pt-md-4">
+                <div class="col-span-12 md:col-span-6 flex flex-wrap items-center gap-4 md:pt-6">
                   <div class="form-check form-switch mb-0">
                     <input
                       id="prodPublicado"
@@ -431,7 +431,7 @@
                 </div>
               </div>
 
-              <div class="quote-note mt-3 mb-0">
+              <div class="quote-note mt-4 mb-0">
                 <i class="bi bi-info-circle"></i>
                 <span>
                   Los productos activos y publicados aparecen en el catálogo público. Las recetas e

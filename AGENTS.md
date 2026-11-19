@@ -12,8 +12,15 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   (el dev server escucha en `::1` y `127.0.0.1:4200` puede no responder).
 - `ng serve` ya aplica `proxy.conf.json` (`/api` → `127.0.0.1:5000`, configurado en `angular.json`).
   Todo el frontend usa rutas relativas (`LlammaService.apiUrl = '/api'`); sin ese proxy no hay datos.
-- Bootstrap 5.3 y Bootstrap Icons vienen por CDN desde `src/index.html`, no de `package.json`.
-  Los overrides globales van en `src/styles.css`.
+- La interfaz usa **Tailwind CSS v4** con el plugin de **Flowbite** (`.postcssrc.json` +
+  `src/styles.css`). Bootstrap ya no se carga: las clases semánticas de las plantillas (`navbar`,
+  `btn`, `modal`, `table`, `badge`, …) se conservan y se definen en la capa `components` de
+  `src/styles.css`. Bootstrap Icons sigue viniendo de `node_modules` (solo los glifos `bi-*`).
+- El contenedor propio es `.llamma-container`, no `.container`: Tailwind genera su propia utilidad
+  `.container` y ambas chocarían. Para rejillas usa `grid grid-cols-12 gap-x-* gap-y-*`; no
+  reintroduzcas `row`, `col-*`, `d-*` ni utilidades de Bootstrap.
+- El plugin de Flowbite se registra con `forms: false` porque su base de formularios emite selectores
+  inválidos (`:is()`) que rompen el CSS crítico; los formularios usan la capa propia del proyecto.
 - Los recursos estáticos propios se sirven desde `public/` (raíz) y desde `src/assets/` (mapeado a
   `/assets` en `angular.json`). El logotipo oficial vive en `src/assets/images/logo-llamma.png`;
   en plantillas se referencia como `assets/images/...`.
@@ -104,7 +111,7 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   rol de diálogo, `aria-labelledby` al `.modal-title`, foco inicial, trampa de Tab, `Esc` mediante
   `(cerrar)` y bloqueo de scroll. No dupliques esa lógica a mano.
 - Accesibilidad mínima obligatoria: skip link y `<main id="contenido">`, `aria-current="page"` en la
-  navegación vía `esRuta()`, `<caption class="visually-hidden">` + `scope="col"` en cada tabla,
+  navegación vía `esRuta()`, `<caption class="sr-only">` + `scope="col"` en cada tabla,
   nombre accesible en todo control y `aria-invalid`/`aria-describedby` con foco al primer error.
 - Las acciones destructivas usan `ConfirmacionService.confirmar(...)` (diálogo global con
   `appModalAccesible`). No uses `window.confirm`: el único punto de montaje es

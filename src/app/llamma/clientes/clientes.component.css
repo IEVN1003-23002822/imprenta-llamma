@@ -236,5 +236,5 @@
 }
 
 .clientes-page tbody tr.table-active > * {
-  --bs-table-bg-state: rgba(var(--llamma-cyan-rgb), 0.1);
+  background-color: rgba(var(--llamma-cyan-rgb), 0.1);
 }

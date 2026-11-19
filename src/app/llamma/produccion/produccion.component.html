@@ -1,6 +1,6 @@
 <div class="module-page produccion-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div>
         <span class="eyebrow">Taller y calidad</span>
         <h1>Producción en tiempo real.</h1>
@@ -9,7 +9,7 @@
           qué necesita atención antes de la entrega.
         </p>
       </div>
-      <div class="d-flex flex-wrap align-items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <span class="date-chip">
           <i class="bi bi-calendar3"></i>
           Hoy · {{ hoy | date: 'dd MMM yyyy' }}
@@ -21,18 +21,18 @@
     </header>
 
     @if (error()) {
-      <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+      <div class="alert alert-danger flex items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
-        <span class="flex-grow-1">{{ error() }}</span>
+        <span class="grow">{{ error() }}</span>
         <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
           Reintentar
         </button>
       </div>
     }
 
-    <div class="row g-3 mb-4">
+    <div class="grid grid-cols-12 gap-4 mb-6">
       @for (stat of estadisticas(); track stat.etiqueta) {
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
           <div class="prod-stat">
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
@@ -50,18 +50,21 @@
         <span class="panel-kicker">Flujo del taller</span>
         <h2>Tablero de producción</h2>
       </div>
-      <div class="d-flex align-items-center gap-2">
+      <div class="flex items-center gap-2">
         @if (cargando()) {
-          <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+          <span
+            class="spinner-border spinner-border-sm text-llamma-cyan-deep"
+            aria-hidden="true"
+          ></span>
         }
-        <span class="kanban-hint d-none d-xl-inline-flex">
+        <span class="kanban-hint hidden xl:inline-flex">
           <i class="bi bi-arrows-expand"></i> Desplázate para ver las 8 etapas
         </span>
         <span class="badge badge-soft-muted">{{ ordenes().length }} órdenes en piso</span>
       </div>
     </div>
 
-    <div class="kanban-scroll mb-4">
+    <div class="kanban-scroll mb-6">
       <div class="kanban-board">
         @for (columna of columnas(); track columna.valor) {
           <section class="kanban-col">
@@ -157,9 +160,9 @@
       </div>
     </div>
 
-    <div class="row g-4">
-      <div class="col-xl-7">
-        <section class="panel-card h-100">
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 xl:col-span-7">
+        <section class="panel-card h-full">
           <div class="panel-head">
             <div>
               <span class="panel-kicker">Capacidad del taller</span>
@@ -186,8 +189,8 @@
         </section>
       </div>
 
-      <div class="col-xl-5">
-        <section class="panel-card h-100 d-flex flex-column">
+      <div class="col-span-12 xl:col-span-5">
+        <section class="panel-card h-full flex flex-col">
           <div class="panel-head">
             <div>
               <span class="panel-kicker">Calidad</span>
@@ -225,7 +228,7 @@
                 </span>
               </div>
             } @empty {
-              <p class="text-muted mb-0 small">
+              <p class="text-llamma-muted mb-0 small">
                 Aún no hay controles de calidad registrados. Abre una orden para capturar el
                 primero.
               </p>
@@ -239,7 +242,7 @@
             >
           </div>
 
-          <a class="btn btn-outline-ink w-100 mt-auto" routerLink="/detalle">
+          <a class="btn btn-outline-ink w-full mt-auto" routerLink="/detalle">
             <i class="bi bi-receipt"></i> Ver detalle de la orden
           </a>
         </section>
@@ -250,7 +253,7 @@
 
 @if (seleccionada(); as orden) {
   <div
-    class="modal fade show d-block"
+    class="modal fade show block"
     tabindex="-1"
     appModalAccesible
     (cerrar)="cerrarDetalle()"
@@ -261,7 +264,7 @@
         <div class="modal-header">
           <div>
             <span class="panel-kicker">Orden de producción</span>
-            <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <h2 class="modal-title h5 mb-0">#{{ orden.pedidoFolio ?? orden.pedidoId }}</h2>
               <span class="badge" [class]="claseEstado(orden.estado)">{{
                 etiquetaEstado(orden.estado)
@@ -278,9 +281,9 @@
         </div>
 
         <div class="modal-body">
-          <div class="row g-4">
-            <div class="col-lg-5">
-              <div class="order-brief mb-3">
+          <div class="grid grid-cols-12 gap-6">
+            <div class="col-span-12 lg:col-span-5">
+              <div class="order-brief mb-4">
                 <span class="order-brief-icon"><i class="bi bi-printer"></i></span>
                 <div>
                   <strong>{{ titulo(orden) }}</strong>
@@ -288,26 +291,26 @@
                 </div>
               </div>
 
-              <div class="row g-3">
-                <div class="col-6">
+              <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-6">
                   <span class="panel-kicker">Entrega</span>
-                  <strong class="d-block">{{ fechaEntrega(orden) }}</strong>
+                  <strong class="block">{{ fechaEntrega(orden) }}</strong>
                 </div>
-                <div class="col-6">
+                <div class="col-span-6">
                   <span class="panel-kicker">Prioridad</span>
                   <span class="badge" [class]="clasePrioridad(orden)">{{ prioridad(orden) }}</span>
                 </div>
-                <div class="col-6">
+                <div class="col-span-6">
                   <span class="panel-kicker">Responsable</span>
-                  <strong class="d-block">{{ orden.responsable || 'Sin asignar' }}</strong>
+                  <strong class="block">{{ orden.responsable || 'Sin asignar' }}</strong>
                 </div>
-                <div class="col-6">
+                <div class="col-span-6">
                   <span class="panel-kicker">Inicio</span>
-                  <strong class="d-block">{{ fechaHora(orden.fechaInicio) }}</strong>
+                  <strong class="block">{{ fechaHora(orden.fechaInicio) }}</strong>
                 </div>
               </div>
 
-              <div class="stage-list mt-3">
+              <div class="stage-list mt-4">
                 @for (etapa of orden.historialEtapas; track etapa.id) {
                   <div
                     class="stage-list-item"
@@ -317,7 +320,7 @@
                     <span class="stage-list-dot"
                       ><i class="bi" [class]="'bi ' + iconoEtapa(etapa.etapa)"></i
                     ></span>
-                    <div class="flex-grow-1 min-w-0">
+                    <div class="grow min-w-0">
                       <strong>{{ etiquetaEtapa(etapa.etapa) }}</strong>
                       <small>
                         {{ etapa.responsable || 'Sin responsable' }} ·
@@ -344,21 +347,21 @@
                     </span>
                   </div>
                 } @empty {
-                  <p class="text-muted mb-0 small">Sin historial de etapas.</p>
+                  <p class="text-llamma-muted mb-0 small">Sin historial de etapas.</p>
                 }
               </div>
 
-              <p class="table-note mt-3 mb-0">
+              <p class="table-note mt-4 mb-0">
                 <i class="bi bi-journal-text"></i>
                 {{ orden.observaciones || 'Sin observaciones registradas.' }}
               </p>
             </div>
 
-            <div class="col-lg-7">
+            <div class="col-span-12 lg:col-span-7">
               @if (puedeGestionar()) {
                 <form [formGroup]="ordenForm" (ngSubmit)="guardarCambios()">
-                  <div class="row g-3">
-                    <div class="col-md-6">
+                  <div class="grid grid-cols-12 gap-4">
+                    <div class="col-span-12 md:col-span-6">
                       <label class="form-label" for="prodEtapa">Etapa actual</label>
                       <select id="prodEtapa" class="form-select" formControlName="etapa">
                         @for (etapa of etapas; track etapa.valor) {
@@ -366,7 +369,7 @@
                         }
                       </select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-span-12 md:col-span-6">
                       <label class="form-label" for="prodEstado">Estado</label>
                       <select id="prodEstado" class="form-select" formControlName="estado">
                         @for (estado of estados; track estado.valor) {
@@ -374,7 +377,7 @@
                         }
                       </select>
                     </div>
-                    <div class="col-12">
+                    <div class="col-span-12">
                       <label class="form-label" for="prodObs">Observaciones</label>
                       <textarea
                         id="prodObs"
@@ -384,7 +387,7 @@
                       ></textarea>
                     </div>
                   </div>
-                  <div class="d-flex flex-wrap gap-2 mt-3">
+                  <div class="flex flex-wrap gap-2 mt-4">
                     <button class="btn btn-brand" type="submit" [disabled]="guardando()">
                       <i
                         class="bi"
@@ -406,7 +409,7 @@
                 </form>
               }
 
-              <div class="panel-head mt-4">
+              <div class="panel-head mt-6">
                 <div>
                   <span class="panel-kicker">Checklist de calidad</span>
                   <h2>Controles de la orden</h2>
@@ -418,7 +421,7 @@
 
               <div class="table-responsive">
                 <table class="table table-llamma align-middle">
-                  <caption class="visually-hidden">
+                  <caption class="sr-only">
                     Controles de calidad de la orden
                   </caption>
                   <thead>
@@ -426,7 +429,7 @@
                       <th scope="col">Criterio</th>
                       <th scope="col">Resultado</th>
                       <th scope="col">Revisó</th>
-                      <th scope="col" class="text-end">Fecha</th>
+                      <th scope="col" class="text-right">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -447,11 +450,11 @@
                           </span>
                         </td>
                         <td>{{ control.revisadoPor || '—' }}</td>
-                        <td class="text-end cell-muted">{{ fechaHora(control.fecha) }}</td>
+                        <td class="text-right cell-muted">{{ fechaHora(control.fecha) }}</td>
                       </tr>
                     } @empty {
                       <tr>
-                        <td colspan="4" class="text-center text-muted py-4">
+                        <td colspan="4" class="text-center text-llamma-muted py-6">
                           Aún no hay controles registrados para esta orden.
                         </td>
                       </tr>
@@ -467,8 +470,8 @@
                   (ngSubmit)="registrarCalidad()"
                 >
                   <span class="panel-kicker">Nuevo control</span>
-                  <div class="row g-2 mt-1">
-                    <div class="col-md-6">
+                  <div class="grid grid-cols-12 gap-2 mt-1">
+                    <div class="col-span-12 md:col-span-6">
                       <input
                         class="form-control form-control-sm"
                         placeholder="Criterio: color, medidas, empaque…"
@@ -479,10 +482,10 @@
                         calidadForm.controls.criterio.invalid &&
                         calidadForm.controls.criterio.touched
                       ) {
-                        <small class="text-danger">Describe el criterio a revisar.</small>
+                        <small class="text-red-600">Describe el criterio a revisar.</small>
                       }
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-span-12 md:col-span-6">
                       <input
                         class="form-control form-control-sm"
                         placeholder="Observaciones"
@@ -490,7 +493,7 @@
                         formControlName="observaciones"
                       />
                     </div>
-                    <div class="col-12 d-flex flex-wrap align-items-center gap-3">
+                    <div class="col-span-12 flex flex-wrap items-center gap-4">
                       <div class="form-check form-switch mb-0">
                         <input
                           id="calidadAprobado"

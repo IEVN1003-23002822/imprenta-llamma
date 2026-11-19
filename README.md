@@ -11,10 +11,11 @@ dividida en dos experiencias segmentadas:
 ## Tecnologías
 
 - **Frontend:** Angular 22+ (Standalone Components, Signals, Reactive Forms, Angular Router).
-- **UI:** Bootstrap 5.3, Bootstrap Icons y Google Fonts (Space Grotesk / Inter).
+- **UI:** Tailwind CSS 4 + Flowbite, Bootstrap Icons y fuentes autoalojadas (Space Grotesk / Inter).
 - **Backend:** Python + Flask, Flask-Cors, Flask-SQLAlchemy, PyMySQL.
 - **Base de datos:** MySQL en producción; SQLite para desarrollo local.
-- **Estilos:** CSS con sistema de diseño institucional CMYK.
+- **Estilos:** capas de Tailwind (`theme`, `base`, `components`, `utilities`) con el sistema de diseño
+  institucional CMYK y utilidades propias.
 
 ## Identidad visual
 
@@ -314,7 +315,8 @@ Contraseña para todos: `llamma2026`.
   manejo global de `401`, cabeceras de seguridad, CORS restringido, límites de peticiones, token
   solo por cabecera, contraste accesible del CTA, pie de página con contacto y aviso de privacidad.
 - Fase 1 de acceso y usabilidad aplicada: Bootstrap, Bootstrap Icons e Inter/Space Grotesk
-  autoalojados con CSP; `/seguimiento` como ruta propia; modales con foco atrapado, `Esc` y
+  autoalojados con CSP (el framework Bootstrap se retiró en la migración a Tailwind); `/seguimiento`
+  como ruta propia; modales con foco atrapado, `Esc` y
   `aria-labelledby`; stepper y borrador del cotizador; skip link, `aria-current`, captions y
   `scope="col"` en tablas, etiquetas de controles y foco en el primer error de cada formulario.
 - Fase 2 de conversión aplicada: logo WebP con `srcset`, 404 real, SEO social por ruta con
@@ -323,6 +325,11 @@ Contraseña para todos: `llamma2026`.
 - Fase 3 en curso: catálogo único de estados en `src/app/llamma/estados.ts` y `Flask_Llamma_API/estados.py`;
   ESLint + Prettier con `build` como compuerta; 53 pruebas unitarias de servicios, guards, interceptores
   y catálogo de estados; CI que valida formato, lint, pruebas y build.
+- Migración visual a Tailwind CSS 4 + Flowbite completada el 19 de noviembre de 2026: Bootstrap ya no
+  se carga, las utilidades se expresan en Tailwind, las clases semánticas viven en la capa
+  `components` de `src/styles.css` y el contenedor pasó a `.llamma-container`. Se conservan Bootstrap
+  Icons (solo los glifos `bi-*`) y se verificó login, navegación, modales, tablas, paginación y menús
+  móviles con el build de producción sin advertencias.
 - **Pendiente de contenido:** no hay fotos reales de producto ni portafolio/testimonios
   autorizados. Las secciones de prueba social permanecen ocultas hasta capturarlos en
   `site-info.ts` y `assets/images/productos/`.

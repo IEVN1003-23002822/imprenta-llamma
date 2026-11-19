@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, effect, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  OnDestroy,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -25,6 +33,8 @@ export class App implements OnDestroy {
   readonly ui = inject(UiService);
   readonly site = SITE_INFO;
   readonly anio = new Date().getFullYear();
+  readonly menuAbierto = signal(false);
+  readonly modulosAbiertos = signal(false);
   private readonly router = inject(Router);
   private readonly seo = inject(SeoService);
   private refresco: ReturnType<typeof setInterval> | null = null;
@@ -48,10 +58,39 @@ export class App implements OnDestroy {
         this.detenerRefresco();
       }
     });
+
+    // Al cambiar de ruta se cierran el menú móvil y el desplegable de módulos.
+    effect(() => {
+      this.urlActual();
+      this.menuAbierto.set(false);
+      this.modulosAbiertos.set(false);
+    });
   }
 
   ngOnDestroy(): void {
     this.detenerRefresco();
+  }
+
+  alternarMenu(): void {
+    this.menuAbierto.update((abierto) => !abierto);
+  }
+
+  alternarModulos(evento: Event): void {
+    evento.preventDefault();
+    evento.stopPropagation();
+    this.modulosAbiertos.update((abierto) => !abierto);
+  }
+
+  @HostListener('document:click', ['$event'])
+  cerrarModulos(evento: Event): void {
+    const objetivo = evento.target as Element | null;
+    if (!objetivo?.closest('.dropdown')) this.modulosAbiertos.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  cerrarConEscape(): void {
+    this.menuAbierto.set(false);
+    this.modulosAbiertos.set(false);
   }
 
   get iniciales(): string {

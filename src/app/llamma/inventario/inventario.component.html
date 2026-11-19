@@ -1,6 +1,6 @@
 <div class="module-page inventario-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div>
         <span class="eyebrow">Materias primas e insumos</span>
         <h1>Control de inventario.</h1>
@@ -9,7 +9,7 @@
           frenan una línea de producción.
         </p>
       </div>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2">
         <button class="btn btn-outline-ink" type="button" (click)="exportar()">
           <i class="bi bi-download"></i> Exportar
         </button>
@@ -25,9 +25,9 @@
     </header>
 
     @if (error()) {
-      <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+      <div class="alert alert-danger flex items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
-        <span class="flex-grow-1">{{ error() }}</span>
+        <span class="grow">{{ error() }}</span>
         <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
           Reintentar
         </button>
@@ -59,9 +59,9 @@
       </div>
     }
 
-    <div class="row g-3 mb-4">
+    <div class="grid grid-cols-12 gap-4 mb-6">
       @for (stat of estadisticas(); track stat.etiqueta) {
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
           <div class="inventory-stat">
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
@@ -74,22 +74,25 @@
       }
     </div>
 
-    <section class="panel-card mb-4">
+    <section class="panel-card mb-6">
       <div class="panel-head flex-wrap">
         <div>
           <span class="panel-kicker">Existencias en tiempo real</span>
           <h2>Materias primas</h2>
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="flex items-center gap-2">
           <span class="badge badge-soft-muted">{{ filtradas().length }} insumos</span>
           @if (cargando()) {
-            <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+            <span
+              class="spinner-border spinner-border-sm text-llamma-cyan-deep"
+              aria-hidden="true"
+            ></span>
           }
         </div>
       </div>
 
-      <form class="row g-2 mb-3" [formGroup]="filtros" (ngSubmit)="filtrar()">
-        <div class="col-lg-5">
+      <form class="grid grid-cols-12 gap-2 mb-4" [formGroup]="filtros" (ngSubmit)="filtrar()">
+        <div class="col-span-12 lg:col-span-5">
           <div class="input-group">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
             <input
@@ -102,7 +105,7 @@
             <button class="btn btn-ink" type="submit">Buscar</button>
           </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-span-6 lg:col-span-3">
           <select
             class="form-select"
             aria-label="Filtrar por categoría"
@@ -114,7 +117,7 @@
             }
           </select>
         </div>
-        <div class="col-6 col-lg-2">
+        <div class="col-span-6 lg:col-span-2">
           <select class="form-select" aria-label="Filtrar por estado" formControlName="estado">
             <option value="">Todo estado</option>
             <option value="critico">Crítico</option>
@@ -122,8 +125,8 @@
             <option value="optimo">Óptimo</option>
           </select>
         </div>
-        <div class="col-lg-2">
-          <button class="btn btn-soft w-100" type="button" (click)="limpiar()">
+        <div class="col-span-12 lg:col-span-2">
+          <button class="btn btn-soft w-full" type="button" (click)="limpiar()">
             <i class="bi bi-arrow-counterclockwise"></i> Limpiar
           </button>
         </div>
@@ -131,20 +134,20 @@
 
       <div class="table-responsive">
         <table class="table table-llamma align-middle">
-          <caption class="visually-hidden">
+          <caption class="sr-only">
             Insumos en inventario
           </caption>
           <thead>
             <tr>
               <th scope="col">Insumo</th>
               <th scope="col">Categoría</th>
-              <th scope="col" class="text-end">Stock actual</th>
+              <th scope="col" class="text-right">Stock actual</th>
               <th scope="col" class="text-center">Mín / Máx</th>
               <th scope="col">Nivel de stock</th>
-              <th scope="col" class="text-end">Costo unitario</th>
+              <th scope="col" class="text-right">Costo unitario</th>
               <th scope="col">Estado</th>
               @if (puedeGestionar()) {
-                <th scope="col" class="text-end">Acciones</th>
+                <th scope="col" class="text-right">Acciones</th>
               }
             </tr>
           </thead>
@@ -171,7 +174,7 @@
                   </div>
                 </td>
                 <td>{{ etiquetaCategoria(materia.categoria) }}</td>
-                <td class="text-end cell-main">
+                <td class="text-right cell-main">
                   {{ cantidad(materia.stockActual, materia.unidadMedida) }}
                 </td>
                 <td class="text-center">
@@ -192,13 +195,13 @@
                     </div>
                   </div>
                 </td>
-                <td class="text-end">{{ costoUnitario(materia) }}</td>
+                <td class="text-right">{{ costoUnitario(materia) }}</td>
                 <td>
                   <span class="badge" [class]="estado.badge">{{ estado.etiqueta }}</span>
                 </td>
                 @if (puedeGestionar()) {
-                  <td class="text-end">
-                    <div class="d-inline-flex gap-1">
+                  <td class="text-right">
+                    <div class="inline-flex gap-1">
                       <button
                         class="btn btn-icon"
                         type="button"
@@ -232,8 +235,11 @@
               </tr>
             } @empty {
               <tr>
-                <td [attr.colspan]="puedeGestionar() ? 8 : 7" class="text-center text-muted py-5">
-                  <i class="bi bi-boxes d-block fs-4 mb-2"></i>
+                <td
+                  [attr.colspan]="puedeGestionar() ? 8 : 7"
+                  class="text-center text-llamma-muted py-12"
+                >
+                  <i class="bi bi-boxes block text-2xl mb-2"></i>
                   No hay insumos con esos filtros.
                 </td>
               </tr>
@@ -276,16 +282,19 @@
       </div>
     </section>
 
-    <div class="row g-4">
-      <div class="col-lg-6">
-        <article class="panel-card h-100">
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 lg:col-span-6">
+        <article class="panel-card h-full">
           <div class="panel-head">
             <div>
               <span class="panel-kicker">Trazabilidad</span>
               <h2>Movimientos recientes</h2>
             </div>
             @if (cargandoMovimientos()) {
-              <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+              <span
+                class="spinner-border spinner-border-sm text-llamma-cyan-deep"
+                aria-hidden="true"
+              ></span>
             } @else {
               <span class="badge badge-soft-muted"
                 >{{ movimientosRecientes().length }} registros</span
@@ -303,7 +312,7 @@
                 >
                   <i class="bi" [class]="'bi ' + estilo.icono"></i>
                 </span>
-                <div class="flex-grow-1">
+                <div class="grow">
                   <strong
                     >{{ etiquetaTipo(movimiento.tipo) }} · {{ movimiento.materiaPrima }}</strong
                   >
@@ -320,7 +329,7 @@
                 </span>
               </div>
             } @empty {
-              <p class="text-muted mb-0 small">
+              <p class="text-llamma-muted mb-0 small">
                 Aún no hay movimientos registrados. Captura una entrada para comenzar el historial.
               </p>
             }
@@ -328,8 +337,8 @@
         </article>
       </div>
 
-      <div class="col-lg-6">
-        <article class="panel-card h-100 d-flex flex-column">
+      <div class="col-span-12 lg:col-span-6">
+        <article class="panel-card h-full flex flex-col">
           <div class="panel-head">
             <div>
               <span class="panel-kicker">Reposición sugerida</span>
@@ -366,13 +375,13 @@
                 </span>
               </div>
             } @empty {
-              <p class="text-muted mb-0 small">
+              <p class="text-llamma-muted mb-0 small">
                 No hay reposiciones urgentes: el inventario cubre los umbrales definidos.
               </p>
             }
           </div>
 
-          <a class="btn btn-outline-ink w-100 mt-auto" routerLink="/abastecimiento">
+          <a class="btn btn-outline-ink w-full mt-auto" routerLink="/abastecimiento">
             <i class="bi bi-cart-plus"></i> Generar orden de compra
           </a>
         </article>
@@ -383,7 +392,7 @@
 
 @if (formularioAbierto()) {
   <div
-    class="modal fade show d-block"
+    class="modal fade show block"
     tabindex="-1"
     appModalAccesible
     (cerrar)="cerrarFormulario()"
@@ -412,15 +421,15 @@
           </div>
 
           <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-md-7">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12 md:col-span-7">
                 <label class="form-label" for="insumoNombre">Nombre del insumo *</label>
                 <input id="insumoNombre" class="form-control" formControlName="nombre" />
                 @if (formulario.controls.nombre.invalid && formulario.controls.nombre.touched) {
-                  <small class="text-danger">Indica al menos dos caracteres.</small>
+                  <small class="text-red-600">Indica al menos dos caracteres.</small>
                 }
               </div>
-              <div class="col-md-5">
+              <div class="col-span-12 md:col-span-5">
                 <label class="form-label" for="insumoCategoria">Categoría</label>
                 <select id="insumoCategoria" class="form-select" formControlName="categoria">
                   @for (categoria of categorias; track categoria.valor) {
@@ -428,7 +437,7 @@
                   }
                 </select>
               </div>
-              <div class="col-md-5">
+              <div class="col-span-12 md:col-span-5">
                 <label class="form-label" for="insumoUnidad">Unidad de medida</label>
                 <select id="insumoUnidad" class="form-select" formControlName="unidadMedida">
                   @for (unidad of unidades; track unidad.valor) {
@@ -436,7 +445,7 @@
                   }
                 </select>
               </div>
-              <div class="col-md-7">
+              <div class="col-span-12 md:col-span-7">
                 <label class="form-label" for="insumoProveedor">Proveedor</label>
                 <select id="insumoProveedor" class="form-select" formControlName="proveedorId">
                   <option value="">Sin proveedor asignado</option>
@@ -445,7 +454,7 @@
                   }
                 </select>
               </div>
-              <div class="col-6 col-md-3">
+              <div class="col-span-6 md:col-span-3">
                 <label class="form-label" for="insumoActual">Stock actual</label>
                 <input
                   id="insumoActual"
@@ -456,7 +465,7 @@
                   formControlName="stockActual"
                 />
               </div>
-              <div class="col-6 col-md-3">
+              <div class="col-span-6 md:col-span-3">
                 <label class="form-label" for="insumoMinimo">Stock mínimo</label>
                 <input
                   id="insumoMinimo"
@@ -467,7 +476,7 @@
                   formControlName="stockMinimo"
                 />
               </div>
-              <div class="col-6 col-md-3">
+              <div class="col-span-6 md:col-span-3">
                 <label class="form-label" for="insumoMaximo">Stock máximo</label>
                 <input
                   id="insumoMaximo"
@@ -478,7 +487,7 @@
                   formControlName="stockMaximo"
                 />
               </div>
-              <div class="col-6 col-md-3">
+              <div class="col-span-6 md:col-span-3">
                 <label class="form-label" for="insumoCosto">Costo unitario</label>
                 <input
                   id="insumoCosto"
@@ -510,7 +519,7 @@
 
 @if (ajusteAbierto()) {
   <div
-    class="modal fade show d-block"
+    class="modal fade show block"
     tabindex="-1"
     appModalAccesible
     (cerrar)="cerrarAjuste()"
@@ -530,8 +539,8 @@
           </div>
 
           <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-12">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12">
                 <label class="form-label" for="movInsumo">Insumo *</label>
                 <select id="movInsumo" class="form-select" formControlName="materiaId">
                   <option value="">Selecciona un insumo…</option>
@@ -540,7 +549,7 @@
                   }
                 </select>
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="movTipo">Tipo de movimiento *</label>
                 <select id="movTipo" class="form-select" formControlName="tipo">
                   @for (tipo of tiposMovimiento; track tipo.valor) {
@@ -548,7 +557,7 @@
                   }
                 </select>
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="movCantidad">Cantidad *</label>
                 <input
                   id="movCantidad"
@@ -559,10 +568,10 @@
                   formControlName="cantidad"
                 />
                 @if (ajusteForm.controls.cantidad.invalid && ajusteForm.controls.cantidad.touched) {
-                  <small class="text-danger">Captura una cantidad mayor a cero.</small>
+                  <small class="text-red-600">Captura una cantidad mayor a cero.</small>
                 }
               </div>
-              <div class="col-12">
+              <div class="col-span-12">
                 <label class="form-label" for="movReferencia">Referencia</label>
                 <input
                   id="movReferencia"
@@ -571,7 +580,7 @@
                   placeholder="Orden de compra, folio, proveedor…"
                 />
               </div>
-              <div class="col-12">
+              <div class="col-span-12">
                 <label class="form-label" for="movMotivo">Motivo</label>
                 <input
                   id="movMotivo"
@@ -583,7 +592,7 @@
             </div>
 
             @if (vistaPreviaAjuste(); as previa) {
-              <div class="movement-preview mt-3">
+              <div class="movement-preview mt-4">
                 <div>
                   <span>Stock actual</span>
                   <strong>{{
@@ -596,7 +605,7 @@
                   <strong>{{ cantidad(previa.resultado, previa.materia.unidadMedida) }}</strong>
                 </div>
               </div>
-              <p class="text-muted small mb-0 mt-2">
+              <p class="text-llamma-muted small mb-0 mt-2">
                 <i class="bi bi-info-circle"></i>
                 Usa <strong>Ajuste de conteo</strong> para fijar el stock final; entrada, salida,
                 merma y devolución operan como suma o resta.

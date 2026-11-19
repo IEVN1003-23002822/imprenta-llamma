@@ -2233,6 +2233,14 @@ __all__ = [
 ]
 </file>
 
+<file path="Flask_Llamma_API/extensions.py">
+"""Extensiones compartidas de Flask."""
+
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+</file>
+
 <file path="Flask_Llamma_API/ratelimit.py">
 """Límite de peticiones en memoria, sin dependencias externas.
 
@@ -2315,6 +2323,127 @@ def demasiadas_peticiones(espera: int, mensaje: str | None = None):
     )
     respuesta.headers["Retry-After"] = str(espera)
     return respuesta, 429
+</file>
+
+<file path="Flask_Llamma_API/requirements.txt">
+Flask>=3.1,<4.0
+Flask-Cors>=6.0,<7.0
+Flask-SQLAlchemy>=3.1,<4.0
+PyMySQL>=1.1,<2.0
+cryptography>=44.0
+</file>
+
+<file path="Flask_Llamma_API/utils.py">
+"""Utilidades compartidas: folios, archivos y respuestas."""
+
+from __future__ import annotations
+
+import os
+import re
+import uuid
+from datetime import date
+
+from flask import current_app
+from sqlalchemy import func
+
+from extensions import db
+from models import utcnow
+
+_CARACTERES_SEGUROS = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+def generar_folio(
+    prefijo: str,
+    modelo,
+    campo: str = "folio",
+    *,
+    con_anio: bool = True,
+    relleno: int = 3,
+    inicio: int = 1,
+) -> str:
+    """Genera un folio consecutivo, por ejemplo SOL-2026-004 o LLM-1048."""
+    if con_anio:
+        base = f"{prefijo}-{utcnow().year}-"
+    else:
+        base = f"{prefijo}-"
+
+    columna = getattr(modelo, campo)
+    ultimo = (
+        db.session.query(func.max(columna)).filter(columna.like(f"{base}%")).scalar()
+    )
+    siguiente = inicio
+    if ultimo:
+        try:
+            siguiente = int(str(ultimo).split("-")[-1]) + 1
+        except (TypeError, ValueError):
+            siguiente = inicio
+    return f"{base}{siguiente:0{relleno}d}"
+
+
+def parse_fecha(valor: str | None) -> date | None:
+    """Convierte YYYY-MM-DD en date, devolviendo None si no es válido."""
+    if not valor:
+        return None
+    try:
+        return date.fromisoformat(str(valor)[:10])
+    except ValueError:
+        return None
+
+
+def parse_decimal(valor, default: float = 0.0) -> float:
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return default
+
+
+def parse_int(valor, default: int | None = None) -> int | None:
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        return default
+
+
+def extension_permitida(nombre: str) -> bool:
+    if "." not in nombre:
+        return False
+    extension = nombre.rsplit(".", 1)[1].lower()
+    return extension in current_app.config["ALLOWED_EXTENSIONS"]
+
+
+def nombre_archivo_seguro(nombre: str) -> str:
+    limpio = _CARACTERES_SEGUROS.sub("_", nombre).strip("._") or "archivo"
+    return f"{uuid.uuid4().hex[:12]}-{limpio[:120]}"
+
+
+def guardar_archivo(storage) -> tuple[str, str, int] | None:
+    """Guarda un archivo subido y devuelve (nombre original, nombre guardado, tamaño)."""
+    if not storage or not storage.filename:
+        return None
+    if not extension_permitida(storage.filename):
+        return None
+
+    carpeta = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(carpeta, exist_ok=True)
+
+    nombre_guardado = nombre_archivo_seguro(storage.filename)
+    destino = os.path.join(carpeta, nombre_guardado)
+    storage.save(destino)
+    tamano = os.path.getsize(destino)
+    return storage.filename, nombre_guardado, tamano
+
+
+def paginar(query, page: int, per_page: int, serializador) -> dict:
+    page = max(page, 1)
+    per_page = min(max(per_page, 1), 100)
+    paginado = query.paginate(page=page, per_page=per_page, error_out=False)
+    return {
+        "items": [serializador(item) for item in paginado.items],
+        "total": paginado.total,
+        "pagina": paginado.page,
+        "porPagina": paginado.per_page,
+        "paginas": paginado.pages,
+    }
 </file>
 
 <file path="public/robots.txt">
@@ -2789,7 +2918,7 @@ export class AvisoPrivacidadComponent {
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { ItemSolicitud, SolicitudCotizacion } from '../llamma.models';
+import { ItemSolicitud, SolicitudCotizacion } from '../../llamma.models';
 
 /** Confirmación posterior al envío de una solicitud de cotización. */
 @Component({
@@ -3171,7 +3300,7 @@ export class CotizarPasosComponent {
 <file path="src/app/llamma/cotizar/cotizar-resumen/cotizar-resumen.component.ts">
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { ItemSolicitud } from '../llamma.models';
+import { ItemSolicitud } from '../../llamma.models';
 
 /** Resumen lateral del cotizador con totales y acción de envío. */
 @Component({
@@ -4584,6 +4713,48 @@ describe('guards de autenticación', () => {
 });
 </file>
 
+<file path="src/app/llamma/auth.guard.ts">
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+
+import { AuthService } from './auth.service';
+import { RolUsuario } from './llamma.models';
+
+/** Exige una sesión activa; conserva la ruta solicitada para volver tras el login. */
+export const authGuard: CanActivateFn = (_route, state) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  if (auth.autenticado()) return true;
+
+  return router.createUrlTree(['/login'], {
+    queryParams: { redirect: state.url },
+  });
+};
+
+/** Restringe el acceso a los roles indicados en `route.data.roles`. */
+export const roleGuard: CanActivateFn = (route) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const roles = (route.data?.['roles'] ?? []) as RolUsuario[];
+
+  if (!auth.autenticado()) {
+    return router.createUrlTree(['/login']);
+  }
+  if (!roles.length || auth.tieneRol(...roles)) return true;
+
+  return router.createUrlTree(['/dashboard']);
+};
+
+/** Evita mostrar el login a quien ya tiene sesión. */
+export const publicOnlyGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  return auth.autenticado() ? router.createUrlTree(['/dashboard']) : true;
+};
+</file>
+
 <file path="src/app/llamma/auth.interceptor.spec.ts">
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -5860,6 +6031,50 @@ export const PORTAFOLIO: readonly CasoPortafolio[] = [];
 export const TESTIMONIOS: readonly Testimonio[] = [];
 </file>
 
+<file path="src/app/llamma/solicitudes.store.ts">
+import { Injectable, inject, signal } from '@angular/core';
+
+import { LlammaService } from './llamma.service';
+import { ResumenSolicitudes } from './llamma.models';
+
+const RESUMEN_INICIAL: ResumenSolicitudes = {
+  total: 0,
+  porEstado: {
+    nueva: 0,
+    'en-revision': 0,
+    cotizada: 0,
+    convertida: 0,
+    descartada: 0,
+  },
+  nuevas: 0,
+  enRevision: 0,
+};
+
+/** Contador compartido de solicitudes para el badge de la barra interna. */
+@Injectable({ providedIn: 'root' })
+export class SolicitudesStore {
+  private readonly service = inject(LlammaService);
+
+  readonly resumen = signal<ResumenSolicitudes>(RESUMEN_INICIAL);
+  readonly cargando = signal(false);
+
+  cargarResumen(): void {
+    this.cargando.set(true);
+    this.service.resumenSolicitudes().subscribe({
+      next: (resumen) => {
+        this.resumen.set(resumen);
+        this.cargando.set(false);
+      },
+      error: () => this.cargando.set(false),
+    });
+  }
+
+  reiniciar(): void {
+    this.resumen.set(RESUMEN_INICIAL);
+  }
+}
+</file>
+
 <file path="src/app/llamma/ui.service.spec.ts">
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -5984,6 +6199,26 @@ if (dom) {
     });
   }
 }
+</file>
+
+<file path=".editorconfig">
+# Editor configuration, see https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.ts]
+quote_type = single
+ij_typescript_use_double_quotes = false
+
+[*.md]
+max_line_length = off
+trim_trailing_whitespace = false
 </file>
 
 <file path=".prettierignore">
@@ -6417,6 +6652,84 @@ export default tseslint.config(
 );
 </file>
 
+<file path="proxy.conf.json">
+{
+  "/api": {
+    "target": "http://127.0.0.1:5000",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
+</file>
+
+<file path="tsconfig.app.json">
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": []
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts"
+  ]
+}
+</file>
+
+<file path="tsconfig.json">
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve"
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
+}
+</file>
+
+<file path="tsconfig.spec.json">
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "vitest/globals"
+    ]
+  },
+  "include": [
+    "src/**/*.d.ts",
+    "src/**/*.spec.ts"
+  ]
+}
+</file>
+
 <file path="vitest-base.config.mts">
 import path from 'node:path';
 
@@ -6579,6 +6892,62 @@ def sesiones_recientes():
     )
 </file>
 
+<file path="Flask_Llamma_API/routes/helpers.py">
+"""Helpers de entrada/salida para las rutas de la API."""
+
+from __future__ import annotations
+
+import json
+import re
+
+from flask import jsonify, request
+
+_CORREO_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+MAX_MENSAJE_CHAT = 4000
+
+
+def payload() -> dict:
+    """Devuelve JSON o form-data como diccionario."""
+    if request.is_json:
+        return request.get_json(silent=True) or {}
+    if request.form:
+        return request.form.to_dict()
+    return request.get_json(silent=True) or {}
+
+
+def campo(data: dict, *nombres, default=None):
+    """Lee la primera clave disponible (soporta camelCase y snake_case)."""
+    for nombre in nombres:
+        if nombre in data and data[nombre] not in (None, ""):
+            return data[nombre]
+    return default
+
+
+def lista_items(data: dict) -> list:
+    bruto = campo(data, "items", "itemsSolicitados")
+    if bruto is None:
+        return []
+    if isinstance(bruto, str):
+        try:
+            bruto = json.loads(bruto)
+        except json.JSONDecodeError:
+            return []
+    return bruto if isinstance(bruto, list) else []
+
+
+def correo_valido(valor: str | None) -> bool:
+    return bool(valor and _CORREO_RE.match(str(valor).strip()))
+
+
+def error(mensaje: str, status: int = 400, codigo: str = "solicitud_invalida"):
+    return jsonify({"error": mensaje, "codigo": codigo}), status
+
+
+def no_encontrado(recurso: str = "Recurso"):
+    return error(f"{recurso} no encontrado", 404, "no_encontrado")
+</file>
+
 <file path="Flask_Llamma_API/auth.py">
 """Autenticación por token de sesión y control de roles/permisos."""
 
@@ -6720,133 +7089,388 @@ def permiso_required(clave: str):
     return decorador
 </file>
 
-<file path="Flask_Llamma_API/extensions.py">
-"""Extensiones compartidas de Flask."""
+<file path="src/app/llamma/captura/captura.component.css">
+/* Ajustes específicos del cotizador. */
+.captura-page .panel-card .panel-head h2 {
+  font-size: 1.08rem;
+}
 
-from flask_sqlalchemy import SQLAlchemy
+/* ---------------------------- Flujo funcional ------------------------------ */
 
-db = SQLAlchemy()
+.field-error {
+  display: block;
+  margin-top: 0.25rem;
+  color: #b42318;
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #d92d20;
+}
+
+.capture-success,
+.capture-created {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 1.4rem;
+  border-left: 5px solid var(--llamma-cyan);
+}
+
+.capture-created {
+  border-left-color: var(--llamma-magenta);
+}
+
+.capture-success h2,
+.capture-created h2 {
+  margin: 0.2rem 0 0.4rem;
+  font-family: var(--llamma-font-display);
+  font-size: 1.4rem;
+}
+
+.capture-success p,
+.capture-created p {
+  max-width: 44rem;
+  margin: 0;
+  color: var(--llamma-muted);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.success-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(var(--llamma-cyan-rgb), 0.12);
+  color: var(--llamma-cyan-deep);
+  font-size: 1.4rem;
+}
+
+.capture-created .success-mark {
+  background: rgba(var(--llamma-magenta-rgb), 0.1);
+  color: var(--llamma-magenta);
+}
+
+.capture-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(180, 35, 24, 0.26);
+  border-radius: 0.7rem;
+  background: #fdecec;
+  color: #a01212;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.capture-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  color: var(--llamma-muted);
+  font-size: 0.8rem;
+}
+
+.capture-loading i {
+  color: var(--llamma-cyan-deep);
+  font-size: 1.3rem;
+}
+
+.capture-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.capture-meta > div {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.7rem;
+  background: #fbfaf7;
+}
+
+.capture-meta span {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.capture-meta strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+}
+
+.capture-check {
+  margin: 0.9rem 0 0.75rem;
+  font-size: 0.7rem;
+}
+
+.capture-check .form-check-label {
+  color: var(--llamma-muted);
+  line-height: 1.45;
+}
+
+.capture-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(20, 122, 74, 0.25);
+  border-radius: 0.7rem;
+  background: #eaf7f0;
+  color: #146c43;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.capture-locked a {
+  color: #146c43;
+  font-weight: 700;
+}
+
+.capture-line-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.6rem;
+  background: rgba(var(--llamma-cyan-rgb), 0.06);
+}
+
+.capture-line-total span {
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+}
+
+.capture-line-total strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.9rem;
+}
+
+.capture-col-qty {
+  width: 6.5rem;
+}
+
+.capture-col-price {
+  width: 8.5rem;
+}
+
+.capture-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.72rem;
+}
+
+.capture-empty i {
+  color: var(--llamma-cyan-deep);
+  font-size: 1.1rem;
+}
+
+.capture-summary-empty {
+  margin: 0.5rem 0 0.9rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+}
+
+@media (max-width: 767.98px) {
+  .capture-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .capture-meta {
+    grid-template-columns: 1fr;
+  }
+}
 </file>
 
-<file path="Flask_Llamma_API/requirements.txt">
-Flask>=3.1,<4.0
-Flask-Cors>=6.0,<7.0
-Flask-SQLAlchemy>=3.1,<4.0
-PyMySQL>=1.1,<2.0
-cryptography>=44.0
-</file>
+<file path="src/app/llamma/consultas/consultas.component.css">
+/* Ajustes visuales del módulo de consultas. */
 
-<file path="Flask_Llamma_API/utils.py">
-"""Utilidades compartidas: folios, archivos y respuestas."""
+.quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1.15rem;
+  border-top: 1px dashed var(--llamma-line);
+}
 
-from __future__ import annotations
+.quick-filters > span {
+  margin-right: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 
-import os
-import re
-import uuid
-from datetime import date
+.filter-chip {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 999px;
+  background: #fbfaf7;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
 
-from flask import current_app
-from sqlalchemy import func
+.filter-chip.is-active {
+  border-color: var(--llamma-carbon);
+  background: var(--llamma-carbon);
+  color: #fff;
+}
 
-from extensions import db
-from models import utcnow
+.query-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
 
-_CARACTERES_SEGUROS = re.compile(r"[^A-Za-z0-9._-]+")
+.query-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
 
+.query-stat span:not(.icon-tile) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
 
-def generar_folio(
-    prefijo: str,
-    modelo,
-    campo: str = "folio",
-    *,
-    con_anio: bool = True,
-    relleno: int = 3,
-    inicio: int = 1,
-) -> str:
-    """Genera un folio consecutivo, por ejemplo SOL-2026-004 o LLM-1048."""
-    if con_anio:
-        base = f"{prefijo}-{utcnow().year}-"
-    else:
-        base = f"{prefijo}-"
+.distribution {
+  display: grid;
+  gap: 1rem;
+}
 
-    columna = getattr(modelo, campo)
-    ultimo = (
-        db.session.query(func.max(columna)).filter(columna.like(f"{base}%")).scalar()
-    )
-    siguiente = inicio
-    if ultimo:
-        try:
-            siguiente = int(str(ultimo).split("-")[-1]) + 1
-        except (TypeError, ValueError):
-            siguiente = inicio
-    return f"{base}{siguiente:0{relleno}d}"
+.distribution-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.74rem;
+}
 
+.distribution-top span {
+  color: var(--llamma-muted);
+  font-weight: 500;
+}
 
-def parse_fecha(valor: str | None) -> date | None:
-    """Convierte YYYY-MM-DD en date, devolviendo None si no es válido."""
-    if not valor:
-        return None
-    try:
-        return date.fromisoformat(str(valor)[:10])
-    except ValueError:
-        return None
+.distribution-top strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.78rem;
+}
 
+.distribution-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #efeee9;
+}
 
-def parse_decimal(valor, default: float = 0.0) -> float:
-    try:
-        return float(valor)
-    except (TypeError, ValueError):
-        return default
+.distribution-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
 
+.fill-cyan {
+  background: var(--llamma-cyan);
+}
 
-def parse_int(valor, default: int | None = None) -> int | None:
-    try:
-        return int(valor)
-    except (TypeError, ValueError):
-        return default
+.fill-magenta {
+  background: var(--llamma-magenta);
+}
 
+.fill-yellow {
+  background: #e8da00;
+}
 
-def extension_permitida(nombre: str) -> bool:
-    if "." not in nombre:
-        return False
-    extension = nombre.rsplit(".", 1)[1].lower()
-    return extension in current_app.config["ALLOWED_EXTENSIONS"]
+.fill-ink {
+  background: var(--llamma-carbon);
+}
 
+.rank-list {
+  display: grid;
+  gap: 0.95rem;
+}
 
-def nombre_archivo_seguro(nombre: str) -> str:
-    limpio = _CARACTERES_SEGUROS.sub("_", nombre).strip("._") or "archivo"
-    return f"{uuid.uuid4().hex[:12]}-{limpio[:120]}"
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
 
+.rank-number {
+  width: 1.4rem;
+  color: #b6b4ac;
+  font-family: var(--llamma-font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
 
-def guardar_archivo(storage) -> tuple[str, str, int] | None:
-    """Guarda un archivo subido y devuelve (nombre original, nombre guardado, tamaño)."""
-    if not storage or not storage.filename:
-        return None
-    if not extension_permitida(storage.filename):
-        return None
+.rank-item strong {
+  display: block;
+  font-size: 0.77rem;
+  font-weight: 600;
+}
 
-    carpeta = current_app.config["UPLOAD_FOLDER"]
-    os.makedirs(carpeta, exist_ok=True)
+.rank-item small {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
+}
 
-    nombre_guardado = nombre_archivo_seguro(storage.filename)
-    destino = os.path.join(carpeta, nombre_guardado)
-    storage.save(destino)
-    tamano = os.path.getsize(destino)
-    return storage.filename, nombre_guardado, tamano
+.rank-amount {
+  white-space: nowrap;
+  font-family: var(--llamma-font-display);
+  font-size: 0.76rem !important;
+}
 
+@media (max-width: 575.98px) {
+  .quick-filters > span {
+    width: 100%;
+  }
 
-def paginar(query, page: int, per_page: int, serializador) -> dict:
-    page = max(page, 1)
-    per_page = min(max(per_page, 1), 100)
-    paginado = query.paginate(page=page, per_page=per_page, error_out=False)
-    return {
-        "items": [serializador(item) for item in paginado.items],
-        "total": paginado.total,
-        "pagina": paginado.page,
-        "porPagina": paginado.per_page,
-        "paginas": paginado.pages,
-    }
+  .query-stat {
+    padding: 0.9rem;
+  }
+}
 </file>
 
 <file path="src/app/llamma/cotizar/cotizar.component.css">
@@ -7449,46 +8073,736 @@ height: 1.5;
 }
 </file>
 
-<file path="src/app/llamma/auth.guard.ts">
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+<file path="src/app/llamma/dashboard/dashboard.component.css">
+/* Ajustes específicos del panel ejecutivo. */
+.dashboard-page .kpi-card {
+  min-height: 178px;
+}
 
-import { AuthService } from './auth.service';
-import { RolUsuario } from './llamma.models';
-
-/** Exige una sesión activa; conserva la ruta solicitada para volver tras el login. */
-export const authGuard: CanActivateFn = (_route, state) => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-
-  if (auth.autenticado()) return true;
-
-  return router.createUrlTree(['/login'], {
-    queryParams: { redirect: state.url },
-  });
-};
-
-/** Restringe el acceso a los roles indicados en `route.data.roles`. */
-export const roleGuard: CanActivateFn = (route) => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  const roles = (route.data?.['roles'] ?? []) as RolUsuario[];
-
-  if (!auth.autenticado()) {
-    return router.createUrlTree(['/login']);
+@media (max-width: 1199.98px) {
+  .dashboard-page .panel-link.mt-auto {
+    margin-top: 1.5rem !important;
   }
-  if (!roles.length || auth.tieneRol(...roles)) return true;
+}
+</file>
 
-  return router.createUrlTree(['/dashboard']);
-};
+<file path="src/app/llamma/solicitudes/solicitudes.component.css">
+/* Bandeja interna de solicitudes de cotización. */
 
-/** Evita mostrar el login a quien ya tiene sesión. */
-export const publicOnlyGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
+.min-w-0 {
+  min-width: 0;
+}
 
-  return auth.autenticado() ? router.createUrlTree(['/dashboard']) : true;
-};
+.inbox-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  height: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.inbox-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.inbox-stat span:not(.icon-tile) {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.inbox-stat-cyan {
+  border-color: rgba(var(--llamma-cyan-rgb), 0.35);
+  background: rgba(var(--llamma-cyan-rgb), 0.05);
+}
+
+/* --------------------------- Layout de dos paneles ------------------------- */
+
+.solicitudes-page .row > [class*='col-'] {
+  min-width: 0;
+}
+
+.inbox-panel,
+.detail-panel {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ---------------------------------- Filtros -------------------------------- */
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.inbox-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.filter-chip {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 999px;
+  background: #fbfaf7;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.filter-chip.is-active {
+  border-color: var(--llamma-carbon);
+  background: var(--llamma-carbon);
+  color: #fff;
+}
+
+.inbox-search {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1 1 22rem;
+  max-width: 32rem;
+}
+
+.inbox-search .input-group {
+  flex: 1 1 auto;
+}
+
+.inbox-search .btn {
+  white-space: nowrap;
+}
+
+/* ----------------------------------- Lista --------------------------------- */
+
+.inbox-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgba(180, 35, 24, 0.26);
+  border-radius: 0.7rem;
+  background: #fdecec;
+  color: #a01212;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.inbox-alert i {
+  margin-top: 0.05rem;
+}
+
+.inbox-loading,
+.inbox-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 2.2rem 1rem;
+  color: var(--llamma-muted);
+  text-align: center;
+}
+
+.inbox-loading i {
+  font-size: 1.4rem;
+  color: var(--llamma-cyan-deep);
+}
+
+.inbox-empty i {
+  font-size: 1.8rem;
+  color: var(--llamma-cyan-deep);
+}
+
+.inbox-empty strong {
+  color: var(--llamma-carbon);
+  font-size: 0.9rem;
+}
+
+.inbox-empty p {
+  max-width: 24rem;
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.request-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+.request-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.85rem;
+  background: #fff;
+  color: inherit;
+  text-align: left;
+}
+
+.request-row:hover {
+  border-color: rgba(var(--llamma-cyan-rgb), 0.55);
+  background: rgba(var(--llamma-cyan-rgb), 0.03);
+}
+
+.request-row.is-active {
+  border-color: var(--llamma-cyan);
+  box-shadow: inset 3px 0 0 var(--llamma-cyan);
+  background: rgba(var(--llamma-cyan-rgb), 0.05);
+}
+
+.request-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.request-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.request-top strong {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.request-company {
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.request-preview {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 0.1rem;
+  color: #4a4a4a;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.request-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  min-width: 0;
+  margin-top: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.62rem;
+}
+
+.request-meta i {
+  color: var(--llamma-cyan-deep);
+}
+
+.request-chevron {
+  margin-top: 0.2rem;
+  color: #b8b6ad;
+  font-size: 0.8rem;
+}
+
+.inbox-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--llamma-line);
+}
+
+.inbox-pager span {
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+/* ---------------------------------- Detalle -------------------------------- */
+
+.detail-panel {
+  position: sticky;
+  top: 5.6rem;
+  max-height: calc(100vh - 7rem);
+  overflow-y: auto;
+}
+
+/* Solo se muestra en el modo hoja inferior (< 1200px). */
+.detail-backdrop {
+  display: none;
+}
+
+.detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.detail-head > div {
+  min-width: 0;
+}
+
+.detail-head h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
+.detail-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
+}
+
+.detail-state .form-select {
+  width: auto;
+  min-width: 9.5rem;
+}
+
+.detail-contact {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.7rem;
+  background: #fbfaf7;
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.detail-contact i {
+  width: 1rem;
+  margin-right: 0.3rem;
+  color: var(--llamma-cyan-deep);
+}
+
+.detail-contact a {
+  color: var(--llamma-carbon);
+  text-decoration: none;
+}
+
+.detail-contact a:hover {
+  text-decoration: underline;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.detail-grid > div {
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.6rem;
+}
+
+.detail-grid span {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.detail-grid strong {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+  text-transform: capitalize;
+}
+
+.detail-message {
+  margin-top: 1rem;
+  padding: 0.7rem 0.85rem;
+  border-left: 3px solid var(--llamma-yellow);
+  background: rgba(var(--llamma-yellow-rgb), 0.11);
+}
+
+.detail-message p {
+  margin: 0.3rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.6;
+}
+
+.detail-items,
+.detail-files {
+  margin-top: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--llamma-line);
+}
+
+.detail-item strong {
+  display: block;
+  font-size: 0.75rem;
+}
+
+.detail-item small {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--llamma-muted);
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+.detail-qty {
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.detail-amount {
+  font-family: var(--llamma-font-display);
+  font-size: 0.72rem !important;
+  white-space: nowrap;
+}
+
+.detail-empty {
+  margin: 0.5rem 0 0;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.6rem;
+  background: #fff;
+  font-size: 0.68rem;
+  text-align: left;
+}
+
+.file-row:hover {
+  border-color: var(--llamma-cyan);
+}
+
+.file-row > i {
+  color: var(--llamma-cyan-deep);
+}
+
+.file-row-name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-row small {
+  color: var(--llamma-muted);
+}
+
+.inbox-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgba(20, 122, 74, 0.25);
+  border-radius: 0.7rem;
+  background: #eaf7f0;
+  color: #146c43;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.detail-cta {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--llamma-line);
+}
+
+.detail-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0;
+  color: var(--llamma-muted);
+  font-size: 0.64rem;
+  line-height: 1.5;
+}
+
+.conversion-result {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(var(--llamma-cyan-rgb), 0.35);
+  border-radius: 0.8rem;
+  background: rgba(var(--llamma-cyan-rgb), 0.05);
+}
+
+.conversion-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.conversion-head > i {
+  font-size: 1.4rem;
+  color: var(--llamma-cyan-deep);
+}
+
+.conversion-head > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.conversion-head strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 0.95rem;
+}
+
+.conversion-totals {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.7rem 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed #cfcdc5;
+}
+
+.conversion-totals > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+}
+
+.conversion-totals span {
+  color: var(--llamma-muted);
+}
+
+.conversion-locked {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.7rem;
+  background: #fbfaf7;
+}
+
+.conversion-locked > i {
+  font-size: 1.2rem;
+  color: var(--llamma-cyan-deep);
+}
+
+.conversion-locked > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.conversion-locked strong {
+  display: block;
+  font-size: 0.74rem;
+}
+
+.conversion-locked span {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+/* ------------------------------- Placeholder ------------------------------- */
+
+.detail-placeholder {
+  text-align: center;
+}
+
+.detail-placeholder h2 {
+  margin: 0.7rem 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+.detail-placeholder p {
+  max-width: 22rem;
+  margin: 0 auto;
+  color: var(--llamma-muted);
+  font-size: 0.74rem;
+  line-height: 1.6;
+}
+
+.placeholder-steps {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--llamma-line);
+  text-align: left;
+}
+
+.placeholder-steps span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--llamma-muted);
+  font-size: 0.72rem;
+}
+
+.placeholder-steps i {
+  color: var(--llamma-cyan-deep);
+}
+
+/* -------------------------------- Responsive ------------------------------- */
+
+@media (max-width: 1199.98px) {
+  /* Al apilar las columnas el detalle quedaría debajo de toda la lista, así que
+     se presenta como una hoja inferior fija sobre la bandeja. */
+  .detail-placeholder {
+    display: none;
+  }
+
+  .detail-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1070;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(20, 20, 20, 0.48);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+  }
+
+  .detail-panel-open {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1080;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(88vh, 48rem);
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    border-radius: 1.25rem 1.25rem 0 0;
+    box-shadow: 0 -20px 48px rgba(20, 20, 20, 0.24);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation: detail-sheet-in 0.22s ease-out;
+  }
+}
+
+@keyframes detail-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* En tablet la hoja se centra y limita su ancho para no parecer una página
+   completa; en móvil ocupa todo el ancho disponible. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .detail-panel-open {
+    right: auto;
+    left: 50%;
+    width: min(42rem, calc(100% - 2rem));
+    max-height: min(84vh, 48rem);
+    margin-bottom: 1.25rem;
+    border-radius: 1.25rem;
+    translate: -50% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-panel-open {
+    animation: none;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .inbox-search {
+    flex: 1 1 100%;
+    max-width: none;
+    flex-wrap: wrap;
+  }
+
+  .inbox-search .input-group {
+    flex: 1 1 100%;
+  }
+
+  .inbox-search .btn {
+    flex: 1 1 auto;
+  }
+
+  .inbox-tabs {
+    width: 100%;
+  }
+
+  .inbox-pager span {
+    display: none;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </file>
 
 <file path="src/app/llamma/auth.interceptor.ts">
@@ -7708,50 +9022,6 @@ export class AuthService {
 }
 </file>
 
-<file path="src/app/llamma/solicitudes.store.ts">
-import { Injectable, inject, signal } from '@angular/core';
-
-import { LlammaService } from './llamma.service';
-import { ResumenSolicitudes } from './llamma.models';
-
-const RESUMEN_INICIAL: ResumenSolicitudes = {
-  total: 0,
-  porEstado: {
-    nueva: 0,
-    'en-revision': 0,
-    cotizada: 0,
-    convertida: 0,
-    descartada: 0,
-  },
-  nuevas: 0,
-  enRevision: 0,
-};
-
-/** Contador compartido de solicitudes para el badge de la barra interna. */
-@Injectable({ providedIn: 'root' })
-export class SolicitudesStore {
-  private readonly service = inject(LlammaService);
-
-  readonly resumen = signal<ResumenSolicitudes>(RESUMEN_INICIAL);
-  readonly cargando = signal(false);
-
-  cargarResumen(): void {
-    this.cargando.set(true);
-    this.service.resumenSolicitudes().subscribe({
-      next: (resumen) => {
-        this.resumen.set(resumen);
-        this.cargando.set(false);
-      },
-      error: () => this.cargando.set(false),
-    });
-  }
-
-  reiniciar(): void {
-    this.resumen.set(RESUMEN_INICIAL);
-  }
-}
-</file>
-
 <file path="src/app/llamma/ui.service.ts">
 import { Injectable, signal } from '@angular/core';
 
@@ -7830,6 +9100,83 @@ export class UiService {
 }
 </file>
 
+<file path="src/app/app.css">
+/* Estilos exclusivos del shell de la aplicación. */
+
+.app-main {
+  flex: 1;
+}
+
+.nav-link-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.32rem;
+  border-radius: 999px;
+  background: var(--llamma-yellow);
+  color: var(--llamma-carbon);
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.65rem 0.3rem 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.user-avatar {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--llamma-cyan);
+  color: var(--llamma-carbon);
+  font-family: var(--llamma-font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.user-meta strong {
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.user-meta small {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 991.98px) {
+  .user-chip {
+    align-self: flex-start;
+  }
+}
+</file>
+
 <file path="src/main.ts">
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
@@ -7838,24 +9185,62 @@ import { App } from './app/app';
 bootstrapApplication(App, appConfig).catch((err) => console.error(err));
 </file>
 
-<file path=".editorconfig">
-# Editor configuration, see https://editorconfig.org
-root = true
+<file path=".gitignore">
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-[*]
-charset = utf-8
-indent_style = space
-indent_size = 2
-insert_final_newline = true
-trim_trailing_whitespace = true
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
 
-[*.ts]
-quote_type = single
-ij_typescript_use_double_quotes = false
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
 
-[*.md]
-max_line_length = off
-trim_trailing_whitespace = false
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+__screenshots__/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Python / Flask
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.sqlite3
+.env
+Flask_Llamma_API/instance/
+Flask_Llamma_API/uploads/
 </file>
 
 <file path=".prettierrc">
@@ -7916,140 +9301,6 @@ trim_trailing_whitespace = false
     "vitest": "^4.1.12"
   }
 }
-</file>
-
-<file path="proxy.conf.json">
-{
-  "/api": {
-    "target": "http://127.0.0.1:5000",
-    "secure": false,
-    "changeOrigin": true
-  }
-}
-</file>
-
-<file path="tsconfig.app.json">
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "types": []
-  },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "src/**/*.spec.ts"
-  ]
-}
-</file>
-
-<file path="tsconfig.json">
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
-{
-  "compileOnSave": false,
-  "compilerOptions": {
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "experimentalDecorators": true,
-    "importHelpers": true,
-    "target": "ES2022",
-    "module": "preserve"
-  },
-  "angularCompilerOptions": {
-    "enableI18nLegacyMessageIdFormat": false,
-    "strictInjectionParameters": true,
-    "strictInputAccessModifiers": true
-  },
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ]
-}
-</file>
-
-<file path="tsconfig.spec.json">
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "types": [
-      "vitest/globals"
-    ]
-  },
-  "include": [
-    "src/**/*.d.ts",
-    "src/**/*.spec.ts"
-  ]
-}
-</file>
-
-<file path="Flask_Llamma_API/routes/helpers.py">
-"""Helpers de entrada/salida para las rutas de la API."""
-
-from __future__ import annotations
-
-import json
-import re
-
-from flask import jsonify, request
-
-_CORREO_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-
-MAX_MENSAJE_CHAT = 4000
-
-
-def payload() -> dict:
-    """Devuelve JSON o form-data como diccionario."""
-    if request.is_json:
-        return request.get_json(silent=True) or {}
-    if request.form:
-        return request.form.to_dict()
-    return request.get_json(silent=True) or {}
-
-
-def campo(data: dict, *nombres, default=None):
-    """Lee la primera clave disponible (soporta camelCase y snake_case)."""
-    for nombre in nombres:
-        if nombre in data and data[nombre] not in (None, ""):
-            return data[nombre]
-    return default
-
-
-def lista_items(data: dict) -> list:
-    bruto = campo(data, "items", "itemsSolicitados")
-    if bruto is None:
-        return []
-    if isinstance(bruto, str):
-        try:
-            bruto = json.loads(bruto)
-        except json.JSONDecodeError:
-            return []
-    return bruto if isinstance(bruto, list) else []
-
-
-def correo_valido(valor: str | None) -> bool:
-    return bool(valor and _CORREO_RE.match(str(valor).strip()))
-
-
-def error(mensaje: str, status: int = 400, codigo: str = "solicitud_invalida"):
-    return jsonify({"error": mensaje, "codigo": codigo}), status
-
-
-def no_encontrado(recurso: str = "Recurso"):
-    return error(f"{recurso} no encontrado", 404, "no_encontrado")
 </file>
 
 <file path="Flask_Llamma_API/routes/public_routes.py">
@@ -10359,220 +11610,213 @@ def seed_database() -> None:
     print("  Correos: ana@llamma.mx (admin), diego@llamma.mx (ventas), mariana@llamma.mx (producción)")
 </file>
 
-<file path="src/app/llamma/captura/captura.component.css">
-/* Ajustes específicos del cotizador. */
-.captura-page .panel-card .panel-head h2 {
-  font-size: 1.08rem;
+<file path="src/app/llamma/abastecimiento/abastecimiento.component.css">
+/* Ajustes visuales del módulo de abastecimiento. */
+
+.supply-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
 }
 
-/* ---------------------------- Flujo funcional ------------------------------ */
+.supply-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
 
-.field-error {
+.supply-stat span:not(.icon-tile) {
   display: block;
   margin-top: 0.25rem;
-  color: #b42318;
-  font-size: 0.66rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
   font-weight: 500;
 }
 
-.form-control.is-invalid,
-.form-select.is-invalid {
-  border-color: #d92d20;
-}
-
-.capture-success,
-.capture-created {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-  padding: 1.4rem;
-  border-left: 5px solid var(--llamma-cyan);
-}
-
-.capture-created {
-  border-left-color: var(--llamma-magenta);
-}
-
-.capture-success h2,
-.capture-created h2 {
-  margin: 0.2rem 0 0.4rem;
-  font-family: var(--llamma-font-display);
-  font-size: 1.4rem;
-}
-
-.capture-success p,
-.capture-created p {
-  max-width: 44rem;
-  margin: 0;
-  color: var(--llamma-muted);
-  font-size: 0.76rem;
-  line-height: 1.6;
-}
-
-.success-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 3rem;
-  height: 3rem;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: rgba(var(--llamma-cyan-rgb), 0.12);
-  color: var(--llamma-cyan-deep);
-  font-size: 1.4rem;
-}
-
-.capture-created .success-mark {
-  background: rgba(var(--llamma-magenta-rgb), 0.1);
-  color: var(--llamma-magenta);
-}
-
-.capture-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 1.25rem;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid rgba(180, 35, 24, 0.26);
-  border-radius: 0.7rem;
-  background: #fdecec;
-  color: #a01212;
-  font-size: 0.72rem;
-  line-height: 1.45;
-}
-
-.capture-loading {
+.supplier-meta {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 3rem 1rem;
-  color: var(--llamma-muted);
-  font-size: 0.8rem;
-}
-
-.capture-loading i {
-  color: var(--llamma-cyan-deep);
-  font-size: 1.3rem;
-}
-
-.capture-meta {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.6rem;
-  margin-bottom: 0.4rem;
+  min-width: 10.5rem;
 }
 
-.capture-meta > div {
-  padding: 0.65rem 0.8rem;
+.abastecimiento-page .table-llamma tbody td:first-child {
+  white-space: nowrap;
+}
+
+.supplier-meta strong {
+  display: block;
+  font-size: 0.79rem;
+  font-weight: 600;
+}
+
+.supplier-meta small {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+}
+
+.supplier-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.supplier-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed var(--llamma-line);
+}
+
+.supplier-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.supplier-row strong {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.supplier-row small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
+}
+
+.supplier-score {
+  margin-left: auto;
+  text-align: right;
+}
+
+.supplier-score strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.86rem;
+}
+
+.supplier-score span {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.6rem;
+}
+
+.receipt-list {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.receipt-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  padding-bottom: 0.95rem;
+  border-bottom: 1px dashed var(--llamma-line);
+}
+
+.receipt-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.receipt-date {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.9rem;
+  height: 2.9rem;
   border: 1px solid var(--llamma-line);
   border-radius: 0.7rem;
   background: #fbfaf7;
 }
 
-.capture-meta span {
-  display: block;
-  color: var(--llamma-muted);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.capture-meta strong {
-  display: block;
-  margin-top: 0.2rem;
-  font-size: 0.76rem;
-}
-
-.capture-check {
-  margin: 0.9rem 0 0.75rem;
-  font-size: 0.7rem;
-}
-
-.capture-check .form-check-label {
-  color: var(--llamma-muted);
-  line-height: 1.45;
-}
-
-.capture-locked {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  padding: 0.7rem 0.8rem;
-  border: 1px solid rgba(20, 122, 74, 0.25);
-  border-radius: 0.7rem;
-  background: #eaf7f0;
-  color: #146c43;
-  font-size: 0.7rem;
-  line-height: 1.5;
-}
-
-.capture-locked a {
-  color: #146c43;
-  font-weight: 700;
-}
-
-.capture-line-total {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.55rem 0.7rem;
-  border-radius: 0.6rem;
-  background: rgba(var(--llamma-cyan-rgb), 0.06);
-}
-
-.capture-line-total span {
-  color: var(--llamma-muted);
-  font-size: 0.66rem;
-}
-
-.capture-line-total strong {
+.receipt-date strong {
   font-family: var(--llamma-font-display);
-  font-size: 0.9rem;
+  font-size: 0.98rem;
+  line-height: 1;
 }
 
-.capture-col-qty {
-  width: 6.5rem;
-}
-
-.capture-col-price {
-  width: 8.5rem;
-}
-
-.capture-empty {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 0.25rem;
+.receipt-date span {
   color: var(--llamma-muted);
-  font-size: 0.72rem;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
-.capture-empty i {
-  color: var(--llamma-cyan-deep);
-  font-size: 1.1rem;
+.receipt-item strong {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
-.capture-summary-empty {
-  margin: 0.5rem 0 0.9rem;
+.receipt-item small {
+  display: block;
+  margin-top: 0.12rem;
   color: var(--llamma-muted);
-  font-size: 0.7rem;
+  font-size: 0.67rem;
 }
 
-@media (max-width: 767.98px) {
-  .capture-meta {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.abastecimiento-page .purchase-item:last-of-type {
+  margin-bottom: 1rem;
 }
 
 @media (max-width: 575.98px) {
-  .capture-meta {
-    grid-template-columns: 1fr;
+  .supply-stat {
+    padding: 0.9rem;
   }
+
+  .supplier-score {
+    margin-left: 0;
+    text-align: left;
+  }
+}
+
+.order-totals {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fbfaf7;
+}
+
+.order-totals > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.78rem;
+}
+
+.order-totals span {
+  color: var(--llamma-muted);
+}
+
+.order-totals strong {
+  font-family: var(--llamma-font-display);
+}
+
+.order-totals-final {
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--llamma-line);
+  font-size: 0.95rem;
+}
+
+.order-totals-final strong {
+  font-size: 1.1rem;
 }
 </file>
 
@@ -11018,173 +12262,6 @@ export class CapturaComponent implements OnInit {
       month: 'short',
       year: 'numeric',
     });
-  }
-}
-</file>
-
-<file path="src/app/llamma/consultas/consultas.component.css">
-/* Ajustes visuales del módulo de consultas. */
-
-.quick-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1.25rem;
-  padding-top: 1.15rem;
-  border-top: 1px dashed var(--llamma-line);
-}
-
-.quick-filters > span {
-  margin-right: 0.25rem;
-  color: var(--llamma-muted);
-  font-size: 0.64rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.filter-chip {
-  padding: 0.4rem 0.7rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 999px;
-  background: #fbfaf7;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.filter-chip.is-active {
-  border-color: var(--llamma-carbon);
-  background: var(--llamma-carbon);
-  color: #fff;
-}
-
-.query-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  height: 100%;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fff;
-  box-shadow: var(--llamma-shadow-sm);
-}
-
-.query-stat strong {
-  display: block;
-  font-family: var(--llamma-font-display);
-  font-size: 1.3rem;
-  line-height: 1;
-}
-
-.query-stat span:not(.icon-tile) {
-  display: block;
-  margin-top: 0.25rem;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.distribution {
-  display: grid;
-  gap: 1rem;
-}
-
-.distribution-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.6rem;
-  margin-bottom: 0.4rem;
-  font-size: 0.74rem;
-}
-
-.distribution-top span {
-  color: var(--llamma-muted);
-  font-weight: 500;
-}
-
-.distribution-top strong {
-  font-family: var(--llamma-font-display);
-  font-size: 0.78rem;
-}
-
-.distribution-track {
-  height: 7px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #efeee9;
-}
-
-.distribution-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-}
-
-.fill-cyan {
-  background: var(--llamma-cyan);
-}
-
-.fill-magenta {
-  background: var(--llamma-magenta);
-}
-
-.fill-yellow {
-  background: #e8da00;
-}
-
-.fill-ink {
-  background: var(--llamma-carbon);
-}
-
-.rank-list {
-  display: grid;
-  gap: 0.95rem;
-}
-
-.rank-item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.rank-number {
-  width: 1.4rem;
-  color: #b6b4ac;
-  font-family: var(--llamma-font-display);
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.rank-item strong {
-  display: block;
-  font-size: 0.77rem;
-  font-weight: 600;
-}
-
-.rank-item small {
-  display: block;
-  margin-top: 0.1rem;
-  color: var(--llamma-muted);
-  font-size: 0.67rem;
-}
-
-.rank-amount {
-  white-space: nowrap;
-  font-family: var(--llamma-font-display);
-  font-size: 0.76rem !important;
-}
-
-@media (max-width: 575.98px) {
-  .quick-filters > span {
-    width: 100%;
-  }
-
-  .query-stat {
-    padding: 0.9rem;
   }
 }
 </file>
@@ -11808,19 +12885,6 @@ export class CotizarComponent implements OnInit {
 }
 </file>
 
-<file path="src/app/llamma/dashboard/dashboard.component.css">
-/* Ajustes específicos del panel ejecutivo. */
-.dashboard-page .kpi-card {
-  min-height: 178px;
-}
-
-@media (max-width: 1199.98px) {
-  .dashboard-page .panel-link.mt-auto {
-    margin-top: 1.5rem !important;
-  }
-}
-</file>
-
 <file path="src/app/llamma/home/home.component.ts">
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -11838,6 +12902,92 @@ import { HomeDetalleComponent } from './home-detalle.component';
 export class HomeComponent {
   readonly portafolio = PORTAFOLIO;
   readonly testimonios = TESTIMONIOS;
+}
+</file>
+
+<file path="src/app/llamma/inventario/inventario.component.css">
+/* Ajustes específicos del inventario. */
+.inventory-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.inventory-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.inventory-stat span:not(.icon-tile) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.inventario-page .table-llamma thead th,
+.inventario-page .table-llamma tbody td {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.inventario-page .purchase-item:last-of-type {
+  margin-bottom: 1.2rem;
+}
+
+.inventory-alert.is-ok {
+  border-color: rgba(25, 135, 84, 0.18);
+  background: linear-gradient(90deg, #eefaf2, #f7fdf9);
+  color: #1c5c3b;
+}
+
+.inventory-alert.is-ok > i,
+.inventory-alert.is-ok a {
+  color: #198754;
+}
+
+.movement-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fbfaf7;
+}
+
+.movement-preview > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.movement-preview span {
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.movement-preview strong {
+  font-family: var(--llamma-font-display);
+  font-size: 1.05rem;
+}
+
+.movement-preview > i {
+  color: var(--llamma-magenta);
+  font-size: 1.1rem;
 }
 </file>
 
@@ -11928,722 +13078,785 @@ export class LoginComponent {
 }
 </file>
 
-<file path="src/app/llamma/solicitudes/solicitudes.component.css">
-/* Bandeja interna de solicitudes de cotización. */
+<file path="src/app/llamma/marketing/marketing.component.css">
+/* Ajustes visuales del módulo de marketing. */
 
-.min-w-0 {
-  min-width: 0;
-}
-
-.inbox-stat {
+.mkt-stat {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.9rem;
   height: 100%;
-  padding: 0.9rem 1rem;
+  padding: 1rem 1.1rem;
   border: 1px solid var(--llamma-line);
   border-radius: var(--llamma-radius-sm);
   background: #fff;
   box-shadow: var(--llamma-shadow-sm);
 }
 
-.inbox-stat strong {
+.mkt-stat strong {
   display: block;
   font-family: var(--llamma-font-display);
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   line-height: 1;
 }
 
-.inbox-stat span:not(.icon-tile) {
+.mkt-stat span:not(.icon-tile) {
   display: block;
-  margin-top: 0.2rem;
+  margin-top: 0.25rem;
   color: var(--llamma-muted);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 500;
 }
 
-.inbox-stat-cyan {
-  border-color: rgba(var(--llamma-cyan-rgb), 0.35);
-  background: rgba(var(--llamma-cyan-rgb), 0.05);
-}
-
-/* --------------------------- Layout de dos paneles ------------------------- */
-
-.solicitudes-page .row > [class*='col-'] {
-  min-width: 0;
-}
-
-.inbox-panel,
-.detail-panel {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-}
-
-/* ---------------------------------- Filtros -------------------------------- */
-
-.filter-row {
+.campaign-cell {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 0.65rem;
+  min-width: 13rem;
 }
 
-.inbox-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.filter-chip {
-  padding: 0.4rem 0.7rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 999px;
-  background: #fbfaf7;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
+.campaign-cell strong {
+  display: block;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
-.filter-chip.is-active {
-  border-color: var(--llamma-carbon);
-  background: var(--llamma-carbon);
-  color: #fff;
+.campaign-cell small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
 }
 
-.inbox-search {
+.channel-list {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.channel-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.38rem;
+  font-size: 0.72rem;
+}
+
+.channel-top > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--llamma-muted);
+}
+
+.channel-top strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.75rem;
+}
+
+.channel-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.dot-muted {
+  background: #cfcdc6;
+}
+
+.channel-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #efeee9;
+}
+
+.channel-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.fill-cyan {
+  background: var(--llamma-cyan);
+}
+
+.fill-magenta {
+  background: var(--llamma-magenta);
+}
+
+.fill-yellow {
+  background: #e8da00;
+}
+
+.fill-ink {
+  background: var(--llamma-carbon);
+}
+
+.fill-muted {
+  background: #adaba4;
+}
+
+.calendar-list {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.calendar-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  padding-bottom: 0.95rem;
+  border-bottom: 1px dashed var(--llamma-line);
+}
+
+.calendar-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.calendar-date {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.9rem;
+  height: 2.9rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.7rem;
+  background: #fbfaf7;
+}
+
+.calendar-date strong {
+  font-family: var(--llamma-font-display);
+  font-size: 0.98rem;
+  line-height: 1;
+}
+
+.calendar-date span {
+  color: var(--llamma-muted);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.calendar-item strong {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.calendar-item small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
+}
+
+.calendar-item .badge {
+  margin-left: auto;
+}
+
+.budget-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.budget-summary span {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.budget-summary strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--llamma-font-display);
+  font-size: 0.92rem;
+}
+
+.budget-track {
+  height: 9px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  background: #efeee9;
+}
+
+.budget-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--llamma-cyan), var(--llamma-magenta));
+}
+
+.budget-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.budget-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+}
+
+.budget-row span:nth-child(2) {
+  color: var(--llamma-muted);
+}
+
+.budget-row strong {
+  margin-left: auto;
+  font-family: var(--llamma-font-display);
+  font-size: 0.72rem;
+}
+
+.budget-dot {
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+@media (max-width: 575.98px) {
+  .mkt-stat {
+    padding: 0.9rem;
+  }
+
+  .budget-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.state-select {
+  min-width: 8rem;
+  font-size: 0.72rem;
+}
+
+.campaign-cell {
+  min-width: 14rem;
+}
+
+.budget-list .text-muted {
+  margin: 0;
+}
+</file>
+
+<file path="src/app/llamma/produccion/produccion.component.css">
+/* Ajustes visuales del tablero de producción. */
+
+.prod-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.prod-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.prod-stat span:not(.icon-tile) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.kanban-head-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.kanban-head-bar h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.025em;
+}
+
+.kanban-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+}
+
+.kanban-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.kanban-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+}
+
+.dot-ink {
+  background: var(--llamma-carbon);
+}
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.kanban-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius);
+  background: #f7f6f2;
+}
+
+.kanban-col-head {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  flex: 1 1 22rem;
-  max-width: 32rem;
+  padding: 0.15rem 0.2rem 0.55rem;
+  border-bottom: 1px solid var(--llamma-line);
 }
 
-.inbox-search .input-group {
-  flex: 1 1 auto;
+.kanban-col-head strong {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-.inbox-search .btn {
-  white-space: nowrap;
-}
-
-/* ----------------------------------- Lista --------------------------------- */
-
-.inbox-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.65rem 0.8rem;
-  border: 1px solid rgba(180, 35, 24, 0.26);
-  border-radius: 0.7rem;
-  background: #fdecec;
-  color: #a01212;
-  font-size: 0.72rem;
-  line-height: 1.45;
-}
-
-.inbox-alert i {
-  margin-top: 0.05rem;
-}
-
-.inbox-loading,
-.inbox-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 2.2rem 1rem;
-  color: var(--llamma-muted);
-  text-align: center;
-}
-
-.inbox-loading i {
-  font-size: 1.4rem;
-  color: var(--llamma-cyan-deep);
-}
-
-.inbox-empty i {
-  font-size: 1.8rem;
-  color: var(--llamma-cyan-deep);
-}
-
-.inbox-empty strong {
-  color: var(--llamma-carbon);
-  font-size: 0.9rem;
-}
-
-.inbox-empty p {
-  max-width: 24rem;
-  margin: 0;
-  font-size: 0.74rem;
-  line-height: 1.5;
-}
-
-.request-list {
+.kanban-count {
+  margin-left: auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.55rem;
-  min-width: 0;
-  margin-top: 1rem;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(26, 26, 26, 0.07);
+  color: var(--llamma-carbon);
+  font-size: 0.64rem;
+  font-weight: 700;
 }
 
-.request-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.8rem;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  padding: 0.85rem 0.9rem;
+.task-card {
+  padding: 0.8rem;
   border: 1px solid var(--llamma-line);
   border-radius: 0.85rem;
   background: #fff;
-  color: inherit;
-  text-align: left;
+  box-shadow: var(--llamma-shadow-sm);
 }
 
-.request-row:hover {
-  border-color: rgba(var(--llamma-cyan-rgb), 0.55);
-  background: rgba(var(--llamma-cyan-rgb), 0.03);
+.task-card.is-featured {
+  border-color: rgba(var(--llamma-magenta-rgb), 0.35);
+  box-shadow: 0 0 0 3px rgba(var(--llamma-magenta-rgb), 0.07);
 }
 
-.request-row.is-active {
-  border-color: var(--llamma-cyan);
-  box-shadow: inset 3px 0 0 var(--llamma-cyan);
-  background: rgba(var(--llamma-cyan-rgb), 0.05);
-}
-
-.request-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.request-top {
+.task-top {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  min-width: 0;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
 }
 
-.request-top strong {
-  font-size: 0.85rem;
-  overflow-wrap: anywhere;
+.task-top .badge {
+  padding: 0.28rem 0.45rem;
+  font-size: 0.55rem;
 }
 
-.request-company {
+.task-title {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.task-client {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
   color: var(--llamma-muted);
-  font-size: 0.68rem;
-  font-weight: 500;
-  overflow-wrap: anywhere;
+  font-size: 0.66rem;
 }
 
-.request-preview {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  margin-top: 0.1rem;
-  color: #4a4a4a;
-  font-size: 0.7rem;
-  line-height: 1.45;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.request-meta {
+.task-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
-  min-width: 0;
-  margin-top: 0.25rem;
+  gap: 0.25rem 0.65rem;
+  margin-top: 0.55rem;
   color: var(--llamma-muted);
   font-size: 0.62rem;
 }
 
-.request-meta i {
+.task-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.task-meta i {
   color: var(--llamma-cyan-deep);
 }
 
-.request-chevron {
-  margin-top: 0.2rem;
-  color: #b8b6ad;
-  font-size: 0.8rem;
-}
-
-.inbox-pager {
+.task-foot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--llamma-line);
-}
-
-.inbox-pager span {
+  gap: 0.5rem;
+  margin-top: 0.65rem;
   color: var(--llamma-muted);
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   font-weight: 600;
 }
 
-/* ---------------------------------- Detalle -------------------------------- */
-
-.detail-panel {
-  position: sticky;
-  top: 5.6rem;
-  max-height: calc(100vh - 7rem);
-  overflow-y: auto;
+.task-progress-track {
+  flex: 1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #efeee9;
 }
 
-/* Solo se muestra en el modo hoja inferior (< 1200px). */
-.detail-backdrop {
-  display: none;
-}
-
-.detail-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.detail-head > div {
-  min-width: 0;
-}
-
-.detail-head h2 {
-  margin: 0.2rem 0 0;
-  font-size: 1.2rem;
-  overflow-wrap: anywhere;
-}
-
-.detail-state {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  margin-top: 0.8rem;
-}
-
-.detail-state .form-select {
-  width: auto;
-  min-width: 9.5rem;
-}
-
-.detail-contact {
-  display: grid;
-  gap: 0.35rem;
-  margin-top: 0.9rem;
-  padding: 0.75rem 0.85rem;
-  border-radius: 0.7rem;
-  background: #fbfaf7;
-  font-size: 0.72rem;
-  overflow-wrap: anywhere;
-}
-
-.detail-contact i {
-  width: 1rem;
-  margin-right: 0.3rem;
-  color: var(--llamma-cyan-deep);
-}
-
-.detail-contact a {
-  color: var(--llamma-carbon);
-  text-decoration: none;
-}
-
-.detail-contact a:hover {
-  text-decoration: underline;
-}
-
-.detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.7rem;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin-top: 0.9rem;
-}
-
-.detail-grid > div {
-  min-width: 0;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 0.6rem;
-}
-
-.detail-grid span {
+.task-progress-track span {
   display: block;
-  color: var(--llamma-muted);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--llamma-cyan), var(--llamma-magenta));
 }
 
-.detail-grid strong {
-  display: block;
-  margin-top: 0.15rem;
-  font-size: 0.72rem;
-  overflow-wrap: anywhere;
-  text-transform: capitalize;
-}
-
-.detail-message {
-  margin-top: 1rem;
-  padding: 0.7rem 0.85rem;
-  border-left: 3px solid var(--llamma-yellow);
-  background: rgba(var(--llamma-yellow-rgb), 0.11);
-}
-
-.detail-message p {
-  margin: 0.3rem 0 0;
-  font-size: 0.74rem;
-  line-height: 1.6;
-}
-
-.detail-items,
-.detail-files {
-  margin-top: 1rem;
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid var(--llamma-line);
-}
-
-.detail-item strong {
-  display: block;
-  font-size: 0.75rem;
-}
-
-.detail-item small {
-  display: block;
-  margin-top: 0.1rem;
+.kanban-more {
+  padding: 0.35rem;
+  border: 0;
+  background: transparent;
   color: var(--llamma-muted);
   font-size: 0.64rem;
-  line-height: 1.4;
-}
-
-.detail-qty {
-  color: var(--llamma-muted);
-  font-size: 0.68rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.detail-amount {
-  font-family: var(--llamma-font-display);
-  font-size: 0.72rem !important;
-  white-space: nowrap;
-}
-
-.detail-empty {
-  margin: 0.5rem 0 0;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-}
-
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  margin-top: 0.4rem;
-  padding: 0.5rem 0.65rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 0.6rem;
-  background: #fff;
-  font-size: 0.68rem;
+  font-weight: 600;
   text-align: left;
 }
 
-.file-row:hover {
-  border-color: var(--llamma-cyan);
+.machine-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 8rem;
 }
 
-.file-row > i {
-  color: var(--llamma-cyan-deep);
+.machine-progress .stage-meter {
+  flex: 1;
 }
 
-.file-row-name {
-  flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.machine-progress small {
+  color: var(--llamma-muted);
+  font-size: 0.64rem;
+  font-weight: 600;
+}
+
+.quality-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.quality-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px dashed var(--llamma-line);
+}
+
+.quality-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.quality-check {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: #f2f1ec;
+  color: var(--llamma-muted);
+  font-size: 0.78rem;
+}
+
+.quality-row.is-done .quality-check {
+  background: #e7f6ee;
+  color: #18794e;
+}
+
+.quality-row strong {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.quality-row small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-size: 0.67rem;
+}
+
+.quality-row .badge {
+  margin-left: auto;
   white-space: nowrap;
 }
 
-.file-row small {
-  color: var(--llamma-muted);
+.produccion-page .quote-note {
+  margin-bottom: 1rem;
 }
 
-.inbox-success {
+.kanban-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.45rem;
+  scrollbar-width: thin;
+}
+
+.kanban-board {
+  grid-template-columns: repeat(8, 12.5rem);
+  min-width: max-content;
+}
+
+.kanban-empty {
   display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding: 0.65rem 0.8rem;
-  border: 1px solid rgba(20, 122, 74, 0.25);
-  border-radius: 0.7rem;
-  background: #eaf7f0;
-  color: #146c43;
-  font-size: 0.7rem;
-  line-height: 1.45;
-}
-
-.detail-cta {
-  display: grid;
-  gap: 0.45rem;
-  margin-top: 1.1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--llamma-line);
-}
-
-.detail-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  margin: 0.2rem 0 0;
-  color: var(--llamma-muted);
-  font-size: 0.64rem;
-  line-height: 1.5;
-}
-
-.conversion-result {
-  margin-top: 1rem;
-  padding: 0.85rem;
-  border: 1px solid rgba(var(--llamma-cyan-rgb), 0.35);
-  border-radius: 0.8rem;
-  background: rgba(var(--llamma-cyan-rgb), 0.05);
-}
-
-.conversion-head {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
-}
-
-.conversion-head > i {
-  font-size: 1.4rem;
-  color: var(--llamma-cyan-deep);
-}
-
-.conversion-head > div {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.conversion-head strong {
-  display: block;
-  font-family: var(--llamma-font-display);
-  font-size: 0.95rem;
-}
-
-.conversion-totals {
-  display: grid;
   gap: 0.3rem;
-  margin: 0.7rem 0;
-  padding-top: 0.6rem;
-  border-top: 1px dashed #cfcdc5;
-}
-
-.conversion-totals > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.7rem;
-}
-
-.conversion-totals span {
-  color: var(--llamma-muted);
-}
-
-.conversion-locked {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-top: 1rem;
-  padding: 0.75rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 0.7rem;
-  background: #fbfaf7;
-}
-
-.conversion-locked > i {
-  font-size: 1.2rem;
-  color: var(--llamma-cyan-deep);
-}
-
-.conversion-locked > div {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.conversion-locked strong {
-  display: block;
-  font-size: 0.74rem;
-}
-
-.conversion-locked span {
-  display: block;
+  margin: 0;
+  padding: 1.4rem 0.5rem;
+  border: 1px dashed rgba(26, 26, 26, 0.12);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.55);
   color: var(--llamma-muted);
   font-size: 0.64rem;
-  line-height: 1.4;
-}
-
-/* ------------------------------- Placeholder ------------------------------- */
-
-.detail-placeholder {
   text-align: center;
 }
 
-.detail-placeholder h2 {
-  margin: 0.7rem 0 0.4rem;
-  font-size: 1.05rem;
+.kanban-empty i {
+  font-size: 1rem;
 }
 
-.detail-placeholder p {
-  max-width: 22rem;
-  margin: 0 auto;
-  color: var(--llamma-muted);
-  font-size: 0.74rem;
-  line-height: 1.6;
+.task-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 193, 7, 0.14);
+  color: #8a5a00;
+  font-size: 0.63rem;
+  line-height: 1.35;
 }
 
-.placeholder-steps {
-  display: grid;
-  gap: 0.45rem;
-  margin-top: 1.2rem;
-  padding-top: 1rem;
-  border-top: 1px dashed var(--llamma-line);
-  text-align: left;
-}
-
-.placeholder-steps span {
+.task-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--llamma-line);
+}
+
+.btn-icon-xs {
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  font-size: 0.7rem;
+}
+
+.stage-load {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.stage-load-row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr) 1.6rem;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.72rem;
+}
+
+.stage-load-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--llamma-carbon);
+  font-weight: 600;
+}
+
+.stage-load-name i {
+  color: var(--llamma-muted);
+}
+
+.stage-load-row strong {
+  text-align: right;
+  font-family: var(--llamma-font-display);
+}
+
+.order-brief {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: linear-gradient(90deg, #fbfaf7, #fff);
+}
+
+.order-brief-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.7rem;
+  background: rgba(0, 174, 239, 0.12);
+  color: var(--llamma-cyan);
+  font-size: 1rem;
+}
+
+.order-brief strong {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.order-brief span:not(.order-brief-icon) {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+}
+
+.stage-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.stage-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.65rem;
+  background: #fff;
+}
+
+.stage-list-dot {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: #f2f1ec;
   color: var(--llamma-muted);
   font-size: 0.72rem;
 }
 
-.placeholder-steps i {
-  color: var(--llamma-cyan-deep);
+.stage-list-item.is-active {
+  border-color: rgba(0, 174, 239, 0.35);
+  background: rgba(0, 174, 239, 0.05);
 }
 
-/* -------------------------------- Responsive ------------------------------- */
+.stage-list-item.is-active .stage-list-dot {
+  background: rgba(0, 174, 239, 0.16);
+  color: var(--llamma-cyan);
+}
+
+.stage-list-item.is-done .stage-list-dot {
+  background: #e7f6ee;
+  color: #18794e;
+}
+
+.stage-list-item strong {
+  display: block;
+  font-size: 0.73rem;
+  font-weight: 600;
+}
+
+.stage-list-item small {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.63rem;
+}
+
+.stage-list-item .badge {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 0.55rem;
+}
+
+.quality-form {
+  margin-top: 1.1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px dashed var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fbfaf7;
+}
 
 @media (max-width: 1199.98px) {
-  /* Al apilar las columnas el detalle quedaría debajo de toda la lista, así que
-     se presenta como una hoja inferior fija sobre la bandeja. */
-  .detail-placeholder {
-    display: none;
-  }
-
-  .detail-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1070;
-    display: block;
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    border: 0;
-    background: rgba(20, 20, 20, 0.48);
-    backdrop-filter: blur(2px);
-    cursor: pointer;
-  }
-
-  .detail-panel-open {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 1080;
-    width: 100%;
-    max-width: 100%;
-    max-height: min(88vh, 48rem);
-    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
-    border-radius: 1.25rem 1.25rem 0 0;
-    box-shadow: 0 -20px 48px rgba(20, 20, 20, 0.24);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    animation: detail-sheet-in 0.22s ease-out;
+  .kanban-board {
+    grid-template-columns: repeat(8, 11.5rem);
   }
 }
 
-@keyframes detail-sheet-in {
-  from {
-    opacity: 0;
-    transform: translateY(1.5rem);
+@media (max-width: 767.98px) {
+  .kanban-board {
+    grid-template-columns: repeat(8, 10.5rem);
   }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .kanban-col {
+    padding: 0.7rem;
+  }
+
+  .stage-load-row {
+    grid-template-columns: 6.5rem minmax(0, 1fr) 1.4rem;
+    font-size: 0.68rem;
   }
 }
 
-/* En tablet la hoja se centra y limita su ancho para no parecer una página
-   completa; en móvil ocupa todo el ancho disponible. */
-@media (min-width: 768px) and (max-width: 1199.98px) {
-  .detail-panel-open {
-    right: auto;
-    left: 50%;
-    width: min(42rem, calc(100% - 2rem));
-    max-height: min(84vh, 48rem);
-    margin-bottom: 1.25rem;
-    border-radius: 1.25rem;
-    translate: -50% 0;
-  }
+.kanban-hint {
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+  font-weight: 500;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .detail-panel-open {
-    animation: none;
-  }
-}
-
-@media (max-width: 575.98px) {
-  .inbox-search {
-    flex: 1 1 100%;
-    max-width: none;
-    flex-wrap: wrap;
-  }
-
-  .inbox-search .input-group {
-    flex: 1 1 100%;
-  }
-
-  .inbox-search .btn {
-    flex: 1 1 auto;
-  }
-
-  .inbox-tabs {
-    width: 100%;
-  }
-
-  .inbox-pager span {
-    display: none;
-  }
-
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
+.kanban-hint i {
+  color: var(--llamma-cyan-deep);
 }
 </file>
 
@@ -12665,83 +13878,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, resilienciaInterceptor])),
   ],
 };
-</file>
-
-<file path="src/app/app.css">
-/* Estilos exclusivos del shell de la aplicación. */
-
-.app-main {
-  flex: 1;
-}
-
-.nav-link-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.nav-count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 1.35rem;
-  height: 1.35rem;
-  padding: 0 0.32rem;
-  border-radius: 999px;
-  background: var(--llamma-yellow);
-  color: var(--llamma-carbon);
-  font-size: 0.62rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.user-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.3rem 0.65rem 0.3rem 0.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.user-avatar {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--llamma-cyan);
-  color: var(--llamma-carbon);
-  font-family: var(--llamma-font-display);
-  font-size: 0.68rem;
-  font-weight: 700;
-}
-
-.user-meta {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
-}
-
-.user-meta strong {
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
-.user-meta small {
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-@media (max-width: 991.98px) {
-  .user-chip {
-    align-self: flex-start;
-  }
-}
 </file>
 
 <file path="src/app/app.routes.ts">
@@ -12977,64 +14113,6 @@ export const routes: Routes = [
     <app-root></app-root>
   </body>
 </html>
-</file>
-
-<file path=".gitignore">
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
-
-# Compiled output
-/dist
-/tmp
-/out-tsc
-/bazel-out
-
-# Node
-/node_modules
-npm-debug.log
-yarn-error.log
-
-# IDEs and editors
-.idea/
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/mcp.json
-.history/*
-
-# Miscellaneous
-/.angular/cache
-.sass-cache/
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
-__screenshots__/
-
-# System files
-.DS_Store
-Thumbs.db
-
-# Python / Flask
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-env/
-*.sqlite3
-.env
-Flask_Llamma_API/instance/
-Flask_Llamma_API/uploads/
 </file>
 
 <file path="AGENTS.md">
@@ -14357,216 +15435,6 @@ app = create_app()
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=app.config["DEBUG"])
-</file>
-
-<file path="src/app/llamma/abastecimiento/abastecimiento.component.css">
-/* Ajustes visuales del módulo de abastecimiento. */
-
-.supply-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  height: 100%;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fff;
-  box-shadow: var(--llamma-shadow-sm);
-}
-
-.supply-stat strong {
-  display: block;
-  font-family: var(--llamma-font-display);
-  font-size: 1.3rem;
-  line-height: 1;
-}
-
-.supply-stat span:not(.icon-tile) {
-  display: block;
-  margin-top: 0.25rem;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.supplier-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-width: 10.5rem;
-}
-
-.abastecimiento-page .table-llamma tbody td:first-child {
-  white-space: nowrap;
-}
-
-.supplier-meta strong {
-  display: block;
-  font-size: 0.79rem;
-  font-weight: 600;
-}
-
-.supplier-meta small {
-  display: block;
-  margin-top: 0.1rem;
-  color: var(--llamma-muted);
-  font-size: 0.66rem;
-}
-
-.supplier-list {
-  display: grid;
-  gap: 1rem;
-}
-
-.supplier-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.65rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px dashed var(--llamma-line);
-}
-
-.supplier-row:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.supplier-row strong {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.supplier-row small {
-  display: block;
-  margin-top: 0.12rem;
-  color: var(--llamma-muted);
-  font-size: 0.67rem;
-}
-
-.supplier-score {
-  margin-left: auto;
-  text-align: right;
-}
-
-.supplier-score strong {
-  font-family: var(--llamma-font-display);
-  font-size: 0.86rem;
-}
-
-.supplier-score span {
-  display: block;
-  color: var(--llamma-muted);
-  font-size: 0.6rem;
-}
-
-.receipt-list {
-  display: grid;
-  gap: 0.95rem;
-}
-
-.receipt-item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.7rem;
-  padding-bottom: 0.95rem;
-  border-bottom: 1px dashed var(--llamma-line);
-}
-
-.receipt-item:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.receipt-date {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 2.9rem;
-  height: 2.9rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 0.7rem;
-  background: #fbfaf7;
-}
-
-.receipt-date strong {
-  font-family: var(--llamma-font-display);
-  font-size: 0.98rem;
-  line-height: 1;
-}
-
-.receipt-date span {
-  color: var(--llamma-muted);
-  font-size: 0.52rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.receipt-item strong {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.receipt-item small {
-  display: block;
-  margin-top: 0.12rem;
-  color: var(--llamma-muted);
-  font-size: 0.67rem;
-}
-
-.abastecimiento-page .purchase-item:last-of-type {
-  margin-bottom: 1rem;
-}
-
-@media (max-width: 575.98px) {
-  .supply-stat {
-    padding: 0.9rem;
-  }
-
-  .supplier-score {
-    margin-left: 0;
-    text-align: left;
-  }
-}
-
-.order-totals {
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fbfaf7;
-}
-
-.order-totals > div {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.78rem;
-}
-
-.order-totals span {
-  color: var(--llamma-muted);
-}
-
-.order-totals strong {
-  font-family: var(--llamma-font-display);
-}
-
-.order-totals-final {
-  margin-top: 0.25rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--llamma-line);
-  font-size: 0.95rem;
-}
-
-.order-totals-final strong {
-  font-size: 1.1rem;
-}
 </file>
 
 <file path="src/app/llamma/abastecimiento/abastecimiento.component.html">
@@ -16729,6 +17597,249 @@ export class AbastecimientoComponent implements OnInit {
     }
   </div>
 </div>
+</file>
+
+<file path="src/app/llamma/clientes/clientes.component.css">
+/* Ajustes visuales del directorio de clientes. */
+
+.client-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.client-stat strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.client-stat span:not(.icon-tile) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.client-profile {
+  padding: 1.5rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius);
+  background: var(--llamma-carbon);
+  color: rgba(255, 255, 255, 0.68);
+  box-shadow: var(--llamma-shadow);
+}
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.profile-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 1rem;
+  background: rgba(var(--llamma-yellow-rgb), 0.16);
+  color: var(--llamma-yellow);
+  font-family: var(--llamma-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.profile-head h2 {
+  margin: 0.15rem 0 0.35rem;
+  color: #fff;
+  font-size: 1.15rem;
+}
+
+.profile-head .panel-kicker {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.profile-contact {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1.05rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-contact li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+}
+
+.profile-contact i {
+  margin-top: 0.12rem;
+  color: var(--llamma-cyan);
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+}
+
+.profile-stats strong {
+  display: block;
+  color: #fff;
+  font-family: var(--llamma-font-display);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.profile-stats span {
+  display: block;
+  margin-top: 0.2rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.client-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1.1rem;
+}
+
+.client-tags span {
+  padding: 0.3rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.62rem;
+  font-weight: 600;
+}
+
+.note-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.note-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px dashed var(--llamma-line);
+}
+
+.note-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.note-dot {
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+}
+
+.note-item strong {
+  display: block;
+  font-size: 0.77rem;
+  font-weight: 600;
+}
+
+.note-item p {
+  margin: 0.18rem 0 0;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.note-item small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #9a9992;
+  font-size: 0.62rem;
+}
+
+.segment-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.segment-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.32rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+}
+
+.segment-top strong {
+  color: var(--llamma-carbon);
+  font-family: var(--llamma-font-display);
+  font-size: 0.74rem;
+}
+
+.segment-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #efeee9;
+}
+
+.segment-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--llamma-cyan), var(--llamma-magenta));
+}
+
+/* La tabla tiene siete columnas: compactamos el espaciado para que quepa
+   completa en escritorio sin recortar la columna de estado. */
+.clientes-page .table-llamma > :not(caption) > * > * {
+  padding-right: 0.7rem;
+  padding-left: 0.7rem;
+}
+
+@media (max-width: 575.98px) {
+  .client-stat {
+    padding: 0.9rem;
+  }
+
+  .client-profile {
+    padding: 1.2rem;
+  }
+}
+
+.clientes-page tbody tr[role='button'] {
+  cursor: pointer;
+}
+
+.clientes-page tbody tr.table-active > * {
+  --bs-table-bg-state: rgba(var(--llamma-cyan-rgb), 0.1);
+}
 </file>
 
 <file path="src/app/llamma/clientes/clientes.component.html">
@@ -19356,6 +20467,333 @@ export class DashboardComponent implements OnInit {
 }
 </file>
 
+<file path="src/app/llamma/detalle/detalle.component.css">
+/* Ajustes visuales del detalle de órdenes. */
+
+.order-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.order-switcher-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.order-switcher-label i {
+  color: var(--llamma-magenta);
+}
+
+.order-switcher-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.order-pill {
+  padding: 0.38rem 0.62rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.55rem;
+  background: #fbfaf7;
+  color: var(--llamma-carbon);
+  font-family: var(--llamma-font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.order-pill span {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-family: var(--llamma-font-body);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.order-pill.is-current {
+  border-color: rgba(var(--llamma-cyan-rgb), 0.4);
+  background: rgba(var(--llamma-cyan-rgb), 0.08);
+}
+
+.order-pill.is-current span {
+  color: #007ba8;
+}
+
+.order-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--llamma-line);
+}
+
+.order-emblem {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 1.05rem;
+  background: var(--llamma-carbon);
+  color: var(--llamma-yellow);
+  font-size: 1.45rem;
+}
+
+.order-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+  letter-spacing: -0.05em;
+}
+
+.order-meta {
+  padding-top: 1.25rem;
+}
+
+.order-meta-item span {
+  display: block;
+  margin-bottom: 0.28rem;
+  color: var(--llamma-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.order-meta-item strong {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.order-meta-item small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+}
+
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline-item {
+  position: relative;
+  display: flex;
+  gap: 0.9rem;
+  padding-bottom: 1.35rem;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  top: 2.3rem;
+  bottom: 0;
+  left: 1.1rem;
+  width: 1px;
+  background: var(--llamma-line);
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+.timeline-dot {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  font-size: 0.9rem;
+}
+
+.is-done .timeline-dot {
+  background: rgba(var(--llamma-cyan-rgb), 0.12);
+  color: var(--llamma-cyan-deep);
+}
+
+.is-active .timeline-dot {
+  background: var(--llamma-magenta);
+  color: #fff;
+}
+
+.is-pending .timeline-dot {
+  background: #f2f1ec;
+  color: #96958f;
+}
+
+.timeline-body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.15rem;
+}
+
+.timeline-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+}
+
+.timeline-top strong {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.timeline-top span {
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.timeline-body p {
+  margin: 0.28rem 0 0;
+  color: var(--llamma-muted);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.order-summary {
+  padding: 1.5rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius);
+  background: #fff;
+  box-shadow: var(--llamma-shadow);
+}
+
+.payment-state {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1.1rem;
+  padding: 0.7rem;
+  border-radius: 0.75rem;
+  background: #f0faf4;
+}
+
+.payment-state strong {
+  display: block;
+  font-size: 0.78rem;
+}
+
+.payment-state small {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+}
+
+.delivery-list {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.delivery-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.delivery-list i {
+  margin-top: 0.12rem;
+  color: var(--llamma-cyan-deep);
+  font-size: 1rem;
+}
+
+.delivery-list strong {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.delivery-list span {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+}
+
+.file-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.file-row strong {
+  display: block;
+  overflow: hidden;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-row small {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+}
+
+@media (max-width: 575.98px) {
+  .order-head {
+    align-items: flex-start;
+  }
+
+  .order-emblem {
+    width: 2.9rem;
+    height: 2.9rem;
+    font-size: 1.2rem;
+  }
+
+  .order-switcher-list {
+    width: 100%;
+  }
+
+  .order-pill {
+    flex: 1 1 auto;
+  }
+}
+
+.pago-list {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--llamma-line);
+}
+</file>
+
 <file path="src/app/llamma/detalle/detalle.component.ts">
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -20826,92 +22264,6 @@ export class DetalleComponent implements OnInit {
     </div>
   </section>
 </div>
-</file>
-
-<file path="src/app/llamma/inventario/inventario.component.css">
-/* Ajustes específicos del inventario. */
-.inventory-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  height: 100%;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fff;
-  box-shadow: var(--llamma-shadow-sm);
-}
-
-.inventory-stat strong {
-  display: block;
-  font-family: var(--llamma-font-display);
-  font-size: 1.35rem;
-  line-height: 1;
-}
-
-.inventory-stat span:not(.icon-tile) {
-  display: block;
-  margin-top: 0.25rem;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.inventario-page .table-llamma thead th,
-.inventario-page .table-llamma tbody td {
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-}
-
-.inventario-page .purchase-item:last-of-type {
-  margin-bottom: 1.2rem;
-}
-
-.inventory-alert.is-ok {
-  border-color: rgba(25, 135, 84, 0.18);
-  background: linear-gradient(90deg, #eefaf2, #f7fdf9);
-  color: #1c5c3b;
-}
-
-.inventory-alert.is-ok > i,
-.inventory-alert.is-ok a {
-  color: #198754;
-}
-
-.movement-preview {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  padding: 0.85rem 1rem;
-  border: 1px dashed var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fbfaf7;
-}
-
-.movement-preview > div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.movement-preview span {
-  color: var(--llamma-muted);
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.movement-preview strong {
-  font-family: var(--llamma-font-display);
-  font-size: 1.05rem;
-}
-
-.movement-preview > i {
-  color: var(--llamma-magenta);
-  font-size: 1.1rem;
-}
 </file>
 
 <file path="src/app/llamma/inventario/inventario.component.html">
@@ -22932,276 +24284,6 @@ export class InventarioComponent implements OnInit {
 </div>
 </file>
 
-<file path="src/app/llamma/marketing/marketing.component.css">
-/* Ajustes visuales del módulo de marketing. */
-
-.mkt-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  height: 100%;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fff;
-  box-shadow: var(--llamma-shadow-sm);
-}
-
-.mkt-stat strong {
-  display: block;
-  font-family: var(--llamma-font-display);
-  font-size: 1.3rem;
-  line-height: 1;
-}
-
-.mkt-stat span:not(.icon-tile) {
-  display: block;
-  margin-top: 0.25rem;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.campaign-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  min-width: 13rem;
-}
-
-.campaign-cell strong {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.campaign-cell small {
-  display: block;
-  margin-top: 0.12rem;
-  color: var(--llamma-muted);
-  font-size: 0.67rem;
-}
-
-.channel-list {
-  display: grid;
-  gap: 0.95rem;
-}
-
-.channel-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.38rem;
-  font-size: 0.72rem;
-}
-
-.channel-top > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--llamma-muted);
-}
-
-.channel-top strong {
-  font-family: var(--llamma-font-display);
-  font-size: 0.75rem;
-}
-
-.channel-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-}
-
-.dot-muted {
-  background: #cfcdc6;
-}
-
-.channel-track {
-  height: 7px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #efeee9;
-}
-
-.channel-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-}
-
-.fill-cyan {
-  background: var(--llamma-cyan);
-}
-
-.fill-magenta {
-  background: var(--llamma-magenta);
-}
-
-.fill-yellow {
-  background: #e8da00;
-}
-
-.fill-ink {
-  background: var(--llamma-carbon);
-}
-
-.fill-muted {
-  background: #adaba4;
-}
-
-.calendar-list {
-  display: grid;
-  gap: 0.95rem;
-}
-
-.calendar-item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.7rem;
-  padding-bottom: 0.95rem;
-  border-bottom: 1px dashed var(--llamma-line);
-}
-
-.calendar-item:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.calendar-date {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 2.9rem;
-  height: 2.9rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 0.7rem;
-  background: #fbfaf7;
-}
-
-.calendar-date strong {
-  font-family: var(--llamma-font-display);
-  font-size: 0.98rem;
-  line-height: 1;
-}
-
-.calendar-date span {
-  color: var(--llamma-muted);
-  font-size: 0.52rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.calendar-item strong {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.calendar-item small {
-  display: block;
-  margin-top: 0.12rem;
-  color: var(--llamma-muted);
-  font-size: 0.67rem;
-}
-
-.calendar-item .badge {
-  margin-left: auto;
-}
-
-.budget-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.6rem;
-  margin-bottom: 0.9rem;
-}
-
-.budget-summary span {
-  display: block;
-  color: var(--llamma-muted);
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.budget-summary strong {
-  display: block;
-  margin-top: 0.2rem;
-  font-family: var(--llamma-font-display);
-  font-size: 0.92rem;
-}
-
-.budget-track {
-  height: 9px;
-  overflow: hidden;
-  margin-bottom: 1rem;
-  border-radius: 999px;
-  background: #efeee9;
-}
-
-.budget-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--llamma-cyan), var(--llamma-magenta));
-}
-
-.budget-list {
-  display: grid;
-  gap: 0.55rem;
-}
-
-.budget-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.7rem;
-}
-
-.budget-row span:nth-child(2) {
-  color: var(--llamma-muted);
-}
-
-.budget-row strong {
-  margin-left: auto;
-  font-family: var(--llamma-font-display);
-  font-size: 0.72rem;
-}
-
-.budget-dot {
-  flex: 0 0 auto;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-}
-
-@media (max-width: 575.98px) {
-  .mkt-stat {
-    padding: 0.9rem;
-  }
-
-  .budget-summary {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.state-select {
-  min-width: 8rem;
-  font-size: 0.72rem;
-}
-
-.campaign-cell {
-  min-width: 14rem;
-}
-
-.budget-list .text-muted {
-  margin: 0;
-}
-</file>
-
 <file path="src/app/llamma/marketing/marketing.component.html">
 <div class="module-page marketing-page">
   <div class="container">
@@ -24190,518 +25272,6 @@ export class MarketingComponent implements OnInit {
   private dosDigitos(valor: number): string {
     return String(valor).padStart(2, '0');
   }
-}
-</file>
-
-<file path="src/app/llamma/produccion/produccion.component.css">
-/* Ajustes visuales del tablero de producción. */
-
-.prod-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  height: 100%;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fff;
-  box-shadow: var(--llamma-shadow-sm);
-}
-
-.prod-stat strong {
-  display: block;
-  font-family: var(--llamma-font-display);
-  font-size: 1.3rem;
-  line-height: 1;
-}
-
-.prod-stat span:not(.icon-tile) {
-  display: block;
-  margin-top: 0.25rem;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.kanban-head-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.8rem;
-  margin-bottom: 1rem;
-}
-
-.kanban-head-bar h2 {
-  margin: 0;
-  font-size: 1.15rem;
-  letter-spacing: -0.025em;
-}
-
-.kanban-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.9rem;
-  color: var(--llamma-muted);
-  font-size: 0.68rem;
-}
-
-.kanban-legend > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.kanban-dot {
-  display: inline-block;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-}
-
-.dot-ink {
-  background: var(--llamma-carbon);
-}
-
-.kanban-board {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.9rem;
-  align-items: start;
-}
-
-.kanban-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.8rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius);
-  background: #f7f6f2;
-}
-
-.kanban-col-head {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.15rem 0.2rem 0.55rem;
-  border-bottom: 1px solid var(--llamma-line);
-}
-
-.kanban-col-head strong {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.kanban-count {
-  margin-left: auto;
-  display: grid;
-  place-items: center;
-  min-width: 1.35rem;
-  height: 1.35rem;
-  padding: 0 0.3rem;
-  border-radius: 999px;
-  background: rgba(26, 26, 26, 0.07);
-  color: var(--llamma-carbon);
-  font-size: 0.64rem;
-  font-weight: 700;
-}
-
-.task-card {
-  padding: 0.8rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 0.85rem;
-  background: #fff;
-  box-shadow: var(--llamma-shadow-sm);
-}
-
-.task-card.is-featured {
-  border-color: rgba(var(--llamma-magenta-rgb), 0.35);
-  box-shadow: 0 0 0 3px rgba(var(--llamma-magenta-rgb), 0.07);
-}
-
-.task-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
-  margin-bottom: 0.4rem;
-}
-
-.task-top .badge {
-  padding: 0.28rem 0.45rem;
-  font-size: 0.55rem;
-}
-
-.task-title {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.task-client {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.3rem;
-  color: var(--llamma-muted);
-  font-size: 0.66rem;
-}
-
-.task-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.65rem;
-  margin-top: 0.55rem;
-  color: var(--llamma-muted);
-  font-size: 0.62rem;
-}
-
-.task-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
-}
-
-.task-meta i {
-  color: var(--llamma-cyan-deep);
-}
-
-.task-foot {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.65rem;
-  color: var(--llamma-muted);
-  font-size: 0.6rem;
-  font-weight: 600;
-}
-
-.task-progress-track {
-  flex: 1;
-  height: 5px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #efeee9;
-}
-
-.task-progress-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--llamma-cyan), var(--llamma-magenta));
-}
-
-.kanban-more {
-  padding: 0.35rem;
-  border: 0;
-  background: transparent;
-  color: var(--llamma-muted);
-  font-size: 0.64rem;
-  font-weight: 600;
-  text-align: left;
-}
-
-.machine-progress {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-width: 8rem;
-}
-
-.machine-progress .stage-meter {
-  flex: 1;
-}
-
-.machine-progress small {
-  color: var(--llamma-muted);
-  font-size: 0.64rem;
-  font-weight: 600;
-}
-
-.quality-list {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.quality-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  padding-bottom: 0.9rem;
-  border-bottom: 1px dashed var(--llamma-line);
-}
-
-.quality-row:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.quality-check {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 50%;
-  background: #f2f1ec;
-  color: var(--llamma-muted);
-  font-size: 0.78rem;
-}
-
-.quality-row.is-done .quality-check {
-  background: #e7f6ee;
-  color: #18794e;
-}
-
-.quality-row strong {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.quality-row small {
-  display: block;
-  margin-top: 0.12rem;
-  color: var(--llamma-muted);
-  font-size: 0.67rem;
-}
-
-.quality-row .badge {
-  margin-left: auto;
-  white-space: nowrap;
-}
-
-.produccion-page .quote-note {
-  margin-bottom: 1rem;
-}
-
-.kanban-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 0.45rem;
-  scrollbar-width: thin;
-}
-
-.kanban-board {
-  grid-template-columns: repeat(8, 12.5rem);
-  min-width: max-content;
-}
-
-.kanban-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  margin: 0;
-  padding: 1.4rem 0.5rem;
-  border: 1px dashed rgba(26, 26, 26, 0.12);
-  border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.55);
-  color: var(--llamma-muted);
-  font-size: 0.64rem;
-  text-align: center;
-}
-
-.kanban-empty i {
-  font-size: 1rem;
-}
-
-.task-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.3rem;
-  margin: 0.5rem 0 0;
-  padding: 0.4rem 0.5rem;
-  border-radius: 0.5rem;
-  background: rgba(255, 193, 7, 0.14);
-  color: #8a5a00;
-  font-size: 0.63rem;
-  line-height: 1.35;
-}
-
-.task-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.6rem;
-  padding-top: 0.55rem;
-  border-top: 1px dashed var(--llamma-line);
-}
-
-.btn-icon-xs {
-  width: 1.75rem;
-  height: 1.75rem;
-  padding: 0;
-  font-size: 0.7rem;
-}
-
-.stage-load {
-  display: grid;
-  gap: 0.7rem;
-}
-
-.stage-load-row {
-  display: grid;
-  grid-template-columns: 8.5rem minmax(0, 1fr) 1.6rem;
-  align-items: center;
-  gap: 0.65rem;
-  font-size: 0.72rem;
-}
-
-.stage-load-name {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--llamma-carbon);
-  font-weight: 600;
-}
-
-.stage-load-name i {
-  color: var(--llamma-muted);
-}
-
-.stage-load-row strong {
-  text-align: right;
-  font-family: var(--llamma-font-display);
-}
-
-.order-brief {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: linear-gradient(90deg, #fbfaf7, #fff);
-}
-
-.order-brief-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 0.7rem;
-  background: rgba(0, 174, 239, 0.12);
-  color: var(--llamma-cyan);
-  font-size: 1rem;
-}
-
-.order-brief strong {
-  display: block;
-  font-size: 0.82rem;
-  line-height: 1.3;
-}
-
-.order-brief span:not(.order-brief-icon) {
-  display: block;
-  margin-top: 0.15rem;
-  color: var(--llamma-muted);
-  font-size: 0.68rem;
-}
-
-.stage-list {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.stage-list-item {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.45rem 0.55rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 0.65rem;
-  background: #fff;
-}
-
-.stage-list-dot {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 50%;
-  background: #f2f1ec;
-  color: var(--llamma-muted);
-  font-size: 0.72rem;
-}
-
-.stage-list-item.is-active {
-  border-color: rgba(0, 174, 239, 0.35);
-  background: rgba(0, 174, 239, 0.05);
-}
-
-.stage-list-item.is-active .stage-list-dot {
-  background: rgba(0, 174, 239, 0.16);
-  color: var(--llamma-cyan);
-}
-
-.stage-list-item.is-done .stage-list-dot {
-  background: #e7f6ee;
-  color: #18794e;
-}
-
-.stage-list-item strong {
-  display: block;
-  font-size: 0.73rem;
-  font-weight: 600;
-}
-
-.stage-list-item small {
-  display: block;
-  color: var(--llamma-muted);
-  font-size: 0.63rem;
-}
-
-.stage-list-item .badge {
-  margin-left: auto;
-  white-space: nowrap;
-  font-size: 0.55rem;
-}
-
-.quality-form {
-  margin-top: 1.1rem;
-  padding: 0.8rem 0.9rem;
-  border: 1px dashed var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fbfaf7;
-}
-
-@media (max-width: 1199.98px) {
-  .kanban-board {
-    grid-template-columns: repeat(8, 11.5rem);
-  }
-}
-
-@media (max-width: 767.98px) {
-  .kanban-board {
-    grid-template-columns: repeat(8, 10.5rem);
-  }
-
-  .kanban-col {
-    padding: 0.7rem;
-  }
-
-  .stage-load-row {
-    grid-template-columns: 6.5rem minmax(0, 1fr) 1.4rem;
-    font-size: 0.68rem;
-  }
-}
-
-.kanban-hint {
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--llamma-muted);
-  font-size: 0.66rem;
-  font-weight: 500;
-}
-
-.kanban-hint i {
-  color: var(--llamma-cyan-deep);
 }
 </file>
 
@@ -28442,576 +29012,6 @@ export class App implements OnDestroy {
       }
     }
   }
-}
-</file>
-
-<file path="src/app/llamma/clientes/clientes.component.css">
-/* Ajustes visuales del directorio de clientes. */
-
-.client-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  height: 100%;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fff;
-  box-shadow: var(--llamma-shadow-sm);
-}
-
-.client-stat strong {
-  display: block;
-  font-family: var(--llamma-font-display);
-  font-size: 1.3rem;
-  line-height: 1;
-}
-
-.client-stat span:not(.icon-tile) {
-  display: block;
-  margin-top: 0.25rem;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.client-profile {
-  padding: 1.5rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius);
-  background: var(--llamma-carbon);
-  color: rgba(255, 255, 255, 0.68);
-  box-shadow: var(--llamma-shadow);
-}
-
-.profile-head {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding-bottom: 1.1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.profile-avatar {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 3.4rem;
-  height: 3.4rem;
-  border-radius: 1rem;
-  background: rgba(var(--llamma-yellow-rgb), 0.16);
-  color: var(--llamma-yellow);
-  font-family: var(--llamma-font-display);
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.profile-head h2 {
-  margin: 0.15rem 0 0.35rem;
-  color: #fff;
-  font-size: 1.15rem;
-}
-
-.profile-head .panel-kicker {
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.profile-contact {
-  display: grid;
-  gap: 0.55rem;
-  margin: 1.05rem 0;
-  padding: 0;
-  list-style: none;
-}
-
-.profile-contact li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  font-size: 0.72rem;
-}
-
-.profile-contact i {
-  margin-top: 0.12rem;
-  color: var(--llamma-cyan);
-}
-
-.profile-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
-  margin-bottom: 1rem;
-  padding: 0.8rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  text-align: center;
-}
-
-.profile-stats strong {
-  display: block;
-  color: #fff;
-  font-family: var(--llamma-font-display);
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.profile-stats span {
-  display: block;
-  margin-top: 0.2rem;
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.client-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-bottom: 1.1rem;
-}
-
-.client-tags span {
-  padding: 0.3rem 0.55rem;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.62rem;
-  font-weight: 600;
-}
-
-.note-list {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.note-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  padding-bottom: 0.9rem;
-  border-bottom: 1px dashed var(--llamma-line);
-}
-
-.note-item:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.note-dot {
-  flex: 0 0 auto;
-  width: 0.5rem;
-  height: 0.5rem;
-  margin-top: 0.35rem;
-  border-radius: 50%;
-}
-
-.note-item strong {
-  display: block;
-  font-size: 0.77rem;
-  font-weight: 600;
-}
-
-.note-item p {
-  margin: 0.18rem 0 0;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-  line-height: 1.5;
-}
-
-.note-item small {
-  display: block;
-  margin-top: 0.25rem;
-  color: #9a9992;
-  font-size: 0.62rem;
-}
-
-.segment-list {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.segment-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.32rem;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-}
-
-.segment-top strong {
-  color: var(--llamma-carbon);
-  font-family: var(--llamma-font-display);
-  font-size: 0.74rem;
-}
-
-.segment-track {
-  height: 6px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #efeee9;
-}
-
-.segment-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--llamma-cyan), var(--llamma-magenta));
-}
-
-/* La tabla tiene siete columnas: compactamos el espaciado para que quepa
-   completa en escritorio sin recortar la columna de estado. */
-.clientes-page .table-llamma > :not(caption) > * > * {
-  padding-right: 0.7rem;
-  padding-left: 0.7rem;
-}
-
-@media (max-width: 575.98px) {
-  .client-stat {
-    padding: 0.9rem;
-  }
-
-  .client-profile {
-    padding: 1.2rem;
-  }
-}
-
-.clientes-page tbody tr[role='button'] {
-  cursor: pointer;
-}
-
-.clientes-page tbody tr.table-active > * {
-  --bs-table-bg-state: rgba(var(--llamma-cyan-rgb), 0.1);
-}
-</file>
-
-<file path="src/app/llamma/detalle/detalle.component.css">
-/* Ajustes visuales del detalle de órdenes. */
-
-.order-switcher {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius-sm);
-  background: #fff;
-  box-shadow: var(--llamma-shadow-sm);
-}
-
-.order-switcher-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--llamma-muted);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.order-switcher-label i {
-  color: var(--llamma-magenta);
-}
-
-.order-switcher-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.order-pill {
-  padding: 0.38rem 0.62rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: 0.55rem;
-  background: #fbfaf7;
-  color: var(--llamma-carbon);
-  font-family: var(--llamma-font-display);
-  font-size: 0.68rem;
-  font-weight: 700;
-}
-
-.order-pill span {
-  display: block;
-  margin-top: 0.12rem;
-  color: var(--llamma-muted);
-  font-family: var(--llamma-font-body);
-  font-size: 0.56rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.order-pill.is-current {
-  border-color: rgba(var(--llamma-cyan-rgb), 0.4);
-  background: rgba(var(--llamma-cyan-rgb), 0.08);
-}
-
-.order-pill.is-current span {
-  color: #007ba8;
-}
-
-.order-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--llamma-line);
-}
-
-.order-emblem {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 3.4rem;
-  height: 3.4rem;
-  border-radius: 1.05rem;
-  background: var(--llamma-carbon);
-  color: var(--llamma-yellow);
-  font-size: 1.45rem;
-}
-
-.order-title {
-  margin: 0;
-  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
-  letter-spacing: -0.05em;
-}
-
-.order-meta {
-  padding-top: 1.25rem;
-}
-
-.order-meta-item span {
-  display: block;
-  margin-bottom: 0.28rem;
-  color: var(--llamma-muted);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.order-meta-item strong {
-  display: block;
-  font-size: 0.86rem;
-  font-weight: 600;
-}
-
-.order-meta-item small {
-  display: block;
-  margin-top: 0.15rem;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-}
-
-.timeline {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.timeline-item {
-  position: relative;
-  display: flex;
-  gap: 0.9rem;
-  padding-bottom: 1.35rem;
-}
-
-.timeline-item:last-child {
-  padding-bottom: 0;
-}
-
-.timeline-item::before {
-  content: '';
-  position: absolute;
-  top: 2.3rem;
-  bottom: 0;
-  left: 1.1rem;
-  width: 1px;
-  background: var(--llamma-line);
-}
-
-.timeline-item:last-child::before {
-  display: none;
-}
-
-.timeline-dot {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 50%;
-  font-size: 0.9rem;
-}
-
-.is-done .timeline-dot {
-  background: rgba(var(--llamma-cyan-rgb), 0.12);
-  color: var(--llamma-cyan-deep);
-}
-
-.is-active .timeline-dot {
-  background: var(--llamma-magenta);
-  color: #fff;
-}
-
-.is-pending .timeline-dot {
-  background: #f2f1ec;
-  color: #96958f;
-}
-
-.timeline-body {
-  flex: 1;
-  min-width: 0;
-  padding-top: 0.15rem;
-}
-
-.timeline-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.4rem 1rem;
-}
-
-.timeline-top strong {
-  font-size: 0.86rem;
-  font-weight: 600;
-}
-
-.timeline-top span {
-  color: var(--llamma-muted);
-  font-size: 0.68rem;
-  white-space: nowrap;
-}
-
-.timeline-body p {
-  margin: 0.28rem 0 0;
-  color: var(--llamma-muted);
-  font-size: 0.76rem;
-  line-height: 1.55;
-}
-
-.order-summary {
-  padding: 1.5rem;
-  border: 1px solid var(--llamma-line);
-  border-radius: var(--llamma-radius);
-  background: #fff;
-  box-shadow: var(--llamma-shadow);
-}
-
-.payment-state {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  margin-bottom: 1.1rem;
-  padding: 0.7rem;
-  border-radius: 0.75rem;
-  background: #f0faf4;
-}
-
-.payment-state strong {
-  display: block;
-  font-size: 0.78rem;
-}
-
-.payment-state small {
-  display: block;
-  color: var(--llamma-muted);
-  font-size: 0.66rem;
-}
-
-.delivery-list {
-  display: grid;
-  gap: 1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.delivery-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.7rem;
-}
-
-.delivery-list i {
-  margin-top: 0.12rem;
-  color: var(--llamma-cyan-deep);
-  font-size: 1rem;
-}
-
-.delivery-list strong {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.delivery-list span {
-  display: block;
-  margin-top: 0.12rem;
-  color: var(--llamma-muted);
-  font-size: 0.7rem;
-}
-
-.file-list {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.file-row strong {
-  display: block;
-  overflow: hidden;
-  font-size: 0.76rem;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.file-row small {
-  display: block;
-  color: var(--llamma-muted);
-  font-size: 0.66rem;
-}
-
-@media (max-width: 575.98px) {
-  .order-head {
-    align-items: flex-start;
-  }
-
-  .order-emblem {
-    width: 2.9rem;
-    height: 2.9rem;
-    font-size: 1.2rem;
-  }
-
-  .order-switcher-list {
-    width: 100%;
-  }
-
-  .order-pill {
-    flex: 1 1 auto;
-  }
-}
-
-.pago-list {
-  display: grid;
-  gap: 0.55rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid var(--llamma-line);
 }
 </file>
 

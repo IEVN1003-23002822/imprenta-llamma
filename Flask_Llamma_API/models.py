@@ -198,7 +198,7 @@ class Cliente(TimestampMixin, db.Model):
         if incluir_metricas:
             pedidos = [p for p in self.pedidos if p.estado != "cancelado"]
             data["totalPedidos"] = len(pedidos)
-            data["totalFacturado"] = round(sum(p.total for p in pedidos), 2)
+            data["totalFacturado"] = round(float(sum((p.total for p in pedidos), 0)), 2)
         return data
 
 

@@ -157,6 +157,8 @@ imágenes con `width`/`height` (sin CLS), tablas responsivas, presupuestos de bu
 25. **Autoalojar Bootstrap, Bootstrap Icons y las fuentes** (o purgar Bootstrap a lo usado). Hoy son
     4 peticiones a 2 CDN sin SRI, render-blocking y con riesgo de supply chain. Autoalojar permite
     cache inmutable, CSP estricta y control de versión.
+    **Superada en parte el 19 de noviembre de 2026:** Bootstrap se retiró por completo y la interfaz
+    pasó a Tailwind CSS 4 + Flowbite; Bootstrap Icons y las fuentes ya se sirven desde el mismo origen.
 26. **Logo a SVG** (o WebP 2x de 4-6 kB): el PNG pesa **63.3 kB** para mostrarse a 31×44 px y se repite
     en 6 plantillas.
 27. **Fuentes**: subset latino en `woff2`, `preload` de 1-2 pesos y `size-adjust` para el fallback; o
@@ -290,9 +292,14 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
   **En curso desde el 18 de noviembre de 2026** con el bloque «calidad primero»: catálogo único de
   estados compartido entre frontend y backend (20), ESLint + Prettier + CI con el build como compuerta
   (23), la primera batería de pruebas con Vitest/jsdom (22, 53 casos en verde) y la modularización del
-  backend por dominio (21, `admin_routes.py` pasó de 1 750 a 40 líneas). Queda la acción 19
-  (subcomponentes de cotizar, captura y abastecimiento); de la 22 falta el tramo de Playwright para
-  los cuatro flujos críticos.
+  backend por dominio (21, `admin_routes.py` pasó de 1 750 a 40 líneas). La acción 19 avanzó con los
+  subcomponentes de `cotizar` (comprobante, pasos y resumen); faltan los de captura y abastecimiento.
+  De la 22 falta el tramo de Playwright para los cuatro flujos críticos.
+  **Migración visual (19 de noviembre de 2026):** Bootstrap 5.3 y su JS salieron de `angular.json` y
+  de `package.json`; las 21 plantillas usan utilidades Tailwind y las clases semánticas se definen en
+  la capa `components` de `src/styles.css`, con `.llamma-container` como contenedor propio. Build de
+  producción en 484.55 kB raw / 113.93 kB estimados (CSS 149.74 kB / 22.14 kB) sin advertencias de
+  presupuesto ni selectores inválidos; Bootstrap Icons se conserva solo para los glifos `bi-*`.
 - **Fase 4 — "operar" (continuo):** 24-25. Migraciones, respaldos probados y PWA opcional.
 
 ### Cómo medir el éxito
@@ -377,3 +384,29 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
   Dos defectos previos salieron a la luz y se corrigieron: el abono no se reflejaba en el saldo del
   pedido (`Pago` se añadía por `pedido_id` en vez de a la colección) y `/api/consultas/pedidos`
   calculaba `ventasPorLinea` con un producto cartesiano por falta de unión con `Producto`.
+
+### Estado tras la migración a Tailwind CSS + Flowbite (19 de noviembre de 2026)
+
+- **Bootstrap retirado por completo.** `bootstrap.min.css` y `bootstrap.bundle.min.js` salieron de
+  `angular.json` y el paquete `bootstrap` de `package.json`. Las plantillas ya no usan `row`,
+  `col-*`, `d-*`, `justify-content-*`, `data-bs-*` ni utilidades equivalentes.
+- **Tailwind CSS 4.3.5 + Flowbite 4.0.2** con `@tailwindcss/postcss` (`.postcssrc.json`). El tema
+  institucional vive en `@theme` (colores CMYK, tipografías, radios y sombras) y la capa `components`
+  de `src/styles.css` reimplementa contenedor, navbar, dropdown, botones, formularios, tablas,
+  paginación, badges, alertas, spinner y modales con los mismos nombres de clase.
+- **`.llamma-container`** sustituye a `.container` en las 21 plantillas y en el footer para no chocar
+  con la utilidad `.container` de Tailwind. Las filas quedaron como
+  `grid grid-cols-12` con `gap-x-*`/`gap-y-*` equivalentes a los antiguos `g-*`.
+- **Menús sin Bootstrap JS.** El colapso del navbar y los desplegables usan signals de Angular,
+  `[class.show]`, `aria-expanded`, cierre por clic fuera y `Escape`. El modal conserva
+  `appModalAccesible` (foco, trampa de Tab, backdrop y bloqueo de scroll).
+- **Flowbite con `forms: false`.** Su base de formularios emitía dos selectores inválidos (`:is()`)
+  que el inliner de CSS crítico no podía parsear; los formularios usan la capa propia. Bootstrap
+  Icons se mantiene solo para los ~150 glifos `bi-*` porque no hay reemplazo 1:1 en Flowbite.
+- **Verificación:** `format:check`, `lint`, 53 pruebas y `build` en verde; build de producción en
+  **484.55 kB raw / 113.93 kB estimados** (CSS 149.74 kB / 22.14 kB) sin advertencias. Comprobación
+  automatizada en Edge/1440 y 390 px: 13/13 (tipografía, contenedor de 1320 px, rejilla de 12
+  columnas, botón, dropdown, modal, tabla, página activa, menú móvil, consola y API limpias).
+- **Corrección colateral:** `Cliente.to_dict` sumaba `Decimal` y Flask lo serializaba como cadena, así
+  que el «Ticket promedio» del directorio mostraba `$NaN` cuando había pedidos. Ahora convierte a
+  `float` (contrato `totalFacturado: number`) y el agregado se calcula bien.

@@ -1,8 +1,8 @@
 <div class="home-page">
   <section class="hero-section">
-    <div class="container position-relative">
-      <div class="row align-items-center g-5">
-        <div class="col-lg-6">
+    <div class="llamma-container relative">
+      <div class="grid grid-cols-12 gap-12 items-center">
+        <div class="col-span-12 lg:col-span-6">
           <span class="hero-badge">
             <span class="badge-pulse"></span>
             Imprenta &amp; estudio de producción
@@ -19,7 +19,7 @@
             hacen que tu marca se vea impecable.
           </p>
 
-          <div class="d-flex flex-wrap gap-3">
+          <div class="flex flex-wrap gap-4">
             <a class="btn btn-brand btn-lg" routerLink="/cotizar">
               Cotizar mi proyecto <i class="bi bi-arrow-up-right"></i>
             </a>
@@ -44,7 +44,7 @@
           </div>
         </div>
 
-        <div class="col-lg-6">
+        <div class="col-span-12 lg:col-span-6">
           <div class="hero-art" aria-hidden="true">
             <div class="art-glow"></div>
 
@@ -111,7 +111,7 @@
   </section>
 
   <section class="ticker-strip" aria-label="Líneas de producción de Llamma">
-    <div class="container">
+    <div class="llamma-container">
       <div class="ticker-track">
         <span class="ticker-item ticker-cyan"><i class="bi bi-easel2"></i> Gran formato</span>
         <span class="ticker-item ticker-magenta"><i class="bi bi-bag-heart"></i> Línea textil</span>
@@ -124,13 +124,13 @@
   </section>
 
   <section class="section-pad">
-    <div class="container">
-      <div class="row align-items-end g-4 mb-5">
-        <div class="col-lg-7">
+    <div class="llamma-container">
+      <div class="grid grid-cols-12 gap-6 items-end mb-12">
+        <div class="col-span-12 lg:col-span-7">
           <span class="eyebrow">Catálogo de transformación</span>
           <h2 class="section-title">Cuatro líneas, una sola obsesión: el detalle.</h2>
         </div>
-        <div class="col-lg-5">
+        <div class="col-span-12 lg:col-span-5">
           <p class="section-lead">
             Cada material tiene una receta. Cada receta, un acabado. Diseñamos y producimos piezas
             listas para exhibir, regalar y recordar.
@@ -138,9 +138,9 @@
         </div>
       </div>
 
-      <div class="row g-4">
-        <div class="col-md-6 col-xl-3">
-          <article class="line-card line-card-cyan h-100">
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 md:col-span-6 xl:col-span-3">
+          <article class="line-card line-card-cyan h-full">
             <div class="line-visual">
               <span class="line-index">01</span>
               <span class="line-badge">Gran formato</span>
@@ -164,8 +164,8 @@
           </article>
         </div>
 
-        <div class="col-md-6 col-xl-3">
-          <article class="line-card line-card-magenta h-100">
+        <div class="col-span-12 md:col-span-6 xl:col-span-3">
+          <article class="line-card line-card-magenta h-full">
             <div class="line-visual">
               <span class="line-index">02</span>
               <span class="line-badge">Sublimación / DTF</span>
@@ -189,8 +189,8 @@
           </article>
         </div>
 
-        <div class="col-md-6 col-xl-3">
-          <article class="line-card line-card-yellow h-100">
+        <div class="col-span-12 md:col-span-6 xl:col-span-3">
+          <article class="line-card line-card-yellow h-full">
             <div class="line-visual">
               <span class="line-index">03</span>
               <span class="line-badge">Sublimación 3D</span>
@@ -214,8 +214,8 @@
           </article>
         </div>
 
-        <div class="col-md-6 col-xl-3">
-          <article class="line-card line-card-ink h-100">
+        <div class="col-span-12 md:col-span-6 xl:col-span-3">
+          <article class="line-card line-card-ink h-full">
             <div class="line-visual">
               <span class="line-index">04</span>
               <span class="line-badge">Acabados especiales</span>
@@ -246,19 +246,19 @@
     <app-home-detalle />
   } @placeholder {
     <div class="section-pad" aria-hidden="true">
-      <div class="container"><div class="defer-skeleton"></div></div>
+      <div class="llamma-container"><div class="defer-skeleton"></div></div>
     </div>
   }
 
   @if (portafolio.length) {
     <section class="section-pad portfolio-section">
-      <div class="container">
-        <div class="row align-items-end g-4 mb-5">
-          <div class="col-lg-7">
+      <div class="llamma-container">
+        <div class="grid grid-cols-12 gap-6 items-end mb-12">
+          <div class="col-span-12 lg:col-span-7">
             <span class="eyebrow">Trabajos recientes</span>
             <h2 class="section-title">Proyectos que ya están en la calle.</h2>
           </div>
-          <div class="col-lg-5">
+          <div class="col-span-12 lg:col-span-5">
             <p class="section-lead">
               Una muestra de piezas producidas para clientes reales. Cada proyecto se publica con su
               autorización.
@@ -266,10 +266,10 @@
           </div>
         </div>
 
-        <div class="row g-4">
+        <div class="grid grid-cols-12 gap-6">
           @for (caso of portafolio; track caso.titulo) {
-            <div class="col-md-6 col-xl-4">
-              <article class="portfolio-card h-100">
+            <div class="col-span-12 md:col-span-6 xl:col-span-4">
+              <article class="portfolio-card h-full">
                 @if (caso.imagen) {
                   <img
                     [src]="caso.imagen"
@@ -303,23 +303,23 @@
 
   @if (testimonios.length) {
     <section class="section-pad testimonials-section">
-      <div class="container">
-        <div class="row align-items-end g-4 mb-5">
-          <div class="col-lg-7">
+      <div class="llamma-container">
+        <div class="grid grid-cols-12 gap-6 items-end mb-12">
+          <div class="col-span-12 lg:col-span-7">
             <span class="eyebrow">Lo que dicen</span>
             <h2 class="section-title">Clientes que volvieron a imprimir.</h2>
           </div>
-          <div class="col-lg-5">
+          <div class="col-span-12 lg:col-span-5">
             <p class="section-lead">
               Testimonios de personas y equipos que confiaron su proyecto a Llamma.
             </p>
           </div>
         </div>
 
-        <div class="row g-4">
+        <div class="grid grid-cols-12 gap-6">
           @for (testimonio of testimonios; track testimonio.autor) {
-            <div class="col-md-6">
-              <article class="testimonial-card h-100">
+            <div class="col-span-12 md:col-span-6">
+              <article class="testimonial-card h-full">
                 <blockquote>
                   <p>{{ testimonio.texto }}</p>
                 </blockquote>
@@ -339,11 +339,11 @@
   }
 
   <section class="cta-section">
-    <div class="container">
+    <div class="llamma-container">
       <div class="cta-panel">
         <span class="cta-ink" aria-hidden="true">LLAMMA</span>
-        <div class="row align-items-center g-4 position-relative">
-          <div class="col-lg-8">
+        <div class="grid grid-cols-12 gap-6 items-center relative">
+          <div class="col-span-12 lg:col-span-8">
             <span class="eyebrow eyebrow-light">¿Listo para producir?</span>
             <h2>Tu próxima gran idea merece un acabado impecable.</h2>
             <p>
@@ -351,11 +351,11 @@
               resultado hable por tu marca.
             </p>
           </div>
-          <div class="col-lg-4 text-lg-end">
+          <div class="col-span-12 lg:col-span-4 lg:text-right">
             <a class="btn btn-yellow btn-lg" routerLink="/cotizar">
               Empezar cotización <i class="bi bi-arrow-up-right"></i>
             </a>
-            <a class="btn btn-link-light d-block mt-3" routerLink="/seguimiento">
+            <a class="btn btn-link-light block mt-4" routerLink="/seguimiento">
               Dar seguimiento a mi solicitud <i class="bi bi-arrow-right"></i>
             </a>
           </div>

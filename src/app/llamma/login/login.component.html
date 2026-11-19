@@ -1,5 +1,5 @@
 <div class="module-page auth-page">
-  <div class="container">
+  <div class="llamma-container">
     <div class="auth-shell">
       <section class="auth-brand">
         <span class="brand-lockup">
@@ -65,7 +65,7 @@
             </div>
           }
 
-          <div class="mb-3">
+          <div class="mb-4">
             <label class="form-label" for="authEmail">Correo corporativo</label>
             <input
               id="authEmail"
@@ -87,7 +87,7 @@
             }
           </div>
 
-          <div class="mb-3">
+          <div class="mb-4">
             <label class="form-label" for="authPassword">Contraseña</label>
             <div class="auth-password">
               <input
@@ -159,7 +159,7 @@
             </p>
           }
 
-          <button class="btn btn-brand w-100" type="submit" [disabled]="enviando()">
+          <button class="btn btn-brand w-full" type="submit" [disabled]="enviando()">
             @if (enviando()) {
               <i class="bi bi-hourglass-split"></i> Validando credenciales...
             } @else {
@@ -175,9 +175,9 @@
       </section>
     </div>
 
-    <div class="row g-4 mt-1">
-      <div class="col-xl-7">
-        <section class="panel-card h-100">
+    <div class="grid grid-cols-12 gap-6 mt-1">
+      <div class="col-span-12 xl:col-span-7">
+        <section class="panel-card h-full">
           <div class="panel-head flex-wrap">
             <div>
               <span class="panel-kicker">Control de acceso</span>
@@ -188,7 +188,7 @@
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle roles-table">
-              <caption class="visually-hidden">
+              <caption class="sr-only">
                 Permisos por rol
               </caption>
               <thead>
@@ -295,8 +295,8 @@
         </section>
       </div>
 
-      <div class="col-xl-5">
-        <section class="panel-card h-100">
+      <div class="col-span-12 xl:col-span-5">
+        <section class="panel-card h-full">
           <div class="panel-head">
             <div>
               <span class="panel-kicker">Seguridad</span>
@@ -337,7 +337,7 @@
             </li>
           </ul>
 
-          <a class="btn btn-outline-ink w-100 mt-auto" href="mailto:soporte@llamma.mx">
+          <a class="btn btn-outline-ink w-full mt-auto" href="mailto:soporte@llamma.mx">
             <i class="bi bi-envelope"></i> Contactar a soporte
           </a>
         </section>

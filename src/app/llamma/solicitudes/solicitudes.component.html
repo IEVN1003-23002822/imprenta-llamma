@@ -1,6 +1,6 @@
 <div class="module-page solicitudes-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div>
         <span class="eyebrow">Bandeja comercial</span>
         <h1>Solicitudes entrantes.</h1>
@@ -9,7 +9,7 @@
           conviértela en cotización y da seguimiento al cliente sin salir del panel.
         </p>
       </div>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2">
         <button
           class="btn btn-outline-ink"
           type="button"
@@ -24,8 +24,8 @@
       </div>
     </header>
 
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-xl-3">
+    <div class="grid grid-cols-12 gap-4 mb-6">
+      <div class="col-span-6 xl:col-span-3">
         <div class="inbox-stat inbox-stat-cyan">
           <span class="icon-tile icon-tile-cyan"><i class="bi bi-inbox"></i></span>
           <div>
@@ -34,7 +34,7 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-xl-3">
+      <div class="col-span-6 xl:col-span-3">
         <div class="inbox-stat">
           <span class="icon-tile icon-tile-warning"><i class="bi bi-hourglass-split"></i></span>
           <div>
@@ -43,7 +43,7 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-xl-3">
+      <div class="col-span-6 xl:col-span-3">
         <div class="inbox-stat">
           <span class="icon-tile icon-tile-magenta"><i class="bi bi-file-earmark-text"></i></span>
           <div>
@@ -52,7 +52,7 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-xl-3">
+      <div class="col-span-6 xl:col-span-3">
         <div class="inbox-stat">
           <span class="icon-tile icon-tile-ink"><i class="bi bi-collection"></i></span>
           <div>
@@ -63,7 +63,7 @@
       </div>
     </div>
 
-    <section class="panel-card mb-4">
+    <section class="panel-card mb-6">
       <div class="filter-row">
         <div class="inbox-tabs" role="tablist" aria-label="Filtrar solicitudes por estado">
           @for (opcion of opciones; track opcion.valor) {
@@ -115,8 +115,8 @@
       </div>
     }
 
-    <div class="row g-4">
-      <div class="col-xl-7">
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 xl:col-span-7">
         <section class="panel-card inbox-panel">
           <div class="panel-head">
             <div>
@@ -209,7 +209,7 @@
         </section>
       </div>
 
-      <div class="col-xl-5">
+      <div class="col-span-12 xl:col-span-5">
         @if (detalleCargando() || seleccionada()) {
           <button
             class="detail-backdrop"
@@ -339,7 +339,7 @@
               <span class="panel-kicker">Partidas solicitadas</span>
               @for (item of solicitud.itemsSolicitados ?? []; track $index) {
                 <div class="detail-item">
-                  <div class="flex-grow-1 min-w-0">
+                  <div class="grow min-w-0">
                     <strong>{{ item.nombreProducto }}</strong>
                     <small>{{ item.especificaciones || 'Sin especificaciones' }}</small>
                   </div>
@@ -423,9 +423,7 @@
               }
 
               <div class="chat-compose">
-                <label class="visually-hidden" for="chatInternoMensaje"
-                  >Respuesta para el cliente</label
-                >
+                <label class="sr-only" for="chatInternoMensaje">Respuesta para el cliente</label>
                 <textarea
                   id="chatInternoMensaje"
                   class="form-control"
@@ -513,7 +511,7 @@
                     <span>Anticipo 50%</span><strong>{{ moneda(cotizacion.anticipo) }}</strong>
                   </div>
                 </div>
-                <div class="d-flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2">
                   <button
                     class="btn btn-sm btn-brand"
                     type="button"
@@ -544,7 +542,7 @@
             } @else {
               <div class="detail-cta">
                 @if (sinPartidas()) {
-                  <button class="btn btn-brand w-100" type="button" (click)="cotizarConDetalle()">
+                  <button class="btn btn-brand w-full" type="button" (click)="cotizarConDetalle()">
                     <i class="bi bi-sliders"></i> Revisar partidas y precios
                   </button>
                   <p class="detail-note">
@@ -554,7 +552,7 @@
                   </p>
                 } @else {
                   <button
-                    class="btn btn-brand w-100"
+                    class="btn btn-brand w-full"
                     type="button"
                     [disabled]="accion() === 'convertir'"
                     (click)="convertir()"
@@ -566,7 +564,7 @@
                     }
                   </button>
                   <button
-                    class="btn btn-outline-ink w-100"
+                    class="btn btn-outline-ink w-full"
                     type="button"
                     (click)="cotizarConDetalle()"
                   >

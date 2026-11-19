@@ -1,6 +1,6 @@
 <div class="module-page clientes-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div>
         <span class="eyebrow">Relación y seguimiento</span>
         <h1>Directorio de clientes.</h1>
@@ -9,7 +9,7 @@
           cuenta. Todo el contexto comercial en un solo lugar.
         </p>
       </div>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2">
         <button class="btn btn-outline-ink" type="button" (click)="exportar()">
           <i class="bi bi-download"></i> Exportar
         </button>
@@ -21,9 +21,9 @@
       </div>
     </header>
 
-    <div class="row g-3 mb-4">
+    <div class="grid grid-cols-12 gap-4 mb-6">
       @for (stat of estadisticas(); track stat.etiqueta) {
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
           <div class="client-stat">
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
@@ -36,27 +36,27 @@
       }
     </div>
 
-    <div class="row g-4">
-      <div class="col-xl-8">
-        <section class="panel-card h-100">
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 xl:col-span-8">
+        <section class="panel-card h-full">
           <div class="panel-head flex-wrap">
             <div>
               <span class="panel-kicker">Base comercial</span>
               <h2>Clientes registrados</h2>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="flex items-center gap-2">
               <span class="badge badge-soft-success">{{ total() }} cuentas</span>
               @if (cargando()) {
                 <span
-                  class="spinner-border spinner-border-sm text-primary"
+                  class="spinner-border spinner-border-sm text-llamma-cyan-deep"
                   aria-hidden="true"
                 ></span>
               }
             </div>
           </div>
 
-          <form class="row g-2 mb-3" [formGroup]="filtros" (ngSubmit)="buscar()">
-            <div class="col-lg-6">
+          <form class="grid grid-cols-12 gap-2 mb-4" [formGroup]="filtros" (ngSubmit)="buscar()">
+            <div class="col-span-12 lg:col-span-6">
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input
@@ -69,7 +69,7 @@
                 <button class="btn btn-ink" type="submit">Buscar</button>
               </div>
             </div>
-            <div class="col-6 col-lg-3">
+            <div class="col-span-6 lg:col-span-3">
               <select
                 class="form-select"
                 aria-label="Filtrar por segmento"
@@ -81,8 +81,8 @@
                 }
               </select>
             </div>
-            <div class="col-6 col-lg-3">
-              <div class="d-flex gap-2">
+            <div class="col-span-6 lg:col-span-3">
+              <div class="flex gap-2">
                 <select
                   class="form-select"
                   aria-label="Filtrar por estado"
@@ -105,9 +105,9 @@
           </form>
 
           @if (error()) {
-            <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+            <div class="alert alert-danger flex items-center gap-2" role="alert">
               <i class="bi bi-exclamation-octagon-fill"></i>
-              <span class="flex-grow-1">{{ error() }}</span>
+              <span class="grow">{{ error() }}</span>
               <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar(pagina())">
                 Reintentar
               </button>
@@ -116,7 +116,7 @@
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle">
-              <caption class="visually-hidden">
+              <caption class="sr-only">
                 Directorio de clientes
               </caption>
               <thead>
@@ -126,7 +126,7 @@
                   <th scope="col">Contacto</th>
                   <th scope="col" class="text-center">Pedidos</th>
                   <th scope="col">Alta</th>
-                  <th scope="col" class="text-end">Total</th>
+                  <th scope="col" class="text-right">Total</th>
                   <th scope="col">Estado</th>
                 </tr>
               </thead>
@@ -159,7 +159,7 @@
                     </td>
                     <td class="text-center">{{ cliente.totalPedidos ?? 0 }}</td>
                     <td>{{ fechaCorta(cliente.fechaRegistro) }}</td>
-                    <td class="text-end cell-main">{{ moneda(cliente.totalFacturado) }}</td>
+                    <td class="text-right cell-main">{{ moneda(cliente.totalFacturado) }}</td>
                     <td>
                       <span
                         class="badge"
@@ -171,8 +171,8 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="7" class="text-center text-muted py-5">
-                      <i class="bi bi-people d-block fs-4 mb-2"></i>
+                    <td colspan="7" class="text-center text-llamma-muted py-12">
+                      <i class="bi bi-people block text-2xl mb-2"></i>
                       No hay clientes con esos filtros.
                     </td>
                   </tr>
@@ -218,9 +218,9 @@
         </section>
       </div>
 
-      <div class="col-xl-4">
+      <div class="col-span-12 xl:col-span-4">
         @if (seleccionado(); as cliente) {
-          <section class="client-profile mb-4">
+          <section class="client-profile mb-6">
             <div class="profile-head">
               <span class="profile-avatar">{{ iniciales(cliente.nombre) }}</span>
               <div>
@@ -262,13 +262,13 @@
             </div>
 
             @if (puedeGestionar()) {
-              <button class="btn btn-brand w-100" type="button" (click)="abrirEditar(cliente)">
+              <button class="btn btn-brand w-full" type="button" (click)="abrirEditar(cliente)">
                 <i class="bi bi-pencil-square"></i> Editar ficha
               </button>
             }
             @if (puedeDesactivar() && cliente.activo) {
               <button
-                class="btn btn-outline-ink w-100 mt-2"
+                class="btn btn-outline-ink w-full mt-2"
                 type="button"
                 (click)="desactivar(cliente)"
               >
@@ -277,7 +277,7 @@
             }
           </section>
 
-          <section class="panel-card mb-4">
+          <section class="panel-card mb-6">
             <div class="panel-head">
               <div>
                 <span class="panel-kicker">Seguimiento</span>
@@ -295,7 +295,7 @@
                   </div>
                 </div>
               } @empty {
-                <p class="text-muted mb-0 small">
+                <p class="text-llamma-muted mb-0 small">
                   Este cliente todavía no tiene notas de seguimiento.
                 </p>
               }
@@ -304,14 +304,14 @@
             @if (puedeGestionar()) {
               @if (!notaAbierta()) {
                 <button
-                  class="btn btn-outline-ink w-100 mt-3"
+                  class="btn btn-outline-ink w-full mt-4"
                   type="button"
                   (click)="notaAbierta.set(true)"
                 >
                   <i class="bi bi-journal-plus"></i> Agregar nota
                 </button>
               } @else {
-                <form class="mt-3" [formGroup]="notaForm" (ngSubmit)="agregarNota()">
+                <form class="mt-4" [formGroup]="notaForm" (ngSubmit)="agregarNota()">
                   <textarea
                     class="form-control"
                     rows="2"
@@ -319,9 +319,9 @@
                     aria-label="Nota de seguimiento del cliente"
                     formControlName="nota"
                   ></textarea>
-                  <div class="d-flex gap-2 mt-2">
+                  <div class="flex gap-2 mt-2">
                     <button
-                      class="btn btn-brand btn-sm flex-grow-1"
+                      class="btn btn-brand btn-sm grow"
                       type="submit"
                       [disabled]="notaForm.invalid"
                     >
@@ -340,8 +340,8 @@
             }
           </section>
         } @else {
-          <section class="panel-card mb-4">
-            <p class="text-muted mb-0">Selecciona un cliente para ver su ficha completa.</p>
+          <section class="panel-card mb-6">
+            <p class="text-llamma-muted mb-0">Selecciona un cliente para ver su ficha completa.</p>
           </section>
         }
 
@@ -352,7 +352,10 @@
               <h2>Segmentos de clientes</h2>
             </div>
             @if (cargandoTodos()) {
-              <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+              <span
+                class="spinner-border spinner-border-sm text-llamma-cyan-deep"
+                aria-hidden="true"
+              ></span>
             }
           </div>
 
@@ -376,7 +379,7 @@
 
 @if (formularioAbierto()) {
   <div
-    class="modal fade show d-block"
+    class="modal fade show block"
     tabindex="-1"
     appModalAccesible
     (cerrar)="cerrarFormulario()"
@@ -405,19 +408,19 @@
           </div>
 
           <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-md-6">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="clienteNombre">Nombre o razón social *</label>
                 <input id="clienteNombre" class="form-control" formControlName="nombre" />
                 @if (formulario.controls.nombre.invalid && formulario.controls.nombre.touched) {
-                  <small class="text-danger">Indica al menos dos caracteres.</small>
+                  <small class="text-red-600">Indica al menos dos caracteres.</small>
                 }
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="clienteEmpresa">Empresa</label>
                 <input id="clienteEmpresa" class="form-control" formControlName="empresa" />
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="clienteCorreo">Correo *</label>
                 <input
                   id="clienteCorreo"
@@ -426,18 +429,18 @@
                   formControlName="correo"
                 />
                 @if (formulario.controls.correo.invalid && formulario.controls.correo.touched) {
-                  <small class="text-danger">Captura un correo válido.</small>
+                  <small class="text-red-600">Captura un correo válido.</small>
                 }
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="clienteTelefono">Teléfono</label>
                 <input id="clienteTelefono" class="form-control" formControlName="telefono" />
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="clienteRfc">RFC</label>
                 <input id="clienteRfc" class="form-control" formControlName="rfc" maxlength="20" />
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="clienteSegmento">Segmento</label>
                 <select id="clienteSegmento" class="form-select" formControlName="segmento">
                   @for (segmento of segmentos; track segmento.valor) {
@@ -445,11 +448,11 @@
                   }
                 </select>
               </div>
-              <div class="col-12">
+              <div class="col-span-12">
                 <label class="form-label" for="clienteDireccion">Dirección</label>
                 <input id="clienteDireccion" class="form-control" formControlName="direccion" />
               </div>
-              <div class="col-12">
+              <div class="col-span-12">
                 <label class="form-label" for="clienteNotas">Notas</label>
                 <textarea
                   id="clienteNotas"
@@ -458,7 +461,7 @@
                   formControlName="notas"
                 ></textarea>
               </div>
-              <div class="col-12">
+              <div class="col-span-12">
                 <div class="form-check form-switch">
                   <input
                     id="clienteActivo"

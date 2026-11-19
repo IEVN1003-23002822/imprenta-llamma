@@ -1,6 +1,6 @@
 <div class="module-page seguimiento-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div class="page-brand">
         <img
           class="page-brand-logo"
@@ -19,7 +19,7 @@
           </p>
         </div>
       </div>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2">
         <a class="btn btn-brand" routerLink="/cotizar">
           <i class="bi bi-pencil-square"></i> Nueva solicitud
         </a>
@@ -41,10 +41,10 @@
       <form
         [formGroup]="seguimientoForm"
         (ngSubmit)="consultar()"
-        class="row g-3 align-items-end"
+        class="grid grid-cols-12 gap-4 items-end"
         novalidate
       >
-        <div class="col-md-5">
+        <div class="col-span-12 md:col-span-5">
           <label class="form-label" for="segFolio">Folio de solicitud</label>
           <input
             id="segFolio"
@@ -69,7 +69,7 @@
             >
           }
         </div>
-        <div class="col-md-5">
+        <div class="col-span-12 md:col-span-5">
           <label class="form-label" for="segCorreo">Correo registrado</label>
           <input
             id="segCorreo"
@@ -96,8 +96,8 @@
             >
           }
         </div>
-        <div class="col-md-2">
-          <button class="btn btn-ink w-100" type="submit" [disabled]="buscando()">
+        <div class="col-span-12 md:col-span-2">
+          <button class="btn btn-ink w-full" type="submit" [disabled]="buscando()">
             @if (buscando()) {
               <i class="bi bi-hourglass-split"></i>
             } @else {
@@ -109,7 +109,7 @@
       </form>
 
       @if (errorSeguimiento()) {
-        <div class="request-error mt-3" role="alert">
+        <div class="request-error mt-4" role="alert">
           <i class="bi bi-exclamation-triangle-fill"></i>
           <span>{{ errorSeguimiento() }}</span>
         </div>
@@ -117,8 +117,8 @@
     </section>
 
     @if (seguimiento(); as solicitud) {
-      <div class="row g-4">
-        <div class="col-xl-7">
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 xl:col-span-7">
           <section
             id="resultadoSeguimiento"
             class="panel-card tracking-result-card"
@@ -200,7 +200,7 @@
           </section>
         </div>
 
-        <div class="col-xl-5">
+        <div class="col-span-12 xl:col-span-5">
           <section class="panel-card chat-card" aria-labelledby="tituloChat">
             <div class="chat-head">
               <div>
@@ -244,7 +244,7 @@
                       <span class="chat-file-name">{{ mensaje.adjunto.nombre }}</span>
                       <small>{{ tamanoChat(mensaje.adjunto.tamanoBytes) }}</small>
                       <i class="bi bi-download"></i>
-                      <span class="visually-hidden">Descargar {{ mensaje.adjunto.nombre }}</span>
+                      <span class="sr-only">Descargar {{ mensaje.adjunto.nombre }}</span>
                     </button>
                   }
                 </div>
@@ -264,7 +264,7 @@
             }
 
             <div class="chat-compose">
-              <label class="visually-hidden" for="chatPublicoMensaje"
+              <label class="sr-only" for="chatPublicoMensaje"
                 >Mensaje para el equipo de Llamma</label
               >
               <textarea

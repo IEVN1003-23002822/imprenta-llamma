@@ -1,6 +1,6 @@
 <div class="module-page abastecimiento-page">
-  <div class="container">
-    <header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
       <div>
         <span class="eyebrow">Compras y reposición</span>
         <h1>Abastecimiento.</h1>
@@ -9,7 +9,7 @@
           el taller nunca se detenga por falta de material.
         </p>
       </div>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2">
         <button class="btn btn-outline-ink" type="button" (click)="exportar()">
           <i class="bi bi-download"></i> Exportar
         </button>
@@ -25,9 +25,9 @@
     </header>
 
     @if (error()) {
-      <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+      <div class="alert alert-danger flex items-center gap-2" role="alert">
         <i class="bi bi-exclamation-octagon-fill"></i>
-        <span class="flex-grow-1">{{ error() }}</span>
+        <span class="grow">{{ error() }}</span>
         <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
           Reintentar
         </button>
@@ -45,9 +45,9 @@
       </div>
     }
 
-    <div class="row g-3 mb-4">
+    <div class="grid grid-cols-12 gap-4 mb-6">
       @for (stat of estadisticas(); track stat.etiqueta) {
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
           <div class="supply-stat">
             <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
               <i class="bi" [class]="'bi ' + stat.icono"></i>
@@ -60,27 +60,27 @@
       }
     </div>
 
-    <div class="row g-4 mb-4">
-      <div class="col-xl-8">
-        <section class="panel-card h-100">
+    <div class="grid grid-cols-12 gap-6 mb-6">
+      <div class="col-span-12 xl:col-span-8">
+        <section class="panel-card h-full">
           <div class="panel-head flex-wrap">
             <div>
               <span class="panel-kicker">Compras en curso</span>
               <h2>Órdenes de compra</h2>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="flex items-center gap-2">
               <span class="badge badge-soft-cyan">{{ filtradas().length }} órdenes</span>
               @if (cargando()) {
                 <span
-                  class="spinner-border spinner-border-sm text-primary"
+                  class="spinner-border spinner-border-sm text-llamma-cyan-deep"
                   aria-hidden="true"
                 ></span>
               }
             </div>
           </div>
 
-          <form class="row g-2 mb-3" [formGroup]="filtros" (ngSubmit)="filtrar()">
-            <div class="col-lg-7">
+          <form class="grid grid-cols-12 gap-2 mb-4" [formGroup]="filtros" (ngSubmit)="filtrar()">
+            <div class="col-span-12 lg:col-span-7">
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input
@@ -93,7 +93,7 @@
                 <button class="btn btn-ink" type="submit">Buscar</button>
               </div>
             </div>
-            <div class="col-7 col-lg-3">
+            <div class="col-span-7 lg:col-span-3">
               <select class="form-select" aria-label="Filtrar por estado" formControlName="estado">
                 <option value="">Todo estado</option>
                 @for (estado of estados; track estado.valor) {
@@ -101,8 +101,8 @@
                 }
               </select>
             </div>
-            <div class="col-5 col-lg-2">
-              <button class="btn btn-soft w-100" type="button" (click)="limpiar()">
+            <div class="col-span-5 lg:col-span-2">
+              <button class="btn btn-soft w-full" type="button" (click)="limpiar()">
                 <i class="bi bi-arrow-counterclockwise"></i> Limpiar
               </button>
             </div>
@@ -110,7 +110,7 @@
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle">
-              <caption class="visually-hidden">
+              <caption class="sr-only">
                 Órdenes de compra registradas
               </caption>
               <thead>
@@ -118,9 +118,9 @@
                   <th scope="col">Folio</th>
                   <th scope="col">Proveedor e insumo</th>
                   <th scope="col">Entrega</th>
-                  <th scope="col" class="text-end">Monto</th>
+                  <th scope="col" class="text-right">Monto</th>
                   <th scope="col">Estado</th>
-                  <th scope="col" class="text-end">Acciones</th>
+                  <th scope="col" class="text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -145,14 +145,14 @@
                       <div class="cell-main">{{ fechaCorta(orden.fechaEntrega) }}</div>
                       <div class="cell-muted">{{ etiquetaEstado(orden.estado) }}</div>
                     </td>
-                    <td class="text-end cell-main">{{ monedaExacta(orden.total) }}</td>
+                    <td class="text-right cell-main">{{ monedaExacta(orden.total) }}</td>
                     <td>
                       <span class="badge" [class]="claseEstado(orden.estado)">
                         {{ etiquetaEstado(orden.estado) }}
                       </span>
                     </td>
-                    <td class="text-end">
-                      <div class="d-inline-flex gap-1">
+                    <td class="text-right">
+                      <div class="inline-flex gap-1">
                         <button
                           class="btn btn-icon"
                           type="button"
@@ -184,8 +184,8 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="6" class="text-center text-muted py-5">
-                      <i class="bi bi-cart-x d-block fs-4 mb-2"></i>
+                    <td colspan="6" class="text-center text-llamma-muted py-12">
+                      <i class="bi bi-cart-x block text-2xl mb-2"></i>
                       No hay órdenes de compra con esos filtros.
                     </td>
                   </tr>
@@ -231,8 +231,8 @@
         </section>
       </div>
 
-      <div class="col-xl-4">
-        <section class="panel-card h-100 d-flex flex-column">
+      <div class="col-span-12 xl:col-span-4">
+        <section class="panel-card h-full flex flex-col">
           <div class="panel-head">
             <div>
               <span class="panel-kicker">Reposición sugerida</span>
@@ -265,7 +265,7 @@
                 </span>
               </div>
             } @empty {
-              <p class="text-muted mb-0 small">
+              <p class="text-llamma-muted mb-0 small">
                 No hay insumos por debajo de su punto de reorden. El inventario está cubierto.
               </p>
             }
@@ -279,7 +279,7 @@
           </div>
 
           @if (puedeGestionar()) {
-            <button class="btn btn-ink w-100 mt-auto" type="button" (click)="generarConsolidada()">
+            <button class="btn btn-ink w-full mt-auto" type="button" (click)="generarConsolidada()">
               <i class="bi bi-file-earmark-plus"></i> Generar orden consolidada
             </button>
           }
@@ -287,18 +287,18 @@
       </div>
     </div>
 
-    <div class="row g-4">
-      <div class="col-lg-6">
-        <section class="panel-card h-100">
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 lg:col-span-6">
+        <section class="panel-card h-full">
           <div class="panel-head">
             <div>
               <span class="panel-kicker">Directorio</span>
               <h2>Proveedores estratégicos</h2>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="flex items-center gap-2">
               @if (cargandoCatalogos()) {
                 <span
-                  class="spinner-border spinner-border-sm text-primary"
+                  class="spinner-border spinner-border-sm text-llamma-cyan-deep"
                   aria-hidden="true"
                 ></span>
               }
@@ -314,7 +314,7 @@
                 <span class="avatar" [class]="'avatar ' + avatar(i)">{{
                   iniciales(proveedor.nombre)
                 }}</span>
-                <div class="flex-grow-1 min-w-0">
+                <div class="grow min-w-0">
                   <strong>{{ proveedor.nombre }}</strong>
                   <small>
                     {{ proveedor.contacto || 'Sin contacto' }}
@@ -334,14 +334,14 @@
                 </span>
               </div>
             } @empty {
-              <p class="text-muted mb-0 small">Aún no hay proveedores registrados.</p>
+              <p class="text-llamma-muted mb-0 small">Aún no hay proveedores registrados.</p>
             }
           </div>
         </section>
       </div>
 
-      <div class="col-lg-6">
-        <section class="panel-card h-100">
+      <div class="col-span-12 lg:col-span-6">
+        <section class="panel-card h-full">
           <div class="panel-head">
             <div>
               <span class="panel-kicker">Calendario</span>
@@ -357,7 +357,7 @@
                   <strong>{{ diaRecepcion(orden.fechaEntrega) }}</strong>
                   <span>{{ mesRecepcion(orden.fechaEntrega) }}</span>
                 </span>
-                <div class="flex-grow-1 min-w-0">
+                <div class="grow min-w-0">
                   <strong>{{ orden.proveedor || 'Sin proveedor' }}</strong>
                   <small>{{ orden.folio }} · {{ etiquetaItems(orden) }}</small>
                 </div>
@@ -366,7 +366,7 @@
                 }}</span>
               </div>
             } @empty {
-              <p class="text-muted mb-0 small">
+              <p class="text-llamma-muted mb-0 small">
                 No hay recepciones programadas para los próximos días.
               </p>
             }
@@ -384,7 +384,7 @@
 
 @if (ordenAbierta()) {
   <div
-    class="modal fade show d-block"
+    class="modal fade show block"
     tabindex="-1"
     appModalAccesible
     (cerrar)="cerrarNueva()"
@@ -404,8 +404,8 @@
           </div>
 
           <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-md-5">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12 md:col-span-5">
                 <label class="form-label" for="ocProveedor">Proveedor *</label>
                 <select id="ocProveedor" class="form-select" formControlName="proveedorId">
                   <option value="">Selecciona un proveedor…</option>
@@ -416,10 +416,10 @@
                 @if (
                   ordenForm.controls.proveedorId.invalid && ordenForm.controls.proveedorId.touched
                 ) {
-                  <small class="text-danger">Selecciona el proveedor de la orden.</small>
+                  <small class="text-red-600">Selecciona el proveedor de la orden.</small>
                 }
               </div>
-              <div class="col-6 col-md-3">
+              <div class="col-span-6 md:col-span-3">
                 <label class="form-label" for="ocEstado">Estado inicial</label>
                 <select id="ocEstado" class="form-select" formControlName="estado">
                   @for (estado of estados; track estado.valor) {
@@ -429,7 +429,7 @@
                   }
                 </select>
               </div>
-              <div class="col-6 col-md-4">
+              <div class="col-span-6 md:col-span-4">
                 <label class="form-label" for="ocEntrega">Entrega estimada</label>
                 <input
                   id="ocEntrega"
@@ -440,7 +440,7 @@
               </div>
             </div>
 
-            <div class="d-flex align-items-center justify-content-between mt-4 mb-2">
+            <div class="flex items-center justify-between mt-6 mb-2">
               <span class="panel-kicker mb-0">Partidas de la orden</span>
               <button class="btn btn-soft btn-sm" type="button" (click)="agregarItem()">
                 <i class="bi bi-plus-lg"></i> Agregar insumo
@@ -449,7 +449,7 @@
 
             <div class="table-responsive">
               <table class="table table-llamma align-middle mb-0">
-                <caption class="visually-hidden">
+                <caption class="sr-only">
                   Partidas de la nueva orden de compra
                 </caption>
                 <thead>
@@ -457,7 +457,7 @@
                     <th scope="col" style="min-width: 14rem">Insumo</th>
                     <th scope="col" style="min-width: 7rem">Cantidad</th>
                     <th scope="col" style="min-width: 9rem">Precio unitario</th>
-                    <th scope="col" class="text-end">Importe</th>
+                    <th scope="col" class="text-right">Importe</th>
                     <th scope="col"></th>
                   </tr>
                 </thead>
@@ -501,8 +501,8 @@
                           [attr.aria-label]="'Precio unitario de la partida ' + (i + 1)"
                         />
                       </td>
-                      <td class="text-end cell-main">{{ monedaExacta(importeItem(i)) }}</td>
-                      <td class="text-end">
+                      <td class="text-right cell-main">{{ monedaExacta(importeItem(i)) }}</td>
+                      <td class="text-right">
                         <button
                           class="btn btn-icon"
                           type="button"
@@ -519,8 +519,8 @@
               </table>
             </div>
 
-            <div class="row g-3 mt-1">
-              <div class="col-md-7">
+            <div class="grid grid-cols-12 gap-4 mt-1">
+              <div class="col-span-12 md:col-span-7">
                 <label class="form-label" for="ocNotas">Notas</label>
                 <textarea
                   id="ocNotas"
@@ -530,7 +530,7 @@
                   formControlName="notas"
                 ></textarea>
               </div>
-              <div class="col-md-5">
+              <div class="col-span-12 md:col-span-5">
                 <div class="order-totals">
                   <div>
                     <span>Partidas</span><strong>{{ totalesFormulario().partidas }}</strong>
@@ -569,7 +569,7 @@
 
 @if (detalle(); as orden) {
   <div
-    class="modal fade show d-block"
+    class="modal fade show block"
     tabindex="-1"
     appModalAccesible
     (cerrar)="cerrarDetalle()"
@@ -580,7 +580,7 @@
         <div class="modal-header">
           <div>
             <span class="panel-kicker">Orden de compra</span>
-            <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <h2 class="modal-title h5 mb-0">{{ orden.folio }}</h2>
               <span class="badge" [class]="claseEstado(orden.estado)">{{
                 etiquetaEstado(orden.estado)
@@ -593,18 +593,18 @@
         </div>
 
         <div class="modal-body">
-          <div class="row g-3 mb-3">
-            <div class="col-sm-6">
+          <div class="grid grid-cols-12 gap-4 mb-4">
+            <div class="col-span-12 sm:col-span-6">
               <span class="panel-kicker">Proveedor</span>
-              <strong class="d-block">{{ orden.proveedor || 'Sin proveedor' }}</strong>
+              <strong class="block">{{ orden.proveedor || 'Sin proveedor' }}</strong>
               <small class="cell-muted">Emitida {{ fechaCorta(orden.fechaEmision) }}</small>
             </div>
-            <div class="col-sm-3">
+            <div class="col-span-12 sm:col-span-3">
               <span class="panel-kicker">Entrega</span>
-              <strong class="d-block">{{ fechaCorta(orden.fechaEntrega) }}</strong>
+              <strong class="block">{{ fechaCorta(orden.fechaEntrega) }}</strong>
               <small class="cell-muted">{{ orden.items.length }} partidas</small>
             </div>
-            <div class="col-sm-3">
+            <div class="col-span-12 sm:col-span-3">
               <span class="panel-kicker">Estado</span>
               @if (puedeGestionar()) {
                 <select
@@ -619,22 +619,22 @@
                   }
                 </select>
               } @else {
-                <strong class="d-block">{{ etiquetaEstado(orden.estado) }}</strong>
+                <strong class="block">{{ etiquetaEstado(orden.estado) }}</strong>
               }
             </div>
           </div>
 
           <div class="table-responsive">
             <table class="table table-llamma align-middle">
-              <caption class="visually-hidden">
+              <caption class="sr-only">
                 Partidas de la orden de compra
               </caption>
               <thead>
                 <tr>
                   <th scope="col">Insumo</th>
                   <th scope="col" class="text-center">Cantidad</th>
-                  <th scope="col" class="text-end">Precio</th>
-                  <th scope="col" class="text-end">Importe</th>
+                  <th scope="col" class="text-right">Precio</th>
+                  <th scope="col" class="text-right">Importe</th>
                 </tr>
               </thead>
               <tbody>
@@ -642,12 +642,12 @@
                   <tr>
                     <td class="cell-main">{{ item.materiaPrima || 'Insumo' }}</td>
                     <td class="text-center">{{ cantidad(item.cantidad, item.unidadMedida) }}</td>
-                    <td class="text-end">{{ monedaExacta(item.precioUnitario) }}</td>
-                    <td class="text-end cell-main">{{ monedaExacta(item.importe) }}</td>
+                    <td class="text-right">{{ monedaExacta(item.precioUnitario) }}</td>
+                    <td class="text-right cell-main">{{ monedaExacta(item.importe) }}</td>
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="4" class="text-center text-muted py-4">
+                    <td colspan="4" class="text-center text-llamma-muted py-6">
                       La orden no tiene partidas.
                     </td>
                   </tr>
@@ -656,7 +656,7 @@
             </table>
           </div>
 
-          <div class="order-totals mt-3">
+          <div class="order-totals mt-4">
             <div>
               <span>Subtotal</span><strong>{{ monedaExacta(orden.subtotal) }}</strong>
             </div>
@@ -669,7 +669,7 @@
           </div>
 
           @if (orden.notas) {
-            <p class="table-note mt-3 mb-0"><i class="bi bi-journal-text"></i> {{ orden.notas }}</p>
+            <p class="table-note mt-4 mb-0"><i class="bi bi-journal-text"></i> {{ orden.notas }}</p>
           }
         </div>
 
@@ -700,7 +700,7 @@
 
 @if (proveedorAbierto()) {
   <div
-    class="modal fade show d-block"
+    class="modal fade show block"
     tabindex="-1"
     appModalAccesible
     (cerrar)="cerrarProveedor()"
@@ -725,34 +725,34 @@
           </div>
 
           <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-12">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12">
                 <label class="form-label" for="provNombre">Nombre o razón social *</label>
                 <input id="provNombre" class="form-control" formControlName="nombre" />
                 @if (
                   proveedorForm.controls.nombre.invalid && proveedorForm.controls.nombre.touched
                 ) {
-                  <small class="text-danger">Indica al menos dos caracteres.</small>
+                  <small class="text-red-600">Indica al menos dos caracteres.</small>
                 }
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="provContacto">Contacto</label>
                 <input id="provContacto" class="form-control" formControlName="contacto" />
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="provTelefono">Teléfono</label>
                 <input id="provTelefono" class="form-control" formControlName="telefono" />
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="provCorreo">Correo</label>
                 <input id="provCorreo" type="email" class="form-control" formControlName="correo" />
                 @if (
                   proveedorForm.controls.correo.invalid && proveedorForm.controls.correo.touched
                 ) {
-                  <small class="text-danger">Captura un correo válido.</small>
+                  <small class="text-red-600">Captura un correo válido.</small>
                 }
               </div>
-              <div class="col-md-6">
+              <div class="col-span-12 md:col-span-6">
                 <label class="form-label" for="provCondiciones">Condiciones de pago</label>
                 <input
                   id="provCondiciones"
