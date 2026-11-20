@@ -110,6 +110,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - Los modales usan la directiva `appModalAccesible` (`src/app/llamma/modal-accesible.directive.ts`):
   rol de diálogo, `aria-labelledby` al `.modal-title`, foco inicial, trampa de Tab, `Esc` mediante
   `(cerrar)` y bloqueo de scroll. No dupliques esa lógica a mano.
+- La vista `/detalle` usa divulgación progresiva: los paneles secundarios (`produccion`, `calidad`,
+  `pagos`, `entrega`, `archivos`) se pliegan con `estaAbierta()`/`alternarSeccion()` sobre un
+  `signal` y recuerdan su estado por dispositivo en `llamma.detalle.secciones.v1`. `imprimir()` los
+  abre antes de imprimir y restaura la preferencia; un panel nuevo debe seguir ese mismo patrón.
 - Accesibilidad mínima obligatoria: skip link y `<main id="contenido">`, `aria-current="page"` en la
   navegación vía `esRuta()`, `<caption class="sr-only">` + `scope="col"` en cada tabla,
   nombre accesible en todo control y `aria-invalid`/`aria-describedby` con foco al primer error.

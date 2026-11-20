@@ -120,6 +120,91 @@
   font-size: 0.7rem;
 }
 
+/* Encabezados plegables: agrupan información secundaria sin sacarla de la página. */
+.seccion-cabecera {
+  margin: 0;
+}
+
+.seccion-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.seccion-toggle:focus-visible {
+  outline: 2px solid var(--llamma-magenta);
+  outline-offset: 4px;
+}
+
+.seccion-identidad {
+  display: block;
+  min-width: 0;
+}
+
+.seccion-titulo {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  transition: color 0.15s ease;
+}
+
+.seccion-toggle:hover .seccion-titulo {
+  color: var(--llamma-magenta);
+}
+
+.seccion-resumen {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  color: var(--llamma-muted);
+}
+
+.seccion-detalle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+
+.seccion-chevron {
+  font-size: 0.82rem;
+  transition: transform 0.18s ease;
+}
+
+.seccion-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.seccion-cuerpo {
+  margin-top: 1.25rem;
+}
+
+.seccion-toggle-compacta .seccion-titulo {
+  font-family: var(--llamma-font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.seccion-bloque {
+  margin-top: 1.1rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--llamma-line);
+}
+
 .timeline {
   margin: 0;
   padding: 0;
@@ -237,6 +322,10 @@
   font-size: 0.66rem;
 }
 
+.payment-state-alerta {
+  background: #fdf2f4;
+}
+
 .delivery-list {
   display: grid;
   gap: 1rem;
@@ -319,6 +408,11 @@
 .pago-list {
   display: grid;
   gap: 0.55rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid var(--llamma-line);
+  margin-top: 0.9rem;
+}
+
+@media (max-width: 575.98px) {
+  .seccion-detalle {
+    display: none;
+  }
 }

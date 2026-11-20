@@ -24,6 +24,19 @@ import { ClienteApi, PedidoApi, PagoApi } from '../llamma.models';
 import { LlammaService } from '../llamma.service';
 import { UiService } from '../ui.service';
 
+/** Preferencia local de paneles desplegados; no contiene datos del pedido. */
+const CLAVE_SECCIONES = 'llamma.detalle.secciones.v1';
+
+type SeccionDetalle = 'produccion' | 'calidad' | 'pagos' | 'entrega' | 'archivos';
+
+const SECCIONES_INICIALES: Record<SeccionDetalle, boolean> = {
+  produccion: false,
+  calidad: false,
+  pagos: false,
+  entrega: false,
+  archivos: false,
+};
+
 @Component({
   selector: 'app-detalle',
   imports: [ReactiveFormsModule, RouterLink],
@@ -48,6 +61,7 @@ export class DetalleComponent implements OnInit {
   readonly registrandoPago = signal(false);
   readonly error = signal<string | null>(null);
   readonly mostrarPago = signal(false);
+  readonly secciones = signal(this.leerSecciones());
 
   readonly estados = ESTADOS_PEDIDO;
   readonly puedeGestionar = computed(() => this.auth.tieneRol('admin', 'ventas'));
@@ -100,6 +114,26 @@ export class DetalleComponent implements OnInit {
         descripcion: item.descripcion,
       })),
   );
+  readonly etapaEnProceso = computed(
+    () => this.etapas().find((etapa) => etapa.clase === 'is-active')?.etiqueta ?? null,
+  );
+  readonly controlesRechazados = computed(
+    () => this.controles().filter((control) => !control.aprobado).length,
+  );
+  readonly textoEntrega = computed(() => {
+    const fecha = this.aFecha(this.pedido()?.fechaEntrega ?? null);
+    if (!fecha) return 'Fecha por confirmar';
+    const hoy = new Date();
+    const dias = Math.round(
+      (new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()).getTime() -
+        new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime()) /
+        86_400_000,
+    );
+    if (dias === 0) return 'Hoy';
+    if (dias > 0) return `En ${dias} ${dias === 1 ? 'día' : 'días'}`;
+    const atraso = Math.abs(dias);
+    return `Vencida hace ${atraso} ${atraso === 1 ? 'día' : 'días'}`;
+  });
 
   ngOnInit(): void {
     this.cargarLista();
@@ -236,7 +270,55 @@ export class DetalleComponent implements OnInit {
   }
 
   imprimir(): void {
-    window.print();
+    const previas = this.secciones();
+    if (Object.values(previas).every(Boolean)) {
+      window.print();
+      return;
+    }
+    this.secciones.set({
+      produccion: true,
+      calidad: true,
+      pagos: true,
+      entrega: true,
+      archivos: true,
+    });
+    const restaurar = () => {
+      this.secciones.set(previas);
+      window.removeEventListener('afterprint', restaurar);
+    };
+    window.addEventListener('afterprint', restaurar);
+    // Se cede un turno de render para que el DOM impreso incluya los paneles.
+    window.setTimeout(() => window.print(), 60);
+  }
+
+  estaAbierta(clave: SeccionDetalle): boolean {
+    return this.secciones()[clave];
+  }
+
+  alternarSeccion(clave: SeccionDetalle): void {
+    const abiertas = { ...this.secciones(), [clave]: !this.secciones()[clave] };
+    this.secciones.set(abiertas);
+    try {
+      localStorage.setItem(CLAVE_SECCIONES, JSON.stringify(abiertas));
+    } catch {
+      // Sin almacenamiento disponible: el estado sigue viviendo en memoria.
+    }
+  }
+
+  private leerSecciones(): Record<SeccionDetalle, boolean> {
+    const valores = { ...SECCIONES_INICIALES };
+    try {
+      const crudo = localStorage.getItem(CLAVE_SECCIONES);
+      if (!crudo) return valores;
+      const guardado = JSON.parse(crudo) as Partial<Record<SeccionDetalle, boolean>>;
+      for (const clave of Object.keys(valores) as SeccionDetalle[]) {
+        const valor = guardado[clave];
+        if (typeof valor === 'boolean') valores[clave] = valor;
+      }
+    } catch {
+      // Preferencias ilegibles: se conservan los valores iniciales.
+    }
+    return valores;
   }
 
   moneda(valor: number | null | undefined): string {

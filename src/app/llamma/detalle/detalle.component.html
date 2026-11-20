@@ -4,16 +4,9 @@
       <div>
         <span class="eyebrow">Órdenes y seguimiento</span>
         <h1>Detalle de órdenes.</h1>
-        <p class="page-lead">
-          Desglose completo del pedido: partidas, materiales, tiempos de producción, anticipos y
-          estado de entrega en una sola vista.
-        </p>
+        <p class="page-lead">Partidas, producción, pagos y entrega de la orden seleccionada.</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <span class="date-chip">
-          <i class="bi bi-calendar3"></i>
-          {{ pedido() ? fechaCorta(pedido()!.fechaPedido) : 'Sin fecha' }}
-        </span>
         <button
           class="btn btn-outline-ink"
           type="button"
@@ -74,101 +67,92 @@
     }
 
     @if (pedido(); as orden) {
-      <div class="grid grid-cols-12 gap-6">
-        <div class="col-span-12 xl:col-span-8">
-          <section class="panel-card mb-6">
-            <div class="order-head">
-              <span class="order-emblem"><i class="bi bi-receipt"></i></span>
-              <div class="grow min-w-0">
-                <span class="panel-kicker">Orden de producción</span>
-                <div class="flex flex-wrap items-center gap-2">
-                  <h2 class="order-title">#{{ orden.folio }}</h2>
-                  <span class="badge" [class]="claseEstado(orden.estado)">{{
-                    etiquetaEstado(orden.estado)
-                  }}</span>
-                  <span class="badge" [class]="clasePrioridad(orden.prioridad)">{{
-                    etiquetaPrioridad(orden.prioridad)
-                  }}</span>
-                </div>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <button
-                  class="btn btn-icon"
-                  type="button"
-                  aria-label="Imprimir orden"
-                  (click)="imprimir()"
-                >
-                  <i class="bi bi-printer"></i>
-                </button>
-                @if (puedeGestionar()) {
-                  <select
-                    class="form-select form-select-sm"
-                    style="min-width: 11rem"
-                    [value]="orden.estado"
-                    [disabled]="guardandoEstado()"
-                    (change)="cambiarEstado($event)"
-                    aria-label="Cambiar estado del pedido"
-                  >
-                    @for (estado of estados; track estado.valor) {
-                      <option [value]="estado.valor">{{ estado.etiqueta }}</option>
-                    }
-                  </select>
+      <section class="panel-card mb-6">
+        <div class="order-head">
+          <span class="order-emblem" aria-hidden="true"><i class="bi bi-receipt"></i></span>
+          <div class="grow min-w-0">
+            <span class="panel-kicker">Orden de producción</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="order-title">#{{ orden.folio }}</h2>
+              <span class="badge" [class]="claseEstado(orden.estado)">{{
+                etiquetaEstado(orden.estado)
+              }}</span>
+              <span class="badge" [class]="clasePrioridad(orden.prioridad)">{{
+                etiquetaPrioridad(orden.prioridad)
+              }}</span>
+            </div>
+          </div>
+          @if (puedeGestionar()) {
+            <div class="w-full sm:w-56">
+              <label class="sr-only" for="estado-pedido">Estado del pedido</label>
+              <select
+                id="estado-pedido"
+                class="form-select form-select-sm"
+                [disabled]="guardandoEstado()"
+                (change)="cambiarEstado($event)"
+              >
+                @for (estado of estados; track estado.valor) {
+                  <option [value]="estado.valor" [selected]="estado.valor === orden.estado">
+                    {{ estado.etiqueta }}
+                  </option>
                 }
-              </div>
+              </select>
             </div>
+          }
+        </div>
 
-            <div class="grid grid-cols-12 gap-4 order-meta">
-              <div class="col-span-12 sm:col-span-6 lg:col-span-3">
-                <div class="order-meta-item">
-                  <span>Cliente</span>
-                  <strong>{{ cliente()?.nombre ?? orden.cliente ?? 'Mostrador' }}</strong>
-                  <small>
-                    {{ cliente()?.empresa || (cliente()?.segmento ?? 'particular') }}
-                    @if (cliente()?.rfc) {
-                      · {{ cliente()!.rfc }}
-                    }
-                  </small>
-                </div>
-              </div>
-              <div class="col-span-12 sm:col-span-6 lg:col-span-3">
-                <div class="order-meta-item">
-                  <span>Fecha de alta</span>
-                  <strong>{{ fechaCorta(orden.fechaPedido) }}</strong>
-                  <small>
-                    @if (orden.cotizacionId) {
-                      Cotización #{{ orden.cotizacionId }}
-                    } @else {
-                      Pedido directo
-                    }
-                  </small>
-                </div>
-              </div>
-              <div class="col-span-12 sm:col-span-6 lg:col-span-3">
-                <div class="order-meta-item">
-                  <span>Entrega comprometida</span>
-                  <strong>{{ fechaCorta(orden.fechaEntrega) }}</strong>
-                  <small>{{
-                    orden.saldo <= 0.01 ? 'Liquidado' : 'Saldo: ' + moneda(orden.saldo)
-                  }}</small>
-                </div>
-              </div>
-              <div class="col-span-12 sm:col-span-6 lg:col-span-3">
-                <div class="order-meta-item">
-                  <span>Responsable</span>
-                  <strong>{{ orden.ordenProduccion?.responsable || 'Sin asignar' }}</strong>
-                  <small>
-                    {{
-                      orden.ordenProduccion
-                        ? 'Etapa: ' + (etapas()[etapaActual() - 1]?.etiqueta ?? 'Diseño')
-                        : 'Sin orden de producción'
-                    }}
-                  </small>
-                </div>
-              </div>
+        <div class="grid grid-cols-12 gap-4 order-meta">
+          <div class="col-span-6 lg:col-span-3">
+            <div class="order-meta-item">
+              <span>Cliente</span>
+              <strong>{{ cliente()?.nombre ?? orden.cliente ?? 'Mostrador' }}</strong>
+              <small>
+                {{ cliente()?.empresa || (cliente()?.segmento ?? 'particular') }}
+                @if (cliente()?.rfc) {
+                  · {{ cliente()!.rfc }}
+                }
+              </small>
             </div>
-          </section>
+          </div>
+          <div class="col-span-6 lg:col-span-3">
+            <div class="order-meta-item">
+              <span>Fecha de alta</span>
+              <strong>{{ fechaCorta(orden.fechaPedido) }}</strong>
+              <small>
+                @if (orden.cotizacionId) {
+                  Cotización #{{ orden.cotizacionId }}
+                } @else {
+                  Pedido directo
+                }
+              </small>
+            </div>
+          </div>
+          <div class="col-span-6 lg:col-span-3">
+            <div class="order-meta-item">
+              <span>Entrega comprometida</span>
+              <strong>{{ fechaCorta(orden.fechaEntrega) }}</strong>
+              <small>{{ textoEntrega() }}</small>
+            </div>
+          </div>
+          <div class="col-span-6 lg:col-span-3">
+            <div class="order-meta-item">
+              <span>Responsable</span>
+              <strong>{{ orden.ordenProduccion?.responsable || 'Sin asignar' }}</strong>
+              <small>
+                {{
+                  orden.ordenProduccion
+                    ? 'Etapa: ' + (etapas()[etapaActual() - 1]?.etiqueta ?? 'Diseño')
+                    : 'Sin orden de producción'
+                }}
+              </small>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          <section class="panel-card mb-6">
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 xl:col-span-8 order-2 xl:order-1 flex flex-col gap-6">
+          <section class="panel-card">
             <div class="panel-head">
               <div>
                 <span class="panel-kicker">Partidas del pedido</span>
@@ -203,18 +187,15 @@
                           ></span>
                           <div>
                             <strong>{{ item.descripcion }}</strong>
-                            <small>{{
-                              item.archivoDiseno ? 'Con archivo de diseño' : 'Sin archivo'
-                            }}</small>
+                            @if (item.archivoDiseno) {
+                              <small><i class="bi bi-paperclip"></i> Con archivo de diseño</small>
+                            }
                           </div>
                         </div>
                       </td>
                       <td>
                         <div class="cell-main">
                           {{ item.especificaciones || 'Sin especificaciones' }}
-                        </div>
-                        <div class="cell-muted">
-                          Precio unitario {{ moneda(item.precioUnitario) }}
                         </div>
                       </td>
                       <td class="text-center">{{ item.cantidad }}</td>
@@ -232,6 +213,12 @@
               </table>
             </div>
 
+            <p
+              class="table-hint mt-3 flex items-center gap-2 text-[0.68rem] text-llamma-muted sm:hidden"
+            >
+              <i class="bi bi-arrow-left-right"></i> Desliza para ver cantidades e importes.
+            </p>
+
             <p class="table-note">
               <i class="bi bi-palette"></i>
               Los acabados especiales se confirman al aprobar el archivo final de preprensa.
@@ -239,95 +226,258 @@
           </section>
 
           <section class="panel-card">
-            <div class="panel-head">
-              <div>
-                <span class="panel-kicker">Trazabilidad</span>
-                <h2>Seguimiento de producción</h2>
-              </div>
-              <span class="badge badge-soft-warning">
-                Etapa {{ etapaActual() }} de {{ etapas().length || 0 }}
-              </span>
-            </div>
+            <h2 class="seccion-cabecera">
+              <button
+                class="seccion-toggle"
+                type="button"
+                aria-controls="detalle-produccion"
+                [attr.aria-expanded]="estaAbierta('produccion')"
+                (click)="alternarSeccion('produccion')"
+              >
+                <span class="seccion-identidad">
+                  <span class="panel-kicker">Trazabilidad</span>
+                  <span class="seccion-titulo">Seguimiento de producción</span>
+                </span>
+                <span class="seccion-resumen">
+                  <span class="badge badge-soft-warning">
+                    Etapa {{ etapaActual() }} de {{ etapas().length || 0 }}
+                  </span>
+                  <span class="seccion-detalle">{{
+                    etapaEnProceso() ?? 'Sin etapa en proceso'
+                  }}</span>
+                  <i
+                    class="bi bi-chevron-down seccion-chevron"
+                    [class.is-open]="estaAbierta('produccion')"
+                    aria-hidden="true"
+                  ></i>
+                </span>
+              </button>
+            </h2>
 
-            <ol class="timeline">
-              @for (etapa of etapas(); track etapa.id) {
-                <li class="timeline-item" [class]="etapa.clase">
-                  <span class="timeline-dot"><i class="bi" [class]="'bi ' + etapa.icono"></i></span>
-                  <div class="timeline-body">
-                    <div class="timeline-top">
-                      <strong>{{ etapa.etiqueta }}</strong>
-                      <span>
-                        {{
-                          etapa.clase === 'is-pending'
-                            ? 'Programado'
-                            : fechaHora(etapa.fin || etapa.inicio)
-                        }}
-                      </span>
-                    </div>
-                    <p>
-                      {{ etapa.responsable || 'Sin responsable' }} ·
-                      {{ etapa.estado.replace('-', ' ') }}
-                      @if (etapa.notas) {
-                        · {{ etapa.notas }}
-                      }
-                    </p>
-                  </div>
-                </li>
-              } @empty {
-                <li class="text-llamma-muted">Aún no hay etapas registradas para esta orden.</li>
-              }
-            </ol>
-
-            @if (controles().length) {
-              <div class="panel-head mt-6">
-                <div>
-                  <span class="panel-kicker">Control de calidad</span>
-                  <h2>Revisiones de la orden</h2>
-                </div>
-              </div>
-              <div class="table-responsive">
-                <table class="table table-llamma align-middle mb-0">
-                  <caption class="sr-only">
-                    Controles de calidad del pedido
-                  </caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Criterio</th>
-                      <th scope="col">Resultado</th>
-                      <th scope="col">Revisó</th>
-                      <th scope="col" class="text-right">Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (control of controles(); track control.id) {
-                      <tr>
-                        <td>
-                          <div class="cell-main">{{ control.criterio }}</div>
-                          <div class="cell-muted">
-                            {{ control.observaciones || 'Sin observaciones' }}
-                          </div>
-                        </td>
-                        <td>
-                          <span
-                            class="badge"
-                            [class]="control.aprobado ? 'badge-soft-success' : 'badge-soft-danger'"
-                          >
-                            {{ control.aprobado ? 'Aprobado' : 'Rechazado' }}
+            @if (estaAbierta('produccion')) {
+              <div id="detalle-produccion" class="seccion-cuerpo">
+                <ol class="timeline">
+                  @for (etapa of etapas(); track etapa.id) {
+                    <li class="timeline-item" [class]="etapa.clase">
+                      <span class="timeline-dot"
+                        ><i class="bi" [class]="'bi ' + etapa.icono"></i
+                      ></span>
+                      <div class="timeline-body">
+                        <div class="timeline-top">
+                          <strong>{{ etapa.etiqueta }}</strong>
+                          <span>
+                            {{
+                              etapa.clase === 'is-pending'
+                                ? 'Programado'
+                                : fechaHora(etapa.fin || etapa.inicio)
+                            }}
                           </span>
-                        </td>
-                        <td>{{ control.revisadoPor || '—' }}</td>
-                        <td class="text-right cell-muted">{{ fechaHora(control.fecha) }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                        </div>
+                        <p>
+                          {{ etapa.responsable || 'Sin responsable' }} ·
+                          {{ etapa.estado.replace('-', ' ') }}
+                          @if (etapa.notas) {
+                            · {{ etapa.notas }}
+                          }
+                        </p>
+                      </div>
+                    </li>
+                  } @empty {
+                    <li class="text-llamma-muted">
+                      Aún no hay etapas registradas para esta orden.
+                    </li>
+                  }
+                </ol>
               </div>
             }
           </section>
+
+          @if (controles().length) {
+            <section class="panel-card">
+              <h2 class="seccion-cabecera">
+                <button
+                  class="seccion-toggle"
+                  type="button"
+                  aria-controls="detalle-calidad"
+                  [attr.aria-expanded]="estaAbierta('calidad')"
+                  (click)="alternarSeccion('calidad')"
+                >
+                  <span class="seccion-identidad">
+                    <span class="panel-kicker">Control de calidad</span>
+                    <span class="seccion-titulo">Revisiones de la orden</span>
+                  </span>
+                  <span class="seccion-resumen">
+                    <span class="badge badge-soft-muted">
+                      {{ controles().length }}
+                      {{ controles().length === 1 ? 'revisión' : 'revisiones' }}
+                    </span>
+                    @if (controlesRechazados()) {
+                      <span class="seccion-detalle">
+                        {{
+                          controlesRechazados() === 1
+                            ? '1 rechazada'
+                            : controlesRechazados() + ' rechazadas'
+                        }}
+                      </span>
+                    }
+                    <i
+                      class="bi bi-chevron-down seccion-chevron"
+                      [class.is-open]="estaAbierta('calidad')"
+                      aria-hidden="true"
+                    ></i>
+                  </span>
+                </button>
+              </h2>
+
+              @if (estaAbierta('calidad')) {
+                <div id="detalle-calidad" class="seccion-cuerpo table-responsive">
+                  <table class="table table-llamma align-middle mb-0">
+                    <caption class="sr-only">
+                      Controles de calidad del pedido
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Criterio</th>
+                        <th scope="col">Resultado</th>
+                        <th scope="col">Revisó</th>
+                        <th scope="col" class="text-right">Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (control of controles(); track control.id) {
+                        <tr>
+                          <td>
+                            <div class="cell-main">{{ control.criterio }}</div>
+                            <div class="cell-muted">
+                              {{ control.observaciones || 'Sin observaciones' }}
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              class="badge"
+                              [class]="
+                                control.aprobado ? 'badge-soft-success' : 'badge-soft-danger'
+                              "
+                            >
+                              {{ control.aprobado ? 'Aprobado' : 'Rechazado' }}
+                            </span>
+                          </td>
+                          <td>{{ control.revisadoPor || '—' }}</td>
+                          <td class="text-right cell-muted">{{ fechaHora(control.fecha) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </section>
+          }
+          <div class="grid grid-cols-12 gap-6">
+            <section class="col-span-12 md:col-span-6 panel-card">
+              <h2 class="seccion-cabecera">
+                <button
+                  class="seccion-toggle"
+                  type="button"
+                  aria-controls="detalle-entrega"
+                  [attr.aria-expanded]="estaAbierta('entrega')"
+                  (click)="alternarSeccion('entrega')"
+                >
+                  <span class="seccion-identidad">
+                    <span class="panel-kicker">Logística</span>
+                    <span class="seccion-titulo">Datos de entrega</span>
+                  </span>
+                  <span class="seccion-resumen">
+                    <span class="seccion-detalle">{{ textoEntrega() }}</span>
+                    <i
+                      class="bi bi-chevron-down seccion-chevron"
+                      [class.is-open]="estaAbierta('entrega')"
+                      aria-hidden="true"
+                    ></i>
+                  </span>
+                </button>
+              </h2>
+
+              @if (estaAbierta('entrega')) {
+                <ul id="detalle-entrega" class="delivery-list seccion-cuerpo">
+                  <li>
+                    <i class="bi bi-geo-alt"></i>
+                    <div>
+                      <strong>{{ cliente()?.direccion || 'Dirección por confirmar' }}</strong>
+                      <span>{{ cliente()?.empresa || cliente()?.nombre || 'Cliente' }}</span>
+                    </div>
+                  </li>
+                  <li>
+                    <i class="bi bi-truck"></i>
+                    <div>
+                      <strong>Entrega: {{ fechaCorta(orden.fechaEntrega) }}</strong>
+                      <span>Recepción de 9:00 a 18:00 h</span>
+                    </div>
+                  </li>
+                </ul>
+              }
+            </section>
+
+            <section class="col-span-12 md:col-span-6 panel-card">
+              <h2 class="seccion-cabecera">
+                <button
+                  class="seccion-toggle"
+                  type="button"
+                  aria-controls="detalle-archivos"
+                  [attr.aria-expanded]="estaAbierta('archivos')"
+                  (click)="alternarSeccion('archivos')"
+                >
+                  <span class="seccion-identidad">
+                    <span class="panel-kicker">Documentos</span>
+                    <span class="seccion-titulo">Archivos del pedido</span>
+                  </span>
+                  <span class="seccion-resumen">
+                    <span class="badge badge-soft-muted">{{ archivos().length }}</span>
+                    <i
+                      class="bi bi-chevron-down seccion-chevron"
+                      [class.is-open]="estaAbierta('archivos')"
+                      aria-hidden="true"
+                    ></i>
+                  </span>
+                </button>
+              </h2>
+
+              @if (estaAbierta('archivos')) {
+                <div id="detalle-archivos" class="file-list seccion-cuerpo">
+                  @for (archivo of archivos(); track archivo.nombre + archivo.descripcion) {
+                    <div class="file-row">
+                      <span class="icon-tile icon-tile-sm icon-tile-magenta"
+                        ><i class="bi bi-file-earmark-image"></i
+                      ></span>
+                      <div class="grow min-w-0">
+                        <strong>{{ archivo.nombre }}</strong>
+                        <small>{{ archivo.descripcion }}</small>
+                      </div>
+                      <a
+                        class="btn btn-icon"
+                        [href]="archivo.ruta"
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="Abrir archivo"
+                      >
+                        <i class="bi bi-box-arrow-up-right"></i>
+                      </a>
+                    </div>
+                  } @empty {
+                    <p class="text-llamma-muted mb-0 small">
+                      Esta orden no tiene archivos adjuntos. Los diseños se cargan desde la
+                      solicitud.
+                    </p>
+                  }
+                </div>
+              }
+            </section>
+          </div>
         </div>
 
-        <div class="col-span-12 xl:col-span-4 summary-sidebar">
-          <aside class="order-summary mb-6">
+        <div
+          class="col-span-12 xl:col-span-4 order-1 xl:order-2 flex flex-col gap-6 summary-sidebar"
+        >
+          <aside class="order-summary">
             <div class="quote-summary-head">
               <span>Resumen del pedido</span>
               <span class="badge" [class]="claseEstado(orden.estado)">{{
@@ -366,7 +516,7 @@
               </div>
             </div>
 
-            <div class="payment-state">
+            <div class="payment-state" [class.payment-state-alerta]="!estadoPago().ok">
               <span
                 class="icon-tile icon-tile-sm"
                 [class]="
@@ -471,102 +621,52 @@
             }
 
             @if (pagos().length) {
-              <div class="mt-4">
-                <span class="panel-kicker">Pagos registrados</span>
-                <div class="pago-list mt-2">
-                  @for (pago of pagos(); track pago.id) {
-                    <div class="flex items-start justify-between gap-2">
-                      <div>
-                        <strong class="small capitalize"
-                          >{{ pago.tipo }} · {{ pago.metodo }}</strong
-                        >
-                        <small class="block text-llamma-muted">
-                          {{ fechaHora(pago.fechaPago) }}
-                          @if (pago.referencia) {
-                            · {{ pago.referencia }}
-                          }
-                        </small>
+              <div class="seccion-bloque">
+                <h2 class="seccion-cabecera">
+                  <button
+                    class="seccion-toggle seccion-toggle-compacta"
+                    type="button"
+                    aria-controls="detalle-pagos"
+                    [attr.aria-expanded]="estaAbierta('pagos')"
+                    (click)="alternarSeccion('pagos')"
+                  >
+                    <span class="seccion-identidad">
+                      <span class="seccion-titulo">Pagos registrados</span>
+                    </span>
+                    <span class="seccion-resumen">
+                      <span class="seccion-detalle">{{ moneda(pagado()) }}</span>
+                      <i
+                        class="bi bi-chevron-down seccion-chevron"
+                        [class.is-open]="estaAbierta('pagos')"
+                        aria-hidden="true"
+                      ></i>
+                    </span>
+                  </button>
+                </h2>
+
+                @if (estaAbierta('pagos')) {
+                  <div id="detalle-pagos" class="pago-list">
+                    @for (pago of pagos(); track pago.id) {
+                      <div class="flex items-start justify-between gap-2">
+                        <div>
+                          <strong class="small capitalize"
+                            >{{ pago.tipo }} · {{ pago.metodo }}</strong
+                          >
+                          <small class="block text-llamma-muted">
+                            {{ fechaHora(pago.fechaPago) }}
+                            @if (pago.referencia) {
+                              · {{ pago.referencia }}
+                            }
+                          </small>
+                        </div>
+                        <span class="font-semibold small">{{ moneda(pago.monto) }}</span>
                       </div>
-                      <span class="font-semibold small">{{ moneda(pago.monto) }}</span>
-                    </div>
-                  }
-                </div>
+                    }
+                  </div>
+                }
               </div>
             }
           </aside>
-
-          <section class="panel-card mb-6">
-            <div class="panel-head">
-              <div>
-                <span class="panel-kicker">Logística</span>
-                <h2>Datos de entrega</h2>
-              </div>
-            </div>
-
-            <ul class="delivery-list">
-              <li>
-                <i class="bi bi-geo-alt"></i>
-                <div>
-                  <strong>{{ cliente()?.direccion || 'Dirección por confirmar' }}</strong>
-                  <span>{{ cliente()?.empresa || cliente()?.nombre || 'Cliente' }}</span>
-                </div>
-              </li>
-              <li>
-                <i class="bi bi-truck"></i>
-                <div>
-                  <strong>Entrega: {{ fechaCorta(orden.fechaEntrega) }}</strong>
-                  <span>Recepción de 9:00 a 18:00 h</span>
-                </div>
-              </li>
-              <li>
-                <i class="bi bi-person"></i>
-                <div>
-                  <strong>{{ cliente()?.nombre || 'Contacto' }}</strong>
-                  <span
-                    >{{ cliente()?.telefono || 'Sin teléfono' }} ·
-                    {{ cliente()?.correo || 'Sin correo' }}</span
-                  >
-                </div>
-              </li>
-            </ul>
-          </section>
-
-          <section class="panel-card">
-            <div class="panel-head">
-              <div>
-                <span class="panel-kicker">Documentos</span>
-                <h2>Archivos del pedido</h2>
-              </div>
-              <span class="badge badge-soft-muted">{{ archivos().length }}</span>
-            </div>
-
-            <div class="file-list">
-              @for (archivo of archivos(); track archivo.nombre + archivo.descripcion) {
-                <div class="file-row">
-                  <span class="icon-tile icon-tile-sm icon-tile-magenta"
-                    ><i class="bi bi-file-earmark-image"></i
-                  ></span>
-                  <div class="grow min-w-0">
-                    <strong>{{ archivo.nombre }}</strong>
-                    <small>{{ archivo.descripcion }}</small>
-                  </div>
-                  <a
-                    class="btn btn-icon"
-                    [href]="archivo.ruta"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="Abrir archivo"
-                  >
-                    <i class="bi bi-box-arrow-up-right"></i>
-                  </a>
-                </div>
-              } @empty {
-                <p class="text-llamma-muted mb-0 small">
-                  Esta orden no tiene archivos adjuntos. Los diseños se cargan desde la solicitud.
-                </p>
-              }
-            </div>
-          </section>
         </div>
       </div>
     }

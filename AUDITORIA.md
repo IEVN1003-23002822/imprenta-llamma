@@ -410,3 +410,28 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
 - **Corrección colateral:** `Cliente.to_dict` sumaba `Decimal` y Flask lo serializaba como cadena, así
   que el «Ticket promedio» del directorio mostraba `$NaN` cuando había pedidos. Ahora convierte a
   `float` (contrato `totalFacturado: number`) y el agregado se calcula bien.
+
+### Detalle de órdenes: divulgación progresiva (20 de noviembre de 2026)
+
+- **Problema.** `/detalle` apilaba cinco bloques densos sin jerarquía: el historial de producción
+  repetía 11 etapas, el precio unitario aparecía dos veces en la misma fila, el teléfono del cliente
+  se imprimía en dos tarjetas, la fecha de entrega y el saldo se repetían en tres lugares y había
+  dos botones de impresión. La página medía 2 324 px a 1440 px y 4 126 px a 390 px.
+- **Solución.** El encabezado de la orden pasó a ancho completo con los cuatro datos clave; el
+  resumen económico vive en una columna lateral fija; y `produccion`, `calidad`, `pagos`, `entrega`
+  y `archivos` son paneles plegables (`<h2>` + `<button aria-expanded>`) con un resumen visible en
+  la cabecera. El estado se guarda por dispositivo en `llamma.detalle.secciones.v1`.
+- **Duplicados eliminados.** Precio unitario dentro de «Especificación», «Sin archivo» repetido por
+  partida, teléfono/correo en la tarjeta de entrega, saldo en el encabezado y chip de fecha del
+  `page-header`. En móvil el resumen económico sube antes de las partidas mediante `order-*`.
+- **Corrección funcional.** El `<select>` de estado se pintaba con la primera opción («Cotización»)
+  porque el `[value]` se aplicaba antes de existir los `<option>`; ahora cada opción lleva
+  `[selected]` y el control refleja el estado real de la orden.
+- **Impresión.** `imprimir()` abre los cinco paneles, lanza `window.print()` y restaura la
+  preferencia en `afterprint`, de modo que el papel incluye todo aunque la pantalla esté plegada.
+- **Resultado.** 1 415 px a 1440 px (−39 %) y 2 466 px a 390 px (−40 %). Verificación automatizada
+  en Edge: **19/19** (estado inicial plegado, persistencia abrir/cerrar, datos presentes al
+  expandir, sin precio ni teléfono duplicados, selector sincronizado, impresión completa, orden
+  móvil y consola/API limpias). `format:check`, `lint`, 53 pruebas y `build` en verde
+  (484.87 kB raw / 114.03 kB estimados).
+
