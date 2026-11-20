@@ -35,6 +35,13 @@ export class App implements OnDestroy {
   readonly anio = new Date().getFullYear();
   readonly menuAbierto = signal(false);
   readonly modulosAbiertos = signal(false);
+
+  /**
+   * Visibilidad de módulos en la navegación. Marketing queda oculto por decisión
+   * de producto: su componente, su ruta y sus permisos siguen intactos. Cambia
+   * el valor a `true` para reactivarlo en el menú.
+   */
+  readonly modulosVisibles: Readonly<Record<'marketing', boolean>> = { marketing: false };
   private readonly router = inject(Router);
   private readonly seo = inject(SeoService);
   private refresco: ReturnType<typeof setInterval> | null = null;

@@ -178,7 +178,7 @@
                     >
                   </li>
                 }
-                @if (auth.tieneRol('admin', 'marketing')) {
+                @if (modulosVisibles.marketing && auth.tieneRol('admin', 'marketing')) {
                   <li>
                     <a
                       class="dropdown-item"

@@ -435,3 +435,22 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
   móvil y consola/API limpias). `format:check`, `lint`, 53 pruebas y `build` en verde
   (484.87 kB raw / 114.03 kB estimados).
 
+### Marketing oculto en la navegación (20 de noviembre de 2026)
+
+- **Único acceso visual retirado:** la entrada «Marketing» del desplegable «Módulos» en `app.html`.
+  Ahora se condiciona a `modulosVisibles.marketing` (`app.ts`), hoy en `false`. Afecta por igual a
+  escritorio y móvil porque es el mismo DOM.
+- **Se conserva íntegro:** `src/app/llamma/marketing/*`, la ruta `/marketing` con roles
+  `admin`/`marketing` en `app.routes.ts`, los métodos `listarActividades`, `crearActividad` y
+  `actualizarActividad` de `LlammaService`, el tipo `RolUsuario`, los endpoints de
+  `marketing_routes.py` y el chunk diferido (31.12 kB) que sigue generándose.
+- **La matriz «Permisos por rol» del login no se toca:** describe el rol, no es un acceso al módulo,
+  y el usuario `paola@llamma.mx` puede seguir iniciando sesión.
+- **Reactivación:** cambiar `modulosVisibles` a `{ marketing: true }` en `app.ts`. No hace falta
+  tocar la plantilla ni las rutas.
+- **Verificación:** **10/10** en Edge con administrador y con rol marketing, en 1440 y 390 px: el
+  desplegable pasa de 8 a 7 accesos internos sin elementos ocultos por CSS, la navegación principal
+  queda intacta, `/marketing` sigue renderizando por URL directa y la consola/red no registran
+  errores. `format:check`, `lint`, 53 pruebas y `build` en verde (484.93 kB raw / 114.03 kB).
+
+
