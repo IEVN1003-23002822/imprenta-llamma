@@ -117,6 +117,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - La visibilidad de los accesos del menú «Módulos» se controla con `modulosVisibles` en `app.ts`.
   Marketing está en `false` por decisión de producto: su ruta, componente y permisos siguen
   activos. Cambia la bandera a `true` para reactivarlo; no borres la entrada de `app.html`.
+- La previsualización de mockups de `/cotizar` vive en `cotizar.component.*`: catálogo
+  `MOCKUPS_CATALOGO` indexado por nombre de producto, imágenes en
+  `src/assets/images/mockups/*.webp` (copias optimizadas de `Toni/mockups`) y área de impresión en
+  porcentajes. El calibrador interno solo se habilita con `/cotizar?calibrar=1`.
 - Accesibilidad mínima obligatoria: skip link y `<main id="contenido">`, `aria-current="page"` en la
   navegación vía `esRuta()`, `<caption class="sr-only">` + `scope="col"` en cada tabla,
   nombre accesible en todo control y `aria-invalid`/`aria-describedby` con foco al primer error.

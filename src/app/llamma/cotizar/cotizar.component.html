@@ -240,9 +240,12 @@
                       (input)="cambiarEspecificaciones($event)"
                     />
                   </div>
-                  <div class="col-span-12">
+                  <div class="col-span-12 flex flex-wrap gap-2">
                     <button class="btn btn-ink" type="button" (click)="agregarProducto()">
                       <i class="bi bi-plus-lg"></i> Agregar a mi solicitud
+                    </button>
+                    <button class="btn btn-outline-ink" type="button" (click)="openPreview()">
+                      <i class="bi bi-eye"></i> Previsualizar diseño
                     </button>
                   </div>
                 </div>
@@ -436,3 +439,298 @@
     }
   </div>
 </div>
+
+@if (showPreviewModal()) {
+  <div class="mockup-backdrop">
+    <div class="mockup-modal" appModalAccesible (cerrar)="closePreview()">
+      <div class="mockup-header">
+        <div>
+          <span class="panel-kicker">{{ productoActual()?.nombre || 'Vista previa' }}</span>
+          <h3 class="modal-title">Previsualización en mockup</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          @if (mostrarCalibrador) {
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-ink]="modoCalibracion()"
+              [class.btn-outline-ink]="!modoCalibracion()"
+              (click)="toggleCalibracion()"
+            >
+              <i class="bi bi-sliders"></i>
+              {{ modoCalibracion() ? 'Cerrar calibrador' : 'Calibrar área' }}
+            </button>
+          }
+          <button type="button" class="btn btn-icon" (click)="closePreview()" aria-label="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="mockup-upload">
+        <label class="form-label" for="mockupFile">1. Sube tu logotipo o diseño (PNG, JPG)</label>
+        <input
+          id="mockupFile"
+          type="file"
+          class="form-control form-control-sm"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+        />
+      </div>
+
+      <div class="mockup-views">
+        <span class="form-label block">2. Elige una vista</span>
+        <div class="mockup-thumbs">
+          @for (vista of currentMockups(); track vista.id; let i = $index) {
+            <button
+              type="button"
+              class="mockup-thumb"
+              [class.is-active]="selectedMockupIndex() === i"
+              [attr.aria-pressed]="selectedMockupIndex() === i"
+              (click)="selectMockup(i)"
+            >
+              <img [src]="vista.imagenBase" [alt]="vista.nombre" loading="lazy" />
+              <span>{{ vista.nombre }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="mockup-stage">
+        <div class="mockup-canvas">
+          <img
+            class="mockup-base"
+            [src]="activeMockup().imagenBase"
+            [alt]="activeMockup().nombre"
+          />
+          <div
+            class="mockup-print-area"
+            [class.is-calibrating]="modoCalibracion()"
+            [style.top]="areaStyle().top"
+            [style.left]="areaStyle().left"
+            [style.width]="areaStyle().width"
+            [style.height]="areaStyle().height"
+            [style.transform]="areaStyle().transform"
+          >
+            @if (previewImage(); as imagen) {
+              <img
+                class="mockup-user-design"
+                [class.fit-cover]="designFit() === 'cover'"
+                [src]="imagen"
+                alt="Tu diseño"
+                [style.transform]="designTransform()"
+              />
+            }
+          </div>
+        </div>
+
+        @if (!previewImage()) {
+          <p class="mockup-empty-hint">
+            <i class="bi bi-image"></i> Sube una imagen arriba para verla aplicada aquí
+          </p>
+        }
+      </div>
+
+      @if (previewImage()) {
+        <div class="mockup-controls">
+          <div class="mockup-controls-top">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Ajuste del diseño">
+              <button
+                type="button"
+                class="btn"
+                [class.btn-ink]="designFit() === 'contain'"
+                [class.btn-outline-ink]="designFit() !== 'contain'"
+                (click)="setDesignFit('contain')"
+              >
+                Ajustar completo
+              </button>
+              <button
+                type="button"
+                class="btn"
+                [class.btn-ink]="designFit() === 'cover'"
+                [class.btn-outline-ink]="designFit() !== 'cover'"
+                (click)="setDesignFit('cover')"
+              >
+                Rellenar área
+              </button>
+            </div>
+            <button type="button" class="btn btn-sm btn-soft" (click)="resetDesignControls()">
+              <i class="bi bi-arrow-counterclockwise"></i> Restablecer
+            </button>
+          </div>
+
+          <div class="mockup-sliders">
+            <label>
+              <span
+                >Tamaño: <strong>{{ designScale() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="30"
+                max="200"
+                step="2"
+                [value]="designScale()"
+                (input)="actualizarNumero('scale', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Horizontal: <strong>{{ designOffsetX() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                step="1"
+                [value]="designOffsetX()"
+                (input)="actualizarNumero('x', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Vertical: <strong>{{ designOffsetY() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                step="1"
+                [value]="designOffsetY()"
+                (input)="actualizarNumero('y', $event)"
+              />
+            </label>
+          </div>
+        </div>
+      }
+
+      @if (mostrarCalibrador && modoCalibracion()) {
+        <div class="mockup-calibrator">
+          <div class="mockup-calibrator-head">
+            <strong>Calibrador de área ({{ activeMockup().id }})</strong>
+            <button type="button" class="btn btn-sm btn-ink" (click)="copiarCalibracion()">
+              <i
+                class="bi"
+                [class.bi-clipboard]="!calCopiado()"
+                [class.bi-clipboard-check]="calCopiado()"
+              ></i>
+              {{ calCopiado() ? 'Copiado' : 'Copiar valores' }}
+            </button>
+          </div>
+
+          <div class="mockup-sliders mockup-sliders-4">
+            <label>
+              <span
+                >Top: <strong>{{ calTop() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="0"
+                max="90"
+                step="0.5"
+                [value]="calTop()"
+                (input)="actualizarNumero('top', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Left: <strong>{{ calLeft() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="0"
+                max="90"
+                step="0.5"
+                [value]="calLeft()"
+                (input)="actualizarNumero('left', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Ancho: <strong>{{ calWidth() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="5"
+                max="100"
+                step="0.5"
+                [value]="calWidth()"
+                (input)="actualizarNumero('width', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Alto: <strong>{{ calHeight() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="5"
+                max="100"
+                step="0.5"
+                [value]="calHeight()"
+                (input)="actualizarNumero('height', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Rotar Y: <strong>{{ calRotateY() }}°</strong></span
+              >
+              <input
+                type="range"
+                min="-45"
+                max="45"
+                step="0.5"
+                [value]="calRotateY()"
+                (input)="actualizarNumero('ry', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Rotar X: <strong>{{ calRotateX() }}°</strong></span
+              >
+              <input
+                type="range"
+                min="-45"
+                max="45"
+                step="0.5"
+                [value]="calRotateX()"
+                (input)="actualizarNumero('rx', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Giro Z: <strong>{{ calRotateZ() }}°</strong></span
+              >
+              <input
+                type="range"
+                min="-30"
+                max="30"
+                step="0.5"
+                [value]="calRotateZ()"
+                (input)="actualizarNumero('rz', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Skew Y: <strong>{{ calSkewY() }}°</strong></span
+              >
+              <input
+                type="range"
+                min="-25"
+                max="25"
+                step="0.5"
+                [value]="calSkewY()"
+                (input)="actualizarNumero('sy', $event)"
+              />
+            </label>
+          </div>
+
+          <pre class="mockup-code">{{ snippetCalibrador() }}</pre>
+        </div>
+      }
+
+      <div class="mockup-footer">
+        <button type="button" class="btn btn-ink" (click)="closePreview()">Listo</button>
+      </div>
+    </div>
+  </div>
+}

@@ -453,4 +453,24 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
   queda intacta, `/marketing` sigue renderizando por URL directa y la consola/red no registran
   errores. `format:check`, `lint`, 53 pruebas y `build` en verde (484.93 kB raw / 114.03 kB).
 
+### Previsualización de mockups en el cotizador (20 de noviembre de 2026)
+
+- **Alcance.** Solo se agregó la función de mockups a `/cotizar`: botón «Previsualizar diseño» en
+  el paso 2, modal accesible con carga de imagen, dos vistas por producto, ajuste
+  (contener/cubrir, tamaño y posición) y calibrador interno. Contacto, carrito, mensaje,
+  logística, resumen, comprobante, chat y estilos existentes quedaron intactos.
+- **Assets.** Los 14 PNG de `Toni/mockups` se convirtieron a WebP (máx. 1600 px, calidad 82) en
+  `src/assets/images/mockups/`: pasan de ~112 MB a 0.55 MB sin cambiar la proporción, así que las
+  coordenadas porcentuales siguen vigentes. El catálogo está indexado por nombre de producto en
+  `cotizar.component.ts`, con respaldo a la lona.
+- **Accesibilidad.** El modal usa `appModalAccesible` (rol, foco inicial, trampa de Tab, `Esc`),
+  las miniaturas exponen `aria-pressed`, cada slider tiene etiqueta y el cierre tiene nombre
+  accesible. El fondo oscuro no intercepta clics; se cierra con «Listo», la X o `Esc`.
+- **Calibrador.** Es una herramienta interna: solo aparece con `/cotizar?calibrar=1` y copia el
+  snippet listo para pegar en `MOCKUPS_CATALOGO`. El cliente nunca ve coordenadas técnicas.
+- **Verificación.** 23/23 en Edge: apertura y cierre con `Esc` con retorno de foco, dos vistas y
+  sus perspectivas, carga de diseño, sliders, `cover`/`contain`, reinicio, calibrador, 390 px sin
+  desbordes, imágenes 200/304 y consola/red limpias. `format:check`, `lint`, 53 pruebas y `build`
+  en verde (485.13 kB raw / 114.06 kB).
+
 
