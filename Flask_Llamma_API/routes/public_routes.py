@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
+from sqlalchemy.orm import joinedload, selectinload
 
 from extensions import db
 from models import (
@@ -34,7 +35,16 @@ public_bp = Blueprint("public", __name__)
 
 def _solicitud_por_credenciales(folio: str, correo: str) -> SolicitudCotizacion | None:
     """Busca una solicitud solo si folio y correo coinciden."""
-    solicitud = SolicitudCotizacion.query.filter_by(folio=folio.strip().upper()).first()
+    solicitud = (
+        SolicitudCotizacion.query.options(
+            selectinload(SolicitudCotizacion.items),
+            selectinload(SolicitudCotizacion.archivos),
+            selectinload(SolicitudCotizacion.cotizaciones),
+            selectinload(SolicitudCotizacion.mensajes).joinedload(MensajeChat.usuario),
+        )
+        .filter_by(folio=folio.strip().upper())
+        .first()
+    )
     if not solicitud or solicitud.correo.lower() != correo.strip().lower():
         return None
     return solicitud

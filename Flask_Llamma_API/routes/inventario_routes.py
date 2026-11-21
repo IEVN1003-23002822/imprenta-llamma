@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, g, jsonify, request
+from sqlalchemy.orm import joinedload
 
 from auth import role_required, token_required
 from estados import TIPOS_MOVIMIENTO
@@ -17,7 +18,7 @@ inventario_bp = Blueprint("inventario", __name__)
 @inventario_bp.get("/materias-primas")
 @token_required
 def listar_materias():
-    query = MateriaPrima.query.filter_by(activo=True)
+    query = MateriaPrima.query.options(joinedload(MateriaPrima.proveedor)).filter_by(activo=True)
     if request.args.get("categoria"):
         query = query.filter(MateriaPrima.categoria == request.args["categoria"])
     if request.args.get("bajoStock") in {"1", "true"}:
@@ -133,7 +134,10 @@ def ajustar_inventario(materia_id: int):
 @inventario_bp.get("/movimientos")
 @token_required
 def listar_movimientos():
-    query = MovimientoInventario.query
+    query = MovimientoInventario.query.options(
+        joinedload(MovimientoInventario.materia_prima),
+        joinedload(MovimientoInventario.usuario),
+    )
     if request.args.get("materiaPrimaId"):
         query = query.filter(
             MovimientoInventario.materia_prima_id == parse_int(request.args["materiaPrimaId"])

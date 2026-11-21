@@ -6,6 +6,7 @@ from datetime import date, timedelta
 
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import or_
+from sqlalchemy.orm import joinedload, selectinload
 
 from auth import role_required, token_required
 from estados import ESTADOS_COTIZACION
@@ -31,7 +32,9 @@ cotizaciones_bp = Blueprint("cotizaciones", __name__)
 @cotizaciones_bp.get("/cotizaciones")
 @token_required
 def listar_cotizaciones():
-    query = Cotizacion.query
+    query = Cotizacion.query.options(
+        joinedload(Cotizacion.cliente), joinedload(Cotizacion.usuario)
+    )
     estado = request.args.get("estado")
     if estado:
         query = query.filter(Cotizacion.estado == estado)
@@ -55,7 +58,15 @@ def listar_cotizaciones():
 @cotizaciones_bp.get("/cotizaciones/<int:cotizacion_id>")
 @token_required
 def detalle_cotizacion(cotizacion_id: int):
-    cotizacion = Cotizacion.query.get(cotizacion_id)
+    cotizacion = (
+        Cotizacion.query.options(
+            selectinload(Cotizacion.items),
+            joinedload(Cotizacion.cliente),
+            joinedload(Cotizacion.usuario),
+        )
+        .filter_by(id=cotizacion_id)
+        .first()
+    )
     if not cotizacion:
         return no_encontrado("Cotización")
     return jsonify(cotizacion.to_dict())

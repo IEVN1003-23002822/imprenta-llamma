@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, publicOnlyGuard, roleGuard } from './llamma/auth.guard';
+import { authGuard, publicOnlyGuard, roleGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   /* --------------------------- Portal público --------------------------- */
@@ -13,7 +13,7 @@ export const routes: Routes = [
           'Imprenta y estudio de producción en México: gran formato, sublimación textil, promocionales y papelería creativa. Cotiza tu proyecto en línea.',
       },
     },
-    loadComponent: () => import('./llamma/home/home.component').then((m) => m.HomeComponent),
+    loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
   },
   {
     path: 'productos',
@@ -25,7 +25,7 @@ export const routes: Routes = [
       },
     },
     loadComponent: () =>
-      import('./llamma/productos/productos.component').then((m) => m.ProductosComponent),
+      import('./features/productos/productos.component').then((m) => m.ProductosComponent),
   },
   {
     path: 'cotizar',
@@ -37,7 +37,7 @@ export const routes: Routes = [
       },
     },
     loadComponent: () =>
-      import('./llamma/cotizar/cotizar.component').then((m) => m.CotizarComponent),
+      import('./features/cotizar/cotizar.component').then((m) => m.CotizarComponent),
   },
   {
     path: 'seguimiento',
@@ -49,13 +49,13 @@ export const routes: Routes = [
       },
     },
     loadComponent: () =>
-      import('./llamma/seguimiento/seguimiento.component').then((m) => m.SeguimientoComponent),
+      import('./features/seguimiento/seguimiento.component').then((m) => m.SeguimientoComponent),
   },
   {
     path: 'login',
     title: 'Llamma | Acceso del equipo',
     canActivate: [publicOnlyGuard],
-    loadComponent: () => import('./llamma/login/login.component').then((m) => m.LoginComponent),
+    loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'aviso-privacidad',
@@ -67,7 +67,7 @@ export const routes: Routes = [
       },
     },
     loadComponent: () =>
-      import('./llamma/aviso-privacidad/aviso-privacidad.component').then(
+      import('./features/aviso-privacidad/aviso-privacidad.component').then(
         (m) => m.AvisoPrivacidadComponent,
       ),
   },
@@ -78,7 +78,7 @@ export const routes: Routes = [
     title: 'Llamma | Dashboard',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./llamma/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+      import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
   },
   {
     path: 'solicitudes',
@@ -86,7 +86,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['admin', 'ventas'] },
     loadComponent: () =>
-      import('./llamma/solicitudes/solicitudes.component').then((m) => m.SolicitudesComponent),
+      import('./features/solicitudes/solicitudes.component').then((m) => m.SolicitudesComponent),
   },
   {
     path: 'captura',
@@ -94,7 +94,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['admin', 'ventas'] },
     loadComponent: () =>
-      import('./llamma/captura/captura.component').then((m) => m.CapturaComponent),
+      import('./features/captura/captura.component').then((m) => m.CapturaComponent),
   },
   {
     path: 'detalle',
@@ -102,14 +102,14 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['admin', 'ventas', 'produccion'] },
     loadComponent: () =>
-      import('./llamma/detalle/detalle.component').then((m) => m.DetalleComponent),
+      import('./features/detalle/detalle.component').then((m) => m.DetalleComponent),
   },
   {
     path: 'consultas',
     title: 'Llamma | Consultas',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./llamma/consultas/consultas.component').then((m) => m.ConsultasComponent),
+      import('./features/consultas/consultas.component').then((m) => m.ConsultasComponent),
   },
   {
     path: 'inventario',
@@ -117,7 +117,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['admin', 'inventario', 'produccion'] },
     loadComponent: () =>
-      import('./llamma/inventario/inventario.component').then((m) => m.InventarioComponent),
+      import('./features/inventario/inventario.component').then((m) => m.InventarioComponent),
   },
   {
     path: 'abastecimiento',
@@ -125,7 +125,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['admin', 'inventario'] },
     loadComponent: () =>
-      import('./llamma/abastecimiento/abastecimiento.component').then(
+      import('./features/abastecimiento/abastecimiento.component').then(
         (m) => m.AbastecimientoComponent,
       ),
   },
@@ -135,7 +135,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['admin', 'produccion'] },
     loadComponent: () =>
-      import('./llamma/produccion/produccion.component').then((m) => m.ProduccionComponent),
+      import('./features/produccion/produccion.component').then((m) => m.ProduccionComponent),
   },
   {
     path: 'clientes',
@@ -143,7 +143,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['admin', 'ventas', 'marketing'] },
     loadComponent: () =>
-      import('./llamma/clientes/clientes.component').then((m) => m.ClientesComponent),
+      import('./features/clientes/clientes.component').then((m) => m.ClientesComponent),
   },
   {
     path: 'marketing',
@@ -151,7 +151,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['admin', 'marketing'] },
     loadComponent: () =>
-      import('./llamma/marketing/marketing.component').then((m) => m.MarketingComponent),
+      import('./features/marketing/marketing.component').then((m) => m.MarketingComponent),
   },
   {
     path: '**',
@@ -164,6 +164,8 @@ export const routes: Routes = [
       },
     },
     loadComponent: () =>
-      import('./llamma/no-encontrado/no-encontrado.component').then((m) => m.NoEncontradoComponent),
+      import('./features/no-encontrado/no-encontrado.component').then(
+        (m) => m.NoEncontradoComponent,
+      ),
   },
 ];

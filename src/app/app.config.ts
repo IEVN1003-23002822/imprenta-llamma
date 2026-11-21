@@ -2,8 +2,8 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
-import { authInterceptor } from './llamma/auth.interceptor';
-import { resilienciaInterceptor } from './llamma/resiliencia.interceptor';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { resilienciaInterceptor } from './core/interceptors/resiliencia.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [

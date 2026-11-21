@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, g, jsonify
+from sqlalchemy.orm import joinedload, selectinload
 
 from auth import role_required, token_required
 from estados import ESTADOS_PRODUCCION, ETAPAS
@@ -17,11 +18,21 @@ produccion_bp = Blueprint("produccion", __name__)
 @produccion_bp.get("/produccion/tablero")
 @token_required
 def tablero_produccion():
-    ordenes = OrdenProduccion.query.order_by(OrdenProduccion.creado_en.asc()).all()
+    ordenes = (
+        OrdenProduccion.query.filter(
+            OrdenProduccion.estado.notin_(["completada", "rechazada"])
+        )
+        .options(
+            joinedload(OrdenProduccion.pedido),
+            joinedload(OrdenProduccion.responsable),
+            selectinload(OrdenProduccion.etapas).joinedload(ProduccionEtapa.responsable),
+            selectinload(OrdenProduccion.controles).joinedload(ControlCalidad.revisor),
+        )
+        .order_by(OrdenProduccion.creado_en.asc())
+        .all()
+    )
     columnas: dict[str, list] = {etapa: [] for etapa in ETAPAS}
     for orden in ordenes:
-        if orden.estado in {"completada", "rechazada"}:
-            continue
         columnas.setdefault(orden.etapa, []).append(orden.to_dict(incluir_detalle=True))
     return jsonify(
         {

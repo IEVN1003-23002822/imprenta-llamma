@@ -25,12 +25,27 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `/assets` en `angular.json`). El logotipo oficial vive en `src/assets/images/logo-llamma.png`;
   en plantillas se referencia como `assets/images/...`.
 
+## Estructura
+
+- Frontend: `src/app/core/` (servicios singleton, modelos, guards, interceptores y configuración),
+  `src/app/shared/` (UI reutilizable: diálogo de confirmación y directiva de modales) y
+  `src/app/features/` (un directorio por dominio: `home`, `productos`, `cotizar`, `detalle`, …).
+  Cada componente conserva su TS/HTML/CSS juntos; los subcomponentes del cotizador viven dentro de
+  `features/cotizar/`.
+- Backend: `models/` agrupa las 27 tablas por dominio (`usuarios`, `catalogos`, `inventario`,
+  `compras`, `solicitudes`, `ventas`, `produccion`, `marketing`) y `models/__init__.py` reexporta
+  todo, así que los imports existentes (`from models import Pedido`) siguen siendo válidos.
+  `routes/` mantiene un blueprint por dominio y `migrations/` guarda los scripts de esquema.
+- Los módulos de arranque (`app.py`, `config.py`, `extensions.py`, `auth.py`, `ratelimit.py`,
+  `utils.py`, `estados.py`, `seed.py`) se quedan en la raíz para conservar `flask --app app` y los
+  imports planos.
+
 ## Verificación
 
 - `npm run lint` (ESLint + angular-eslint), `npm run format:check` (Prettier) y
   `npx ng test --watch=false` (Vitest + jsdom) deben quedar en verde antes de dar algo por terminado.
   `npm test` sin argumentos entra en modo watch si hay TTY.
-- Los specs viven junto al código (`src/app/llamma/*.spec.ts`) e importan `describe/it/expect/vi` de
+- Los specs viven junto al código (`src/app/**/*.spec.ts`) e importan `describe/it/expect/vi` de
   `'vitest'` de forma explícita. `src/test-setup.ts` y `vitest-base.config.mts` son obligatorios: el
   primero reenlaza `localStorage`/`sessionStorage` de jsdom frente a los globales experimentales de
   Node 26 y el segundo relativiza los `include` absolutos que `tinyglobby` no resuelve en Windows.
@@ -51,6 +66,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `mysqldump --databases llamma_db --default-character-set=utf8mb4 --set-gtid-purged=OFF
   --single-transaction --routines --triggers --result-file=llamma_laragon.sql`
   (binario en `C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin`).
+- Los índices de rendimiento se declaran en `models/*.py` (bases nuevas) y se aplican a una base
+  existente con `.venv\Scripts\python.exe migrations\indices_rendimiento.py` (idempotente). La
+  versión SQL equivalente está en `migrations/2026_11_indices_rendimiento.sql`.
 - Usuarios demo y contraseña: ver `README.md` (`llamma2026`). Son solo para desarrollo local.
 
 ## Seguridad y entorno
@@ -67,7 +85,7 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `Retry-After` y sus topes se configuran con las variables documentadas en `README.md`.
 - `app.py` añade cabeceras de seguridad (`nosniff`, `X-Frame-Options`, `Referrer-Policy`,
   `Permissions-Policy`, COOP, HSTS en HTTPS y `Cache-Control: no-store` en `/api`).
-- Los datos de contacto del portal viven en `src/app/llamma/site-info.ts`; los campos vacíos no se
+- Los datos de contacto del portal viven en `src/app/core/config/site-info.ts`; los campos vacíos no se
   renderizan. El aviso de privacidad está en `/aviso-privacidad` y su texto es una base LFPDPPP que
   debe revisarse con asesoría legal antes de publicarse.
 
@@ -78,14 +96,17 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   (totales, alta de clientes, partidas y descuento de inventario). Un endpoint nuevo va en el
   módulo de su dominio; si creas un blueprint, agrégalo a `ADMIN_BLUEPRINTS`.
 - El backend serializa con `to_dict()` en camelCase y los tipos espejo están en
-  `src/app/llamma/llamma.models.ts`. Un campo o estado nuevo exige tocar ambos lados.
+  `src/app/core/models/llamma.models.ts`. Un campo o estado nuevo exige tocar ambos lados.
 - Los estados válidos se declaran una sola vez por lado: `Flask_Llamma_API/estados.py`
   (`ESTADOS_PEDIDO`, `ETAPAS`, `ESTADOS_PRODUCCION`, `ESTADOS_COMPRA`, `CANALES`, …) y
-  `src/app/llamma/estados.ts` con el campo `valor` y las ayudas `etiquetaDe`/`badgeDe`/`iconoDe`.
+  `src/app/core/models/estados.ts` con el campo `valor` y las ayudas `etiquetaDe`/`badgeDe`/`iconoDe`.
   Un estado nuevo exige tocar la unión de `llamma.models.ts`, ese catálogo y el backend; no
   reintroduzcas mapas de etiqueta o badge locales en los componentes.
 - Los listados devuelven `{ items, total }`. `GET /api/pedidos` omite `items`: usa
   `GET /api/pedidos/<id>` para el detalle (producción lo carga aparte y lo cachea por pedido).
+  Las consultas de listado cargan relaciones con `joinedload` (many-to-one) y `selectinload`
+  (colecciones) para que `to_dict()` no dispare N+1; no agregues un `to_dict()` que toque una
+  relación sin su opción de carga.
 - El chat por solicitud vive en `mensajes_chat` y se serializa como `mensajes`. El cliente entra
   solo con folio + correo exactos (`/api/public/solicitudes/<folio>/mensajes`); el interno exige
   rol `admin` o `ventas` (`/api/solicitudes/<id>/mensajes`). `GET /api/solicitudes/<id>` ya incluye
@@ -107,7 +128,7 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - El seguimiento público es su propio componente y ruta (`/seguimiento`); el cotizador solo enlaza
   con `folio`/`correo` por query params. No vuelvas a incrustar el formulario de seguimiento en
   `/cotizar`.
-- Los modales usan la directiva `appModalAccesible` (`src/app/llamma/modal-accesible.directive.ts`):
+- Los modales usan la directiva `appModalAccesible` (`src/app/shared/modal-accesible.directive.ts`):
   rol de diálogo, `aria-labelledby` al `.modal-title`, foco inicial, trampa de Tab, `Esc` mediante
   `(cerrar)` y bloqueo de scroll. No dupliques esa lógica a mano.
 - La vista `/detalle` usa divulgación progresiva: los paneles secundarios (`produccion`, `calidad`,
@@ -128,7 +149,7 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `appModalAccesible`). No uses `window.confirm`: el único punto de montaje es
   `<app-confirmacion-dialog />` en `app.html`.
 - El SEO de cada ruta se declara en `data.seo` (`app.routes.ts`) y lo aplica `SeoService`
-  (`src/app/llamma/seo.service.ts`): descripción, canonical, `robots`, OG/Twitter y JSON-LD. El ERP y
+  (`src/app/core/services/seo.service.ts`): descripción, canonical, `robots`, OG/Twitter y JSON-LD. El ERP y
   el login van `noindex`. Si cambias el dominio, ajusta `robots.txt`, `sitemap.xml` y `src/index.html`.
 - `resilienciaInterceptor` aplica `timeout` de 20 s y un reintento solo a `GET` (status 0/5xx). No
   reintentes escrituras: duplicarían altas y movimientos de inventario.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import or_
+from sqlalchemy.orm import selectinload
 
 from auth import role_required, token_required
 from extensions import db
@@ -18,7 +19,7 @@ clientes_bp = Blueprint("clientes", __name__)
 @clientes_bp.get("/clientes")
 @token_required
 def listar_clientes():
-    query = Cliente.query
+    query = Cliente.query.options(selectinload(Cliente.pedidos))
     if request.args.get("segmento"):
         query = query.filter(Cliente.segmento == request.args["segmento"])
     if request.args.get("activo") in {"0", "false"}:
@@ -50,7 +51,9 @@ def listar_clientes():
 @clientes_bp.get("/clientes/<int:cliente_id>")
 @token_required
 def detalle_cliente(cliente_id: int):
-    cliente = Cliente.query.get(cliente_id)
+    cliente = (
+        Cliente.query.options(selectinload(Cliente.pedidos)).filter_by(id=cliente_id).first()
+    )
     if not cliente:
         return no_encontrado("Cliente")
     return jsonify(cliente.to_dict(incluir_metricas=True))

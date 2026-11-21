@@ -6,6 +6,7 @@ import os
 
 from flask import Blueprint, current_app, g, jsonify, request, send_from_directory
 from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload, selectinload
 
 from auth import role_required, token_required
 from estados import ESTADOS_SOLICITUD
@@ -27,7 +28,10 @@ solicitudes_bp = Blueprint("solicitudes", __name__)
 @solicitudes_bp.get("/solicitudes")
 @token_required
 def listar_solicitudes():
-    query = SolicitudCotizacion.query
+    query = SolicitudCotizacion.query.options(
+        selectinload(SolicitudCotizacion.items),
+        selectinload(SolicitudCotizacion.archivos),
+    )
 
     estado = request.args.get("estado")
     if estado:
@@ -78,7 +82,16 @@ def resumen_solicitudes():
 @solicitudes_bp.get("/solicitudes/<int:solicitud_id>")
 @token_required
 def detalle_solicitud(solicitud_id: int):
-    solicitud = SolicitudCotizacion.query.get(solicitud_id)
+    solicitud = (
+        SolicitudCotizacion.query.options(
+            selectinload(SolicitudCotizacion.items),
+            selectinload(SolicitudCotizacion.archivos),
+            selectinload(SolicitudCotizacion.cotizaciones),
+            selectinload(SolicitudCotizacion.mensajes).joinedload(MensajeChat.usuario),
+        )
+        .filter_by(id=solicitud_id)
+        .first()
+    )
     if not solicitud:
         return no_encontrado("Solicitud")
     return jsonify(solicitud.to_dict(incluir_mensajes=True))
@@ -87,7 +100,13 @@ def detalle_solicitud(solicitud_id: int):
 @solicitudes_bp.get("/solicitudes/<int:solicitud_id>/mensajes")
 @token_required
 def listar_mensajes_solicitud(solicitud_id: int):
-    solicitud = SolicitudCotizacion.query.get(solicitud_id)
+    solicitud = (
+        SolicitudCotizacion.query.options(
+            selectinload(SolicitudCotizacion.mensajes).joinedload(MensajeChat.usuario)
+        )
+        .filter_by(id=solicitud_id)
+        .first()
+    )
     if not solicitud:
         return no_encontrado("Solicitud")
     mensajes = solicitud.mensajes

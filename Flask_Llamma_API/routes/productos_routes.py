@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from auth import role_required, token_required
 from extensions import db
@@ -17,7 +18,7 @@ productos_bp = Blueprint("productos", __name__)
 @productos_bp.get("/productos")
 @token_required
 def listar_productos():
-    query = Producto.query
+    query = Producto.query.options(joinedload(Producto.receta))
     if request.args.get("linea"):
         query = query.filter(Producto.linea_produccion == request.args["linea"])
     busqueda = (request.args.get("q") or "").strip()
@@ -30,7 +31,15 @@ def listar_productos():
 @productos_bp.get("/productos/<int:producto_id>")
 @token_required
 def detalle_producto(producto_id: int):
-    producto = Producto.query.get(producto_id)
+    producto = (
+        Producto.query.options(
+            joinedload(Producto.receta)
+            .selectinload(Receta.componentes)
+            .joinedload(RecetaComponente.materia_prima)
+        )
+        .filter_by(id=producto_id)
+        .first()
+    )
     if not producto:
         return no_encontrado("Producto")
     data = producto.to_dict()

@@ -118,10 +118,23 @@ Llamma/
 │   ├── config.py
 │   ├── estados.py
 │   ├── extensions.py
-│   ├── models.py
 │   ├── ratelimit.py
 │   ├── seed.py
 │   ├── utils.py
+│   ├── models/                     # 27 tablas agrupadas por dominio
+│   │   ├── __init__.py             # reexporta todos los modelos
+│   │   ├── base.py
+│   │   ├── usuarios.py
+│   │   ├── catalogos.py
+│   │   ├── inventario.py
+│   │   ├── compras.py
+│   │   ├── solicitudes.py
+│   │   ├── ventas.py
+│   │   ├── produccion.py
+│   │   └── marketing.py
+│   ├── migrations/
+│   │   ├── indices_rendimiento.py  # aplica índices faltantes (idempotente)
+│   │   └── 2026_11_indices_rendimiento.sql
 │   ├── routes/
 │   │   ├── admin_routes.py        # reúne los blueprints internos
 │   │   ├── comun.py               # helpers compartidos del ERP
@@ -143,15 +156,20 @@ Llamma/
 ├── public/
 ├── src/
 │   ├── app/
-│   │   ├── llamma/
-│   │   │   ├── auth.guard.ts
-│   │   │   ├── auth.interceptor.ts
-│   │   │   ├── auth.service.ts
-│   │   │   ├── solicitudes.store.ts
-│   │   │   ├── cotizar/
+│   │   ├── core/
+│   │   │   ├── config/site-info.ts
+│   │   │   ├── guards/auth.guard.ts
+│   │   │   ├── interceptors/       # auth + resiliencia
+│   │   │   ├── models/             # estados.ts + llamma.models.ts
+│   │   │   └── services/           # auth, confirmación, API, SEO, store y UI
+│   │   ├── features/
+│   │   │   ├── cotizar/            # incluye pasos, resumen y comprobante
 │   │   │   ├── solicitudes/
 │   │   │   ├── captura/
 │   │   │   └── ...módulos del ERP
+│   │   ├── shared/
+│   │   │   ├── confirmacion-dialog.component.*
+│   │   │   └── modal-accesible.directive.ts
 │   │   ├── app.config.ts
 │   │   ├── app.routes.ts
 │   │   ├── app.ts
@@ -286,7 +304,7 @@ El token de sesión viaja **solo** en `Authorization: Bearer` (o `X-Auth-Token`)
 login con el aviso correspondiente.
 
 Los datos de contacto del portal (teléfono, WhatsApp, dirección y horario) se editan en
-`src/app/llamma/site-info.ts`. Los campos vacíos no se muestran en el pie de página. El correo
+`src/app/core/config/site-info.ts`. Los campos vacíos no se muestran en el pie de página. El correo
 `soporte@llamma.mx` es el canal público de soporte y privacidad.
 
 > Las credenciales demo son solo para desarrollo local. Elimina o cambia esos usuarios antes de
@@ -322,7 +340,7 @@ Contraseña para todos: `llamma2026`.
 - Fase 2 de conversión aplicada: logo WebP con `srcset`, 404 real, SEO social por ruta con
   `robots.txt`/`sitemap.xml`, `timeout` y reintento de `GET`, catálogo cacheado, confirmaciones
   propias, `@defer` de las secciones bajas de la portada y soporte de fotos de producto.
-- Fase 3 en curso: catálogo único de estados en `src/app/llamma/estados.ts` y `Flask_Llamma_API/estados.py`;
+- Fase 3 en curso: catálogo único de estados en `src/app/core/models/estados.ts` y `Flask_Llamma_API/estados.py`;
   ESLint + Prettier con `build` como compuerta; 53 pruebas unitarias de servicios, guards, interceptores
   y catálogo de estados; CI que valida formato, lint, pruebas y build.
 - Migración visual a Tailwind CSS 4 + Flowbite completada el 19 de noviembre de 2026: Bootstrap ya no

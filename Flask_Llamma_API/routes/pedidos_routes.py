@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload, selectinload
 
 from auth import role_required, token_required
 from estados import ESTADOS_PEDIDO
 from extensions import db
 from models import (
     Cliente,
+    ControlCalidad,
     OrdenProduccion,
     Pago,
     Pedido,
@@ -28,7 +30,7 @@ pedidos_bp = Blueprint("pedidos", __name__)
 @pedidos_bp.get("/pedidos")
 @token_required
 def listar_pedidos():
-    query = Pedido.query
+    query = Pedido.query.options(joinedload(Pedido.cliente))
     estado = request.args.get("estado")
     if estado:
         query = query.filter(Pedido.estado == estado)
@@ -52,7 +54,21 @@ def listar_pedidos():
 @pedidos_bp.get("/pedidos/<int:pedido_id>")
 @token_required
 def detalle_pedido(pedido_id: int):
-    pedido = Pedido.query.get(pedido_id)
+    pedido = (
+        Pedido.query.options(
+            joinedload(Pedido.cliente),
+            selectinload(Pedido.items),
+            selectinload(Pedido.pagos),
+            selectinload(Pedido.orden_produccion).options(
+                joinedload(OrdenProduccion.responsable),
+                joinedload(OrdenProduccion.pedido),
+                selectinload(OrdenProduccion.etapas).joinedload(ProduccionEtapa.responsable),
+                selectinload(OrdenProduccion.controles).joinedload(ControlCalidad.revisor),
+            ),
+        )
+        .filter_by(id=pedido_id)
+        .first()
+    )
     if not pedido:
         return no_encontrado("Pedido")
     return jsonify(pedido.to_dict())
@@ -121,6 +137,10 @@ def consultar_pedidos():
 
     paginado = (
         Pedido.query.filter(Pedido.id.in_(ids))
+        .options(
+            joinedload(Pedido.cliente),
+            selectinload(Pedido.items).joinedload(PedidoItem.producto),
+        )
         .order_by(Pedido.fecha_pedido.desc(), Pedido.id.desc())
         .paginate(page=max(page, 1), per_page=min(max(per_page, 1), 100), error_out=False)
     )

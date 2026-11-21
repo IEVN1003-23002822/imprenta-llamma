@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, g, jsonify, request
+from sqlalchemy.orm import joinedload, selectinload
 
 from auth import role_required, token_required
 from estados import ESTADOS_COMPRA
@@ -44,7 +45,13 @@ def crear_proveedor():
 @compras_bp.get("/ordenes-compra")
 @token_required
 def listar_ordenes_compra():
-    query = OrdenCompra.query.order_by(OrdenCompra.creado_en.desc())
+    query = (
+        OrdenCompra.query.options(
+            joinedload(OrdenCompra.proveedor),
+            selectinload(OrdenCompra.items).joinedload(OrdenCompraItem.materia_prima),
+        )
+        .order_by(OrdenCompra.creado_en.desc())
+    )
     return jsonify(
         paginar(
             query,

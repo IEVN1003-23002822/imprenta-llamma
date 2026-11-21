@@ -347,7 +347,7 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
 
 ### Estado tras el bloque «calidad primero» de la Fase 3 (18 de noviembre de 2026)
 
-- **Acción 20 (constantes compartidas).** `src/app/llamma/estados.ts` concentra estados de solicitud,
+- **Acción 20 (constantes compartidas).** `src/app/core/models/estados.ts` concentra estados de solicitud,
   cotización, pedido, producción, compras, actividades y marketing, además de prioridades, etapas,
   segmentos, líneas, categorías, unidades, tipos de movimiento y extensiones de archivo. Expone las
   ayudas `etiquetaDe`, `badgeDe`, `iconoDe`, `mapaEtiquetas`, `mapaIconos` y `mapaCortas`. Doce
@@ -440,7 +440,7 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
 - **Único acceso visual retirado:** la entrada «Marketing» del desplegable «Módulos» en `app.html`.
   Ahora se condiciona a `modulosVisibles.marketing` (`app.ts`), hoy en `false`. Afecta por igual a
   escritorio y móvil porque es el mismo DOM.
-- **Se conserva íntegro:** `src/app/llamma/marketing/*`, la ruta `/marketing` con roles
+- **Se conserva íntegro:** `src/app/features/marketing/*`, la ruta `/marketing` con roles
   `admin`/`marketing` en `app.routes.ts`, los métodos `listarActividades`, `crearActividad` y
   `actualizarActividad` de `LlammaService`, el tipo `RolUsuario`, los endpoints de
   `marketing_routes.py` y el chunk diferido (31.12 kB) que sigue generándose.
@@ -472,5 +472,29 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
   sus perspectivas, carga de diseño, sliders, `cover`/`contain`, reinicio, calibrador, 390 px sin
   desbordes, imágenes 200/304 y consola/red limpias. `format:check`, `lint`, 53 pruebas y `build`
   en verde (485.13 kB raw / 114.06 kB).
+
+### Reorganización por dominio y optimización de consultas (20 de noviembre de 2026)
+
+- **Frontend.** `src/app/llamma/` se dividió en `core/` (servicios, modelos, guards, interceptores y
+  configuración), `shared/` (diálogo de confirmación y directiva de modales) y `features/` (17
+  módulos). Los movimientos usaron `git mv` para conservar historial y se reescribieron 112 imports
+  relativos; no se modificó ninguna plantilla, hoja de estilos ni flujo de UI.
+- **Backend.** `models.py` (1004 líneas, 27 tablas) pasó a `models/` con un módulo por dominio
+  (`usuarios`, `catalogos`, `inventario`, `compras`, `solicitudes`, `ventas`, `produccion`,
+  `marketing`) más `base.py`. `models/__init__.py` reexporta todo, así que `from models import X`
+  sigue funcionando sin tocar los endpoints.
+- **Consultas.** Los listados y detalles usan `joinedload`/`selectinload` según cardinalidad, y el
+  dashboard reemplazó sumas en Python por `count`/`sum`/`case`. Se ordenan de forma determinista los
+  agregados por etapa y línea. Medición de `SELECT` por endpoint: total **193 → 92** (−52.3 %);
+  clientes 25→6, solicitudes 41→7, órdenes de compra 14→6, tablero 18→9 y dashboard 21→13.
+- **Base de datos.** 25 índices nuevos declarados en `models/*.py` y aplicados a `llamma_db`
+  (44 en total en la metadata). La migración idempotente es
+  `migrations/indices_rendimiento.py` y su equivalente SQL
+  `migrations/2026_11_indices_rendimiento.sql`. El dump `llamma_laragon.sql` incorpora los índices
+  sin alterar sus datos y se verificó importándolo en una base temporal (27 tablas).
+- **Verificación.** Las 33 respuestas GET comparadas antes/después son idénticas (se normalizan
+  fecha de health, último acceso y orden de tableros). **51/51** comprobaciones en Edge en 1440 y
+  390 px, sin errores de consola ni respuestas 4xx/5xx. `format:check`, `lint`, 53 pruebas y `build`
+  en verde (485.13 kB raw / 114.05 kB); `compileall` del backend sin errores.
 
 

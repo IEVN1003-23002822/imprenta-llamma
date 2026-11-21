@@ -11,12 +11,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 
-import { AuthService } from './llamma/auth.service';
-import { ConfirmacionDialogComponent } from './llamma/confirmacion-dialog.component';
-import { SeoService } from './llamma/seo.service';
-import { SITE_INFO } from './llamma/site-info';
-import { SolicitudesStore } from './llamma/solicitudes.store';
-import { UiService } from './llamma/ui.service';
+import { AuthService } from './core/services/auth.service';
+import { ConfirmacionDialogComponent } from './shared/confirmacion-dialog.component';
+import { SeoService } from './core/services/seo.service';
+import { SITE_INFO } from './core/config/site-info';
+import { SolicitudesStore } from './core/services/solicitudes.store';
+import { UiService } from './core/services/ui.service';
 
 const REFRESCO_MS = 60_000;
 
