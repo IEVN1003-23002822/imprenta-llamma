@@ -2961,42 +2961,6 @@ body.modal-abierto {
 }
 
 /* Portafolio y testimonios de la portada (se ocultan si no hay contenido). */
-.portfolio-card {
-  overflow: hidden;
-  border: 1px solid var(--llamma-line);
-  border-top: 4px solid var(--llamma-cyan);
-  border-radius: var(--llamma-radius-sm);
-  background: #fff;
-  box-shadow: var(--llamma-shadow-sm);
-}
-
-.portfolio-card img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
-}
-
-.portfolio-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1.15rem;
-}
-
-.portfolio-body h3 {
-  margin: 0;
-  font-family: var(--llamma-font-display);
-  font-size: 1.05rem;
-}
-
-.portfolio-body p {
-  margin: 0;
-  color: var(--llamma-muted);
-  font-size: 0.78rem;
-  line-height: 1.55;
-}
-
 .testimonial-card {
   display: flex;
   flex-direction: column;

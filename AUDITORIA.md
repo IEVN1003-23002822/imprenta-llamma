@@ -583,4 +583,20 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
 - **Verificación.** `format:check`, `lint`, **53/53** pruebas y `build` en verde
   (551.10 kB raw / 121.92 kB); **51/51** rutas en Edge y captura de `/seguimiento` revisada.
 
+### Vitrina «Nuestros productos» en la portada (21 de noviembre de 2026)
+
+- **Decisión UX.** Se reutiliza la sección de portafolio que ya existía en la home, con el ancla
+  `#nuestros-productos`. No se añade otro elemento al menú superior para no competir con «Catálogo»;
+  el acceso secundario queda en el footer («Nuestros productos»). La vitrina muestra ejemplos de
+  acabados y la sección explica que no es el catálogo comercial.
+- **Assets.** 10 JPG de `Lamma  Mockup realista/` se convirtieron a WebP calidad 84 y máx. 1000 px:
+  `src/assets/images/portafolio/textil/` (4) y `portafolio/promocionales/` (6). Pasan de 5.85 MB a
+  0.52 MB. Los originales quedan fuera de Git mediante `.gitignore`.
+- **Implementación.** `PORTAFOLIO` en `site-info.ts` contiene los 10 casos; la home usa un layout
+  masonry Tailwind (`columns-1 md:columns-2 xl:columns-3`) con imágenes de altura natural, badges,
+  títulos, descripciones y CTA final a `/cotizar`.
+- **Verificación.** `format:check`, `lint`, **53/53** pruebas y `build` en verde
+  (553.24 kB raw / 122.44 kB); **51/51** rutas en Edge, imágenes WebP con HTTP 200 y sin desbordes
+  horizontales a 390 px.
+
 

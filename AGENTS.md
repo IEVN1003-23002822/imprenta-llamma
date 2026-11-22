@@ -31,6 +31,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - Los recursos estáticos propios se sirven desde `public/` (raíz) y desde `src/assets/` (mapeado a
   `/assets` en `angular.json`). El logotipo oficial vive en `src/assets/images/logo-llamma.png`;
   en plantillas se referencia como `assets/images/...`.
+- La vitrina «Nuestros productos» de la portada usa `#nuestros-productos` y las imágenes WebP de
+  `src/assets/images/portafolio/{textil,promocionales}`. Los JPG fuente de `Lamma  Mockup realista/`
+  no se publican y están ignorados por Git; para regenerar la vitrina, conviértelos a WebP con el
+  mismo nombre y ruta.
 
 ## Estructura
 
