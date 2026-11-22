@@ -1,42 +1,81 @@
-<div class="module-page not-found-page">
-  <div class="llamma-container">
-    <section class="panel-card not-found-card">
-      <span class="eyebrow">Error 404</span>
-      <p class="not-found-code" aria-hidden="true">404</p>
-      <h1>Esta página no existe.</h1>
-      <p class="page-lead">
+<div class="pt-[2.75rem] pb-[5.5rem] grid min-h-[calc(100vh-18rem)] items-center py-16">
+  <div
+    class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+  >
+    <section
+      class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 relative mx-auto max-w-[46rem] overflow-hidden p-[clamp(2rem,5vw,3.5rem)]"
+    >
+      <span
+        class="mb-[0.9rem] inline-flex items-center gap-[0.6rem] text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[var(--llamma-magenta)] before:h-1 before:w-[1.6rem] before:rounded-full before:bg-[linear-gradient(90deg,var(--llamma-cyan),var(--llamma-magenta)_60%,var(--llamma-yellow))] before:content-['']"
+        >Error 404</span
+      >
+      <p
+        class="pointer-events-none absolute -top-2 right-6 m-0 select-none font-[family-name:var(--llamma-font-display)] text-[clamp(5rem,14vw,9rem)] font-extrabold leading-none text-[var(--llamma-line)] max-[575.98px]:right-3"
+        aria-hidden="true"
+      >
+        404
+      </p>
+      <h1
+        class="relative mb-3 mt-[0.35rem] font-[family-name:var(--llamma-font-display)] text-[clamp(1.8rem,4vw,2.6rem)] font-extrabold"
+      >
+        Esta página no existe.
+      </h1>
+      <p class="mb-0 max-w-[44rem] text-base text-[var(--llamma-muted)]">
         Puede que el enlace esté roto o que la página se haya movido. Busca un producto en el
         catálogo o vuelve al inicio para seguir explorando.
       </p>
 
-      <form class="not-found-search" (ngSubmit)="buscar()">
+      <form class="relative my-7" (ngSubmit)="buscar()">
         <label class="sr-only" for="busqueda404">Buscar en el catálogo</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <div class="flex w-full flex-wrap items-stretch">
+          <span
+            class="flex items-center whitespace-nowrap rounded-l-[0.72rem] border border-r-0 border-[var(--llamma-line)] bg-[#f2f1ec] px-3 py-1.5 text-[0.85rem] font-normal leading-normal text-[var(--llamma-muted)]"
+            ><i class="bi bi-search"></i
+          ></span>
           <input
             id="busqueda404"
-            class="form-control"
+            class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] min-w-0 flex-1 rounded-none"
             type="search"
             name="q"
             placeholder="Buscar producto, línea o material…"
             autocomplete="off"
             [(ngModel)]="texto"
           />
-          <button class="btn btn-brand" type="submit">
+          <button
+            class="-ml-px inline-block cursor-pointer select-none rounded-l-none rounded-r-[0.72rem] border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal text-white no-underline shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
+            type="submit"
+          >
             Buscar <i class="bi bi-arrow-right"></i>
           </button>
         </div>
       </form>
 
-      <nav class="not-found-links" aria-label="Enlaces de ayuda">
-        <a class="btn btn-brand" routerLink="/"> <i class="bi bi-house"></i> Ir al inicio </a>
-        <a class="btn btn-outline-ink" routerLink="/productos">
+      <nav
+        class="flex flex-wrap gap-[0.65rem] max-[575.98px]:[&>a]:w-full"
+        aria-label="Enlaces de ayuda"
+      >
+        <a
+          class="-ml-px inline-block cursor-pointer select-none rounded-l-none rounded-r-[0.72rem] border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal text-white no-underline shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
+          routerLink="/"
+        >
+          <i class="bi bi-house"></i> Ir al inicio
+        </a>
+        <a
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+          routerLink="/productos"
+        >
           <i class="bi bi-grid-3x3-gap"></i> Ver catálogo
         </a>
-        <a class="btn btn-soft" routerLink="/cotizar">
+        <a
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
+          routerLink="/cotizar"
+        >
           <i class="bi bi-send"></i> Solicitar cotización
         </a>
-        <a class="btn btn-soft" routerLink="/seguimiento">
+        <a
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
+          routerLink="/seguimiento"
+        >
           <i class="bi bi-search"></i> Seguir mi solicitud
         </a>
       </nav>

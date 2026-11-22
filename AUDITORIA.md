@@ -497,4 +497,90 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
   390 px, sin errores de consola ni respuestas 4xx/5xx. `format:check`, `lint`, 53 pruebas y `build`
   en verde (485.13 kB raw / 114.05 kB); `compileall` del backend sin errores.
 
+### Migración a Tailwind + Flowbite en seis módulos (21 de noviembre de 2026)
+
+- **Alcance.** Solo `login`, `dashboard`, `solicitudes`, `detalle`, `produccion` y `clientes`.
+  No se modificaron `cotizar`, catálogo, inventario, abastecimiento, marketing ni el resto del ERP.
+- **Componentes sustituidos.** Se retiraron de esas plantillas `btn*`, `form-label`,
+  `form-control`, `form-select`, `form-check*`, `form-switch`, `input-group*`, `table`,
+  `table-responsive`, `badge`, `alert`, `modal*`, `spinner-border*`, `pagination`, `page-*`,
+  `h5`, `small`, `text-end` e `is-invalid`. En su lugar se usan utilidades Tailwind inline con los
+  tokens de color y espaciado del proyecto.
+- **Interacción.** Los modales usan overlay fijo, panel centrado y scroll interno; conservan
+  `appModalAccesible` y ahora exponen `data-modal-title`/`data-modal-body`. Los interruptores de
+  producción y clientes usan el patrón `peer` de Tailwind. La paginación activa/deshabilitada se
+  resuelve con clases condicionales y `disabled`.
+- **Compatibilidad.** La directiva de modales acepta los nuevos atributos y mantiene el respaldo a
+  `.modal-title`/`.modal-body` para los módulos que aún no migraron.
+- **Verificación.** `format:check`, `lint`, **53/53** pruebas y `build` en verde
+  (500.14 kB raw / 116.18 kB). **51/51** comprobaciones de rutas en Edge; **21/21** capturas y
+  comprobaciones de escritorio/móvil; **9/9** interacciones (abrir/cerrar modales, foco, bloqueo de
+  scroll, interruptor y validación visual del login). Sin errores de consola ni desbordes a 390 px.
+
+### Cierre de la migración en los seis módulos (21 de noviembre de 2026)
+
+- **Login y clientes.** Todo el estilo pasó a utilidades Tailwind inline: estructura, marca, tarjeta,
+  formulario, filas, pistas, notas, tabla de roles, permisos, seguridad, tarjetas de estadísticas,
+  perfil, notas y segmentos. `login.component.css` y `clientes.component.css` quedaron sin reglas.
+- **Primitivas compartidas.** En los seis módulos se sustituyeron `llamma-container`, `module-page`,
+  `page-header`, `page-lead`, `panel-card`, `panel-head`, `panel-kicker`, `panel-link`, `date-chip`,
+  `eyebrow`, `table-llamma`, `cell-main`, `cell-muted`, `table-note`, `field-error` y utilidades de
+  color por clases Tailwind equivalentes. Las definiciones globales se conservan para el resto del
+  ERP.
+- **CSS depurado.** Se eliminaron reglas muertas (`auth-divider`, `session-*`, `kanban-legend`,
+  `kanban-dot`, `dot-ink`, `kanban-more`, `machine-progress`) y las reglas locales que ya cubrían
+  las utilidades migradas.
+- **Flowbite.** No se añadió JavaScript: modales, tabs, toggles, paginación y formularios siguen
+  controlados por Angular y `appModalAccesible`; se usan los patrones visuales de Flowbite/Tailwind.
+- **Verificación.** `format:check`, `lint`, **53/53** pruebas y `build` en verde
+  (518.47 kB raw / 118.57 kB). **51/51** rutas, **21/21** capturas y **9/9** interacciones en Edge;
+  390 px sin desbordes y sin errores de consola.
+
+### Fase 1 de migración global: shell y navegación (21 de noviembre de 2026)
+
+- **Shell.** `app.html` pasó a utilidades Tailwind: contenedor de aplicación, skip link, franja CMYK,
+  navbar, menú móvil, enlaces activos, desplegable «Módulos», chip de usuario, botones de acceso/salida,
+  footer, toasts y `main`.
+- **CSS eliminado.** `app.css` quedó sin reglas; se retiraron de `styles.css` los bloques de
+  `.navbar*`, `.navbar-llamma*`, `.brand-*`, `.site-footer*`, `.app-shell`, `.app-main`, `.ink-strip`,
+  `.skip-link`, `.user-*`, `.nav-link*` y los overrides del dropdown del navbar.
+- **Conservado.** Las reglas genéricas de `.dropdown*` siguen disponibles para `consultas`; `.btn`
+  y demás primitivas globales se mantienen para los módulos aún no migrados.
+- **Verificación.** `format:check`, `lint`, **53/53** pruebas y `build` en verde
+  (539.02 kB raw / 120.58 kB); **51/51** rutas y **9/9** interacciones en Edge, sin errores de
+  consola ni desbordes a 390 px.
+
+### Fase 2a: páginas públicas simples (21 de noviembre de 2026)
+
+- **404.** `not-found-page`, `not-found-card`, `not-found-code`, búsqueda y enlaces migrados a
+  utilidades Tailwind; `no-encontrado.component.css` quedó sin reglas.
+- **Aviso de privacidad.** `legal-page`, `legal-back`, tipografía legal, listas, enlaces, `hr` y pie
+  migrados; `aviso-privacidad.component.css` quedó sin reglas.
+- **Primitivas reutilizadas.** Contenedor, `panel-card`, `panel-kicker`, `eyebrow`, `page-lead`,
+  botones, inputs y `field-error` se resolvieron con las mismas utilidades de los módulos anteriores.
+- **Verificación.** `format:check`, `lint`, **53/53** pruebas y `build` en verde
+  (541.29 kB raw / 120.94 kB); **51/51** rutas en Edge; capturas de 404 y aviso revisadas sin
+  desbordes ni errores de consola.
+
+### Fase 2b: catálogo público de productos (21 de noviembre de 2026)
+
+- **Catálogo.** Filtros por línea, buscador, rejilla de tarjetas, media, precio, badges, estado
+  vacío, error y bloque de ayuda migrados a utilidades Tailwind.
+- **Gestión interna.** Modal, tabla, formularios, switches, botones y acciones de publicación/baja
+  pasaron al mismo patrón de utilidades; el switch usa `peer`.
+- **CSS eliminado.** `productos.component.css` quedó sin reglas.
+- **Verificación.** `format:check`, `lint`, **53/53** pruebas y `build` en verde
+  (546.11 kB raw / 121.33 kB); **51/51** rutas en Edge y captura del catálogo revisada.
+
+### Fase 2c: seguimiento público (21 de noviembre de 2026)
+
+- **Consulta.** Cabecera, formulario folio/correo, validaciones, botones y tarjeta de ayuda migrados a
+  utilidades Tailwind.
+- **Resultado.** Datos de la solicitud, partidas, archivos, cotización y badges migrados.
+- **Chat.** Hilos, burbujas propias, metadatos, adjuntos, composición, chips y ayudas migrados a
+  utilidades; se eliminó la dependencia del CSS global del chat en esta vista.
+- **CSS eliminado.** `seguimiento.component.css` quedó sin reglas.
+- **Verificación.** `format:check`, `lint`, **53/53** pruebas y `build` en verde
+  (551.10 kB raw / 121.92 kB); **51/51** rutas en Edge y captura de `/seguimiento` revisada.
+
 

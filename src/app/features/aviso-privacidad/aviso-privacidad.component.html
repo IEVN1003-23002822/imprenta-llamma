@@ -2,14 +2,30 @@
   Documento base alineado a la LFPDPPP. Antes de publicar, validar el texto y
   los datos del responsable con asesoría legal.
 -->
-<div class="module-page legal-page">
-  <div class="llamma-container">
-    <a class="legal-back" routerLink="/"> <i class="bi bi-arrow-left"></i> Volver al inicio </a>
+<div
+  class="pt-[2.75rem] pb-[5.5rem] py-[2.2rem] pb-16 [&_a]:text-[var(--llamma-carbon)] [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:text-[var(--llamma-magenta)] [&_h1]:mb-[0.4rem] [&_h1]:mt-[0.2rem] [&_h1]:text-[clamp(1.7rem,4vw,2.4rem)] [&_h2]:mb-[0.6rem] [&_h2]:mt-8 [&_h2]:text-[1.1rem] [&_hr]:my-[2.2rem] [&_hr]:mb-[1.2rem] [&_hr]:border-[var(--llamma-line)] [&_li]:mb-[0.35rem] [&_li]:text-[0.9rem] [&_li]:leading-[1.75] [&_li]:text-[var(--llamma-muted)] [&_p]:text-[0.9rem] [&_p]:leading-[1.75] [&_p]:text-[var(--llamma-muted)] [&_ul]:pl-[1.1rem]"
+>
+  <div
+    class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+  >
+    <a
+      class="mx-auto mb-4 flex max-w-[52rem] items-center gap-[0.4rem] text-[0.8rem] font-semibold text-[var(--llamma-muted)] hover:text-[var(--llamma-magenta)] max-[575.98px]:px-[0.2rem]"
+      routerLink="/"
+    >
+      <i class="bi bi-arrow-left"></i> Volver al inicio
+    </a>
 
-    <article class="panel-card">
-      <span class="panel-kicker">Información legal</span>
+    <article
+      class="mx-auto max-w-[52rem] rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-[clamp(1.4rem,4vw,3rem)] shadow-[var(--llamma-shadow-sm)]"
+    >
+      <span
+        class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+        >Información legal</span
+      >
       <h1>Aviso de privacidad</h1>
-      <p class="legal-updated">Última actualización: {{ actualizado }}</p>
+      <p class="mb-[1.6rem] text-[0.74rem] uppercase tracking-[0.06em] text-[var(--llamma-muted)]">
+        Última actualización: {{ actualizado }}
+      </p>
 
       <p>
         En {{ site.nombre }} nos importa que sepas qué hacemos con tus datos. Este aviso explica qué
@@ -81,13 +97,15 @@
 
       <hr />
 
-      <p class="legal-foot">
+      <p class="mb-[0.4rem] flex flex-wrap items-center gap-[0.35rem] text-[0.82rem]">
         <i class="bi bi-envelope"></i>
         ¿Dudas sobre tu información?
         <a [href]="'mailto:' + site.correo">Escríbenos a {{ site.correo }}</a
         >.
       </p>
-      <p class="legal-foot legal-copy">
+      <p
+        class="mb-[0.4rem] flex flex-wrap items-center gap-[0.35rem] text-[0.82rem] text-[0.72rem] text-[var(--llamma-muted)]"
+      >
         © {{ anio }} {{ site.nombre }}. Todos los derechos reservados.
       </p>
     </article>

@@ -52,7 +52,7 @@ export class ModalAccesibleDirective implements AfterViewInit, OnDestroy {
     modal.setAttribute('aria-modal', 'true');
 
     if (!modal.hasAttribute('aria-label') && !modal.hasAttribute('aria-labelledby')) {
-      const titulo = modal.querySelector<HTMLElement>('.modal-title');
+      const titulo = modal.querySelector<HTMLElement>('[data-modal-title], .modal-title');
       if (titulo) {
         if (!titulo.id) titulo.id = `${this.id}-titulo`;
         modal.setAttribute('aria-labelledby', titulo.id);
@@ -128,7 +128,7 @@ export class ModalAccesibleDirective implements AfterViewInit, OnDestroy {
     const modal = this.host.nativeElement;
     if (!document.contains(modal)) return;
 
-    const cuerpo = modal.querySelector<HTMLElement>('.modal-body');
+    const cuerpo = modal.querySelector<HTMLElement>('[data-modal-body], .modal-body');
     const candidatos = cuerpo
       ? Array.from(cuerpo.querySelectorAll<HTMLElement>(ENFOCABLES))
       : this.enfocables();

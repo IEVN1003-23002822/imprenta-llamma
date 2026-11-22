@@ -349,7 +349,14 @@ export class ClientesComponent implements OnInit {
 
   rangoTexto(): string {
     const inicio = this.total() ? (this.pagina() - 1) * 10 + 1 : 0;
-    return `Mostrando ${inicio}–${Math.min(this.pagina() * 10, this.total())} de ${this.total()} clientes`;
+    return `Mostrando ${inicio}-${Math.min(this.pagina() * 10, this.total())} de ${this.total()} clientes`;
+  }
+
+  clasePagina(numero: number): string {
+    const base = 'relative block border px-2 py-1 text-[0.76rem] no-underline transition';
+    return numero === this.pagina()
+      ? `${base} z-10 border-neutral-900 bg-neutral-900 text-white`
+      : `${base} border-[var(--llamma-line)] text-[var(--llamma-carbon)] hover:bg-[rgba(var(--llamma-magenta-rgb),0.06)] hover:text-[var(--llamma-magenta)]`;
   }
 
   etiquetaSegmento(segmento: string): string {

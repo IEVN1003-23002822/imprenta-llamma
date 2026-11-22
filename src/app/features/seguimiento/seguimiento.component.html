@@ -1,9 +1,13 @@
-<div class="module-page seguimiento-page">
-  <div class="llamma-container">
-    <header class="page-header flex flex-wrap items-end justify-between gap-4">
-      <div class="page-brand">
+<div class="pt-[2.75rem] pb-[5.5rem] seguimiento-page">
+  <div
+    class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+  >
+    <header
+      class="mb-[2.2rem] [&_h1]:mb-[0.65rem] [&_h1]:text-[clamp(2.15rem,4.1vw,3.45rem)] [&_h1]:leading-[1.02] flex flex-wrap items-end justify-between gap-4"
+    >
+      <div class="flex items-start gap-[1.1rem] max-[575.98px]:gap-3">
         <img
-          class="page-brand-logo"
+          class="mt-[0.15rem] h-[54px] w-auto flex-none drop-shadow-[0_6px_14px_rgba(26,26,26,0.12)] max-[575.98px]:h-11"
           src="assets/images/logo-llamma-128.webp"
           srcset="assets/images/logo-llamma-128.webp 2x, assets/images/logo-llamma-256.webp 4x"
           alt="Imprenta Llamma Logo"
@@ -11,31 +15,51 @@
           height="54"
         />
         <div>
-          <span class="eyebrow">Portal de clientes</span>
+          <span
+            class="mb-[0.9rem] inline-flex items-center gap-[0.6rem] text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[var(--llamma-magenta)] before:h-1 before:w-[1.6rem] before:rounded-full before:bg-[linear-gradient(90deg,var(--llamma-cyan),var(--llamma-magenta)_60%,var(--llamma-yellow))] before:content-['']"
+            >Portal de clientes</span
+          >
           <h1>Sigue tu solicitud.</h1>
-          <p class="page-lead">
+          <p class="mb-0 max-w-[44rem] text-base text-[var(--llamma-muted)]">
             Consulta el avance de tu cotización y conversa con nuestro equipo. Solo necesitas el
             folio que te entregamos al enviar la solicitud y el correo con el que la registraste.
           </p>
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a class="btn btn-brand" routerLink="/cotizar">
+        <a
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+          routerLink="/cotizar"
+        >
           <i class="bi bi-pencil-square"></i> Nueva solicitud
         </a>
-        <a class="btn btn-outline-ink" routerLink="/productos">
+        <a
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+          routerLink="/productos"
+        >
           <i class="bi bi-grid-3x3-gap"></i> Ver catálogo
         </a>
       </div>
     </header>
 
-    <section class="panel-card tracking-card" aria-labelledby="tituloConsulta">
-      <div class="panel-head flex-wrap">
+    <section
+      class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 mb-6"
+      aria-labelledby="tituloConsulta"
+    >
+      <div
+        class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em] flex-wrap"
+      >
         <div>
-          <span class="panel-kicker">Seguimiento</span>
+          <span
+            class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+            >Seguimiento</span
+          >
           <h2 id="tituloConsulta">Consulta el estatus de tu solicitud</h2>
         </div>
-        <span class="badge badge-soft-muted">Folio + correo</span>
+        <span
+          class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] badge-soft-muted"
+          >Folio + correo</span
+        >
       </div>
 
       <form
@@ -45,11 +69,15 @@
         novalidate
       >
         <div class="col-span-12 md:col-span-5">
-          <label class="form-label" for="segFolio">Folio de solicitud</label>
+          <label
+            class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+            for="segFolio"
+            >Folio de solicitud</label
+          >
           <input
             id="segFolio"
             type="text"
-            class="form-control"
+            class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
             formControlName="folio"
             placeholder="SOL-2026-001"
             autocomplete="off"
@@ -57,24 +85,30 @@
             [attr.aria-invalid]="
               seguimientoForm.controls.folio.touched && seguimientoForm.controls.folio.invalid
             "
-            [class.is-invalid]="
+            [class.border-red-600]="
               seguimientoForm.controls.folio.touched && seguimientoForm.controls.folio.invalid
             "
           />
           @if (seguimientoForm.controls.folio.touched && seguimientoForm.controls.folio.invalid) {
-            <span class="field-error" id="segFolioAyuda">Escribe el folio de tu solicitud.</span>
+            <span class="mt-1 block text-[0.66rem] font-medium text-[#b42318]" id="segFolioAyuda"
+              >Escribe el folio de tu solicitud.</span
+            >
           } @else {
-            <span class="field-hint" id="segFolioAyuda"
+            <span class="mt-[0.3rem] text-[0.66rem] text-[var(--llamma-muted)]" id="segFolioAyuda"
               >Lo encuentras en el comprobante o en el correo de confirmación.</span
             >
           }
         </div>
         <div class="col-span-12 md:col-span-5">
-          <label class="form-label" for="segCorreo">Correo registrado</label>
+          <label
+            class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+            for="segCorreo"
+            >Correo registrado</label
+          >
           <input
             id="segCorreo"
             type="email"
-            class="form-control"
+            class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
             formControlName="correo"
             placeholder="nombre&#64;empresa.mx"
             autocomplete="email"
@@ -82,22 +116,26 @@
             [attr.aria-invalid]="
               seguimientoForm.controls.correo.touched && seguimientoForm.controls.correo.invalid
             "
-            [class.is-invalid]="
+            [class.border-red-600]="
               seguimientoForm.controls.correo.touched && seguimientoForm.controls.correo.invalid
             "
           />
           @if (seguimientoForm.controls.correo.touched && seguimientoForm.controls.correo.invalid) {
-            <span class="field-error" id="segCorreoAyuda"
+            <span class="mt-1 block text-[0.66rem] font-medium text-[#b42318]" id="segCorreoAyuda"
               >Ingresa el mismo correo con el que registraste la solicitud.</span
             >
           } @else {
-            <span class="field-hint" id="segCorreoAyuda"
+            <span class="mt-[0.3rem] text-[0.66rem] text-[var(--llamma-muted)]" id="segCorreoAyuda"
               >Debe coincidir exactamente con el correo de la solicitud.</span
             >
           }
         </div>
         <div class="col-span-12 md:col-span-2">
-          <button class="btn btn-ink w-full" type="submit" [disabled]="buscando()">
+          <button
+            class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white w-full"
+            type="submit"
+            [disabled]="buscando()"
+          >
             @if (buscando()) {
               <i class="bi bi-hourglass-split"></i>
             } @else {
@@ -109,7 +147,10 @@
       </form>
 
       @if (errorSeguimiento()) {
-        <div class="request-error mt-4" role="alert">
+        <div
+          class="mb-[0.9rem] flex items-start gap-2 rounded-[0.7rem] border border-[rgba(180,35,24,0.26)] bg-[#fdecec] px-[0.75rem] py-[0.65rem] text-[0.7rem] leading-[1.45] text-[#a01212] [&_i]:mt-[0.1rem] mt-4"
+          role="alert"
+        >
           <i class="bi bi-exclamation-triangle-fill"></i>
           <span>{{ errorSeguimiento() }}</span>
         </div>
@@ -121,21 +162,31 @@
         <div class="col-span-12 xl:col-span-7">
           <section
             id="resultadoSeguimiento"
-            class="panel-card tracking-result-card"
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 h-full scroll-mt-24 focus:outline-none focus-visible:shadow-[0_0_0_0.25rem_rgba(var(--llamma-cyan-rgb),0.28)]"
             tabindex="-1"
             aria-labelledby="tituloResultado"
           >
-            <div class="tracking-head">
+            <div
+              class="flex flex-wrap items-start justify-between gap-4 [&_h2]:mb-0 [&_h2]:mt-[0.2rem] [&_h2]:text-[1.15rem]"
+            >
               <div>
-                <span class="panel-kicker">Solicitud {{ solicitud.folio }}</span>
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Solicitud {{ solicitud.folio }}</span
+                >
                 <h2 id="tituloResultado">{{ solicitud.nombreCliente }}</h2>
               </div>
-              <span class="badge" [class]="claseEstado(solicitud.estado)">
+              <span
+                class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                [class]="claseEstado(solicitud.estado)"
+              >
                 {{ etiquetaEstado(solicitud.estado) }}
               </span>
             </div>
 
-            <div class="tracking-grid">
+            <div
+              class="mt-4 grid grid-cols-2 gap-3 max-[575.98px]:grid-cols-1 [&>div]:rounded-[0.7rem] [&>div]:bg-[rgba(26,26,26,0.03)] [&>div]:px-[0.8rem] [&>div]:py-[0.65rem] [&_span]:block [&_span]:text-[0.6rem] [&_span]:font-semibold [&_span]:uppercase [&_span]:tracking-[0.05em] [&_span]:text-[var(--llamma-muted)] [&_strong]:mt-[0.2rem] [&_strong]:block [&_strong]:text-[0.76rem]"
+            >
               <div>
                 <span>Recibida</span>
                 <strong>{{ fecha(solicitud.fechaCreacion) }}</strong>
@@ -155,12 +206,21 @@
             </div>
 
             @if (solicitud.mensaje) {
-              <p class="tracking-message">{{ solicitud.mensaje }}</p>
+              <p
+                class="mb-0 mt-4 border-l-[3px] border-[var(--llamma-cyan)] bg-[rgba(var(--llamma-cyan-rgb),0.05)] px-4 py-[0.8rem] text-[0.76rem] leading-[1.6]"
+              >
+                {{ solicitud.mensaje }}
+              </p>
             }
 
             @if (solicitud.items.length) {
-              <div class="tracking-items">
-                <span class="panel-kicker">Partidas de la solicitud</span>
+              <div
+                class="[&_ul]:m-0 [&_ul]:mt-[0.6rem] [&_ul]:flex [&_ul]:list-none [&_ul]:flex-col [&_ul]:gap-2 [&_ul]:p-0 [&_li]:flex [&_li]:flex-col [&_li]:gap-[0.15rem] [&_li]:border-l-[3px] [&_li]:border-[var(--llamma-cyan)] [&_li]:bg-[#fbfaf7] [&_li]:px-3 [&_li]:py-[0.55rem] [&_strong]:text-[0.78rem] [&_span]:text-[0.7rem] [&_span]:leading-[1.45] [&_span]:text-[var(--llamma-muted)]"
+              >
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Partidas de la solicitud</span
+                >
                 <ul>
                   @for (item of solicitud.items; track $index) {
                     <li>
@@ -173,7 +233,9 @@
             }
 
             @if (solicitud.archivos.length) {
-              <p class="tracking-files">
+              <p
+                class="mt-[0.9rem] inline-flex items-center gap-[0.4rem] text-[0.72rem] text-[var(--llamma-muted)]"
+              >
                 <i class="bi bi-paperclip"></i>
                 {{ solicitud.archivos.length }}
                 {{
@@ -186,7 +248,9 @@
             }
 
             @if (solicitud.cotizacion) {
-              <div class="tracking-quote">
+              <div
+                class="mt-4 flex items-center gap-[0.7rem] rounded-xl border border-[rgba(0,174,239,0.25)] bg-[rgba(var(--llamma-cyan-rgb),0.07)] px-4 py-[0.8rem] [&>i]:text-[1.3rem] [&>i]:text-[var(--llamma-cyan-deep)] [&_span]:block [&_span]:text-[0.68rem] [&_span]:text-[var(--llamma-muted)] [&_strong]:block [&_strong]:text-[0.8rem]"
+              >
                 <i class="bi bi-file-earmark-check"></i>
                 <div>
                   <strong>Cotización {{ solicitud.cotizacion.folio }}</strong>
@@ -201,30 +265,44 @@
         </div>
 
         <div class="col-span-12 xl:col-span-5">
-          <section class="panel-card chat-card" aria-labelledby="tituloChat">
-            <div class="chat-head">
+          <section
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 flex h-full flex-col"
+            aria-labelledby="tituloChat"
+          >
+            <div
+              class="mb-[0.85rem] flex flex-wrap items-start justify-between gap-3 [&_h2]:m-0 [&_h2]:text-[1.05rem]"
+            >
               <div>
-                <span class="panel-kicker">Chat de la solicitud</span>
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Chat de la solicitud</span
+                >
                 <h2 id="tituloChat">Conversación con el equipo</h2>
               </div>
-              <button class="btn btn-sm btn-outline-ink" type="button" (click)="refrescarChat()">
+              <button
+                class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 rounded! px-2! py-1! text-sm! border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                type="button"
+                (click)="refrescarChat()"
+              >
                 <i class="bi bi-arrow-clockwise"></i> Actualizar
               </button>
             </div>
 
             <div
               #hiloChat
-              class="chat-thread"
+              class="flex max-h-[22rem] flex-col gap-[0.65rem] overflow-y-auto rounded-[var(--llamma-radius-sm)] border border-[var(--llamma-line)] bg-[var(--llamma-paper)] p-[0.9rem] scroll-smooth max-[575.98px]:max-h-[17rem]"
               role="log"
               aria-live="polite"
               aria-label="Mensajes de la solicitud"
             >
               @for (mensaje of mensajes(); track mensaje.id) {
                 <div
-                  class="chat-bubble"
+                  class="max-w-[88%] self-start rounded-[0.9rem_0.9rem_0.9rem_0.25rem] border border-[var(--llamma-line)] bg-white p-[0.65rem_0.85rem] shadow-[var(--llamma-shadow-sm)] max-[575.98px]:max-w-[94%] [&_p]:m-0 [&_p]:whitespace-pre-line [&_p]:break-words [&_p]:text-[0.88rem] [&_p]:leading-[1.55]"
                   [class.chat-bubble-propio]="mensaje.remitenteTipo === 'cliente'"
                 >
-                  <div class="chat-meta">
+                  <div
+                    class="mb-[0.2rem] flex items-baseline justify-between gap-2 text-[0.68rem] text-[var(--llamma-muted)] [&_strong]:text-[0.72rem] [&_strong]:text-[var(--llamma-carbon)] [&_time]:whitespace-nowrap"
+                  >
                     <strong>{{
                       mensaje.remitenteTipo === 'cliente' ? 'Tú' : mensaje.autor
                     }}</strong>
@@ -235,13 +313,16 @@
                   }
                   @if (mensaje.adjunto) {
                     <button
-                      class="chat-file"
+                      class="mt-2 flex w-full items-center gap-[0.4rem] rounded-[0.55rem] border border-[var(--llamma-line)] bg-white/75 px-[0.55rem] py-[0.35rem] text-left text-[0.75rem] text-[var(--llamma-carbon)] hover:border-[rgba(var(--llamma-cyan-rgb),0.6)]"
                       type="button"
                       [disabled]="descargandoAdjunto() === mensaje.id"
                       (click)="descargarAdjuntoChat(mensaje)"
                     >
                       <i class="bi bi-paperclip"></i>
-                      <span class="chat-file-name">{{ mensaje.adjunto.nombre }}</span>
+                      <span
+                        class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+                        >{{ mensaje.adjunto.nombre }}</span
+                      >
                       <small>{{ tamanoChat(mensaje.adjunto.tamanoBytes) }}</small>
                       <i class="bi bi-download"></i>
                       <span class="sr-only">Descargar {{ mensaje.adjunto.nombre }}</span>
@@ -249,7 +330,7 @@
                   }
                 </div>
               } @empty {
-                <p class="chat-empty">
+                <p class="m-auto text-center text-[0.82rem] text-[var(--llamma-muted)]">
                   <i class="bi bi-chat-dots"></i>
                   Aún no hay mensajes. Escríbenos si necesitas aclarar algo de tu solicitud.
                 </p>
@@ -257,19 +338,22 @@
             </div>
 
             @if (errorChat()) {
-              <div class="request-error" role="alert">
+              <div
+                class="mb-[0.9rem] flex items-start gap-2 rounded-[0.7rem] border border-[rgba(180,35,24,0.26)] bg-[#fdecec] px-[0.75rem] py-[0.65rem] text-[0.7rem] leading-[1.45] text-[#a01212] [&_i]:mt-[0.1rem]"
+                role="alert"
+              >
                 <i class="bi bi-exclamation-triangle-fill"></i>
                 <span>{{ errorChat() }}</span>
               </div>
             }
 
-            <div class="chat-compose">
+            <div class="mt-[0.85rem] [&_textarea]:min-h-16 [&_textarea]:resize-y">
               <label class="sr-only" for="chatPublicoMensaje"
                 >Mensaje para el equipo de Llamma</label
               >
               <textarea
                 id="chatPublicoMensaje"
-                class="form-control"
+                class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
                 rows="2"
                 maxlength="4000"
                 placeholder="Escribe tu mensaje..."
@@ -277,9 +361,11 @@
                 [value]="borrador()"
                 (input)="actualizarBorrador($event)"
               ></textarea>
-              <div class="chat-compose-actions">
-                <div class="chat-adjunto">
-                  <label class="btn btn-sm btn-outline-ink mb-0">
+              <div class="mt-[0.55rem] flex flex-wrap items-center justify-between gap-[0.6rem]">
+                <div class="flex min-w-0 flex-wrap items-center gap-[0.45rem]">
+                  <label
+                    class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 rounded! px-2! py-1! text-sm! border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white mb-0"
+                  >
                     <i class="bi bi-paperclip"></i> Adjuntar
                     <input
                       type="file"
@@ -289,7 +375,9 @@
                     />
                   </label>
                   @if (adjuntoChat(); as archivo) {
-                    <span class="chat-adjunto-chip">
+                    <span
+                      class="inline-flex max-w-[14rem] items-center gap-[0.3rem] overflow-hidden text-ellipsis whitespace-nowrap rounded-full border border-dashed border-[rgba(var(--llamma-cyan-rgb),0.6)] bg-[rgba(var(--llamma-cyan-rgb),0.08)] px-2 py-[0.2rem] text-[0.72rem] [&_button]:inline-flex [&_button]:items-center [&_button]:border-0 [&_button]:bg-transparent [&_button]:p-0 [&_button]:leading-none [&_button]:text-[var(--llamma-muted)] [&_button:hover]:text-[var(--llamma-magenta)]"
+                    >
                       {{ archivo.name }}
                       <button
                         type="button"
@@ -302,7 +390,7 @@
                   }
                 </div>
                 <button
-                  class="btn btn-ink btn-sm"
+                  class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white rounded! px-2! py-1! text-sm!"
                   type="button"
                   [disabled]="enviandoMensaje()"
                   (click)="enviarMensaje()"
@@ -314,7 +402,10 @@
                   }
                 </button>
               </div>
-              <small class="chat-hint" id="chatAyuda">
+              <small
+                class="mt-[0.4rem] block text-[0.7rem] text-[var(--llamma-muted)]"
+                id="chatAyuda"
+              >
                 Adjuntos permitidos: PDF, AI, PSD, PNG, JPG, SVG o ZIP (máx. 25 MB).
               </small>
             </div>
@@ -322,16 +413,29 @@
         </div>
       </div>
     } @else {
-      <section class="panel-card tracking-help" aria-labelledby="tituloAyuda">
-        <div class="panel-head">
+      <section
+        class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7"
+        aria-labelledby="tituloAyuda"
+      >
+        <div
+          class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em]"
+        >
           <div>
-            <span class="panel-kicker">Antes de consultar</span>
+            <span
+              class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+              >Antes de consultar</span
+            >
             <h2 id="tituloAyuda">¿Cómo funciona el seguimiento?</h2>
           </div>
         </div>
-        <ol class="tracking-steps">
+        <ol
+          class="m-0 mt-[1.2rem] grid list-none grid-cols-3 gap-4 p-0 max-[991.98px]:grid-cols-1 [&_li]:flex [&_li]:items-start [&_li]:gap-[0.7rem] [&_li]:rounded-[var(--llamma-radius-sm)] [&_li]:border [&_li]:border-[var(--llamma-line)] [&_li]:bg-[#fbfaf7] [&_li]:p-[0.9rem] [&_p]:mb-0 [&_p]:mt-[0.2rem] [&_p]:text-[0.7rem] [&_p]:leading-[1.5] [&_p]:text-[var(--llamma-muted)] [&_strong]:block [&_strong]:text-[0.8rem]"
+        >
           <li>
-            <span class="step-number">01</span>
+            <span
+              class="inline-grid h-[2.35rem] w-[2.35rem] flex-none place-items-center rounded-[0.8rem] bg-[var(--llamma-carbon)] font-[family-name:var(--llamma-font-display)] text-[0.68rem] text-white"
+              >01</span
+            >
             <div>
               <strong>Ten a la mano tu folio</strong>
               <p>
@@ -340,14 +444,20 @@
             </div>
           </li>
           <li>
-            <span class="step-number">02</span>
+            <span
+              class="inline-grid h-[2.35rem] w-[2.35rem] flex-none place-items-center rounded-[0.8rem] bg-[var(--llamma-carbon)] font-[family-name:var(--llamma-font-display)] text-[0.68rem] text-white"
+              >02</span
+            >
             <div>
               <strong>Usa el correo exacto</strong>
               <p>Por seguridad solo mostramos la solicitud si el folio y el correo coinciden.</p>
             </div>
           </li>
           <li>
-            <span class="step-number">03</span>
+            <span
+              class="inline-grid h-[2.35rem] w-[2.35rem] flex-none place-items-center rounded-[0.8rem] bg-[var(--llamma-carbon)] font-[family-name:var(--llamma-font-display)] text-[0.68rem] text-white"
+              >03</span
+            >
             <div>
               <strong>Consulta y conversa</strong>
               <p>Verás el estatus, la cotización y podrás enviar mensajes o archivos al equipo.</p>

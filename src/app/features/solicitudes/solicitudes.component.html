@@ -1,24 +1,34 @@
-<div class="module-page solicitudes-page">
-  <div class="llamma-container">
-    <header class="page-header flex flex-wrap items-end justify-between gap-4">
+<div class="pt-[2.75rem] pb-[5.5rem] solicitudes-page">
+  <div
+    class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+  >
+    <header
+      class="mb-[2.2rem] [&_h1]:mb-[0.65rem] [&_h1]:text-[clamp(2.15rem,4.1vw,3.45rem)] [&_h1]:leading-[1.02] flex flex-wrap items-end justify-between gap-4"
+    >
       <div>
-        <span class="eyebrow">Bandeja comercial</span>
+        <span
+          class="mb-[0.9rem] inline-flex items-center gap-[0.6rem] text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[var(--llamma-magenta)] before:h-1 before:w-[1.6rem] before:rounded-full before:bg-[linear-gradient(90deg,var(--llamma-cyan),var(--llamma-magenta)_60%,var(--llamma-yellow))] before:content-['']"
+          >Bandeja comercial</span
+        >
         <h1>Solicitudes entrantes.</h1>
-        <p class="page-lead">
+        <p class="mb-0 max-w-[44rem] text-base text-[var(--llamma-muted)]">
           Cada solicitud del portal llega aquí con su folio, partidas y archivos. Atiéndela,
           conviértela en cotización y da seguimiento al cliente sin salir del panel.
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
         <button
-          class="btn btn-outline-ink"
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
           type="button"
           (click)="cargar()"
           [disabled]="cargando()"
         >
           <i class="bi bi-arrow-clockwise"></i> Actualizar
         </button>
-        <a class="btn btn-brand" routerLink="/captura">
+        <a
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+          routerLink="/captura"
+        >
           <i class="bi bi-plus-lg"></i> Nueva cotización
         </a>
       </div>
@@ -63,7 +73,9 @@
       </div>
     </div>
 
-    <section class="panel-card mb-6">
+    <section
+      class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 mb-6"
+    >
       <div class="filter-row">
         <div class="inbox-tabs" role="tablist" aria-label="Filtrar solicitudes por estado">
           @for (opcion of opciones; track opcion.valor) {
@@ -79,11 +91,14 @@
         </div>
 
         <div class="inbox-search">
-          <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <div class="flex w-full flex-1 flex-wrap items-stretch">
+            <span
+              class="flex items-center whitespace-nowrap rounded-l-[0.72rem] border border-r-0 border-[var(--llamma-line)] bg-[#f2f1ec] px-3 py-1.5 text-[0.85rem] font-normal leading-normal text-[var(--llamma-muted)]"
+              ><i class="bi bi-search"></i
+            ></span>
             <input
               type="search"
-              class="form-control"
+              class="block min-h-[2.8rem] w-full min-w-0 flex-1 w-auto! -ml-px rounded-l-none! rounded-r-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
               placeholder="Folio, cliente o correo..."
               aria-label="Buscar solicitudes por folio, cliente o correo"
               [value]="texto()"
@@ -91,12 +106,16 @@
               (keyup.enter)="buscar()"
             />
           </div>
-          <button class="btn btn-ink" type="button" (click)="buscar()">
+          <button
+            class="inline-block cursor-pointer select-none whitespace-nowrap rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white"
+            type="button"
+            (click)="buscar()"
+          >
             <i class="bi bi-funnel-fill"></i> Buscar
           </button>
           @if (hayFiltros()) {
             <button
-              class="btn btn-soft"
+              class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
               type="button"
               aria-label="Limpiar filtros"
               (click)="limpiar()"
@@ -117,13 +136,23 @@
 
     <div class="grid grid-cols-12 gap-6">
       <div class="col-span-12 xl:col-span-7">
-        <section class="panel-card inbox-panel">
-          <div class="panel-head">
+        <section
+          class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 inbox-panel"
+        >
+          <div
+            class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em]"
+          >
             <div>
-              <span class="panel-kicker">Bandeja</span>
+              <span
+                class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                >Bandeja</span
+              >
               <h2>Solicitudes recibidas</h2>
             </div>
-            <span class="badge badge-soft-muted">{{ total() }} resultados</span>
+            <span
+              class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[rgba(26,26,26,0.06)] text-[var(--llamma-muted)]"
+              >{{ total() }} resultados</span
+            >
           </div>
 
           @if (cargando()) {
@@ -153,7 +182,10 @@
                   <span class="request-main">
                     <span class="request-top">
                       <strong>{{ solicitud.nombreCliente }}</strong>
-                      <span class="badge" [class]="claseEstado(solicitud.estado)">
+                      <span
+                        class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                        [class]="claseEstado(solicitud.estado)"
+                      >
                         {{ etiquetaEstado(solicitud.estado) }}
                       </span>
                     </span>
@@ -187,7 +219,7 @@
             @if (paginas() > 1) {
               <div class="inbox-pager">
                 <button
-                  class="btn btn-soft btn-sm"
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
                   type="button"
                   [disabled]="pagina() <= 1"
                   (click)="cambiarPagina(-1)"
@@ -196,7 +228,7 @@
                 </button>
                 <span>Página {{ pagina() }} de {{ paginas() }}</span>
                 <button
-                  class="btn btn-soft btn-sm"
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
                   type="button"
                   [disabled]="pagina() >= paginas()"
                   (click)="cambiarPagina(1)"
@@ -221,7 +253,7 @@
 
         @if (detalleCargando()) {
           <aside
-            class="panel-card detail-panel detail-panel-open"
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 detail-panel detail-panel-open"
             role="region"
             aria-label="Detalle de la solicitud"
           >
@@ -232,17 +264,20 @@
           </aside>
         } @else if (seleccionada(); as solicitud) {
           <aside
-            class="panel-card detail-panel detail-panel-open"
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 detail-panel detail-panel-open"
             role="region"
             aria-label="Detalle de la solicitud"
           >
             <div class="detail-head">
               <div>
-                <span class="panel-kicker">Solicitud {{ solicitud.folio }}</span>
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Solicitud {{ solicitud.folio }}</span
+                >
                 <h2>{{ solicitud.nombreCliente }}</h2>
               </div>
               <button
-                class="btn btn-icon"
+                class="inline-grid h-9 w-9 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
                 type="button"
                 aria-label="Cerrar detalle"
                 (click)="cerrarDetalle()"
@@ -252,11 +287,14 @@
             </div>
 
             <div class="detail-state">
-              <span class="badge" [class]="claseEstado(solicitud.estado)">
+              <span
+                class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                [class]="claseEstado(solicitud.estado)"
+              >
                 {{ etiquetaEstado(solicitud.estado) }}
               </span>
               <select
-                class="form-select form-select-sm"
+                class="block min-h-[2.8rem] w-full w-auto! min-w-[9.5rem] rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
                 aria-label="Cambiar estado de la solicitud"
                 [value]="solicitud.estado"
                 [disabled]="accion() === 'estado'"
@@ -284,7 +322,7 @@
             <div class="detail-actions">
               @if (solicitud.telefono) {
                 <a
-                  class="btn btn-sm btn-outline-ink"
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
                   [href]="whatsapp(solicitud.telefono)"
                   target="_blank"
                   rel="noopener"
@@ -292,11 +330,14 @@
                   <i class="bi bi-whatsapp"></i> WhatsApp
                 </a>
               }
-              <a class="btn btn-sm btn-outline-ink" [href]="'mailto:' + solicitud.correo">
+              <a
+                class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                [href]="'mailto:' + solicitud.correo"
+              >
                 <i class="bi bi-envelope"></i> Correo
               </a>
               <button
-                class="btn btn-sm btn-outline-ink"
+                class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
                 type="button"
                 (click)="copiarCorreo(solicitud.correo)"
               >
@@ -330,13 +371,19 @@
 
             @if (solicitud.mensaje) {
               <div class="detail-message">
-                <span class="panel-kicker">Mensaje del cliente</span>
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Mensaje del cliente</span
+                >
                 <p>{{ solicitud.mensaje }}</p>
               </div>
             }
 
             <div class="detail-items">
-              <span class="panel-kicker">Partidas solicitadas</span>
+              <span
+                class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                >Partidas solicitadas</span
+              >
               @for (item of solicitud.itemsSolicitados ?? []; track $index) {
                 <div class="detail-item">
                   <div class="grow min-w-0">
@@ -355,7 +402,10 @@
 
             @if (solicitud.archivosAdjuntos?.length) {
               <div class="detail-files">
-                <span class="panel-kicker">Archivos adjuntos</span>
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Archivos adjuntos</span
+                >
                 @for (archivo of solicitud.archivosAdjuntos; track archivo.id) {
                   <button class="file-row" type="button" (click)="descargar(archivo)">
                     <i class="bi bi-paperclip"></i>
@@ -370,10 +420,17 @@
             <div class="chat-panel">
               <div class="chat-head">
                 <div>
-                  <span class="panel-kicker">Chat con el cliente</span>
+                  <span
+                    class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                    >Chat con el cliente</span
+                  >
                   <h3>Conversación de la solicitud</h3>
                 </div>
-                <button class="btn btn-sm btn-outline-ink" type="button" (click)="refrescarChat()">
+                <button
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                  type="button"
+                  (click)="refrescarChat()"
+                >
                   <i class="bi bi-arrow-clockwise"></i> Actualizar
                 </button>
               </div>
@@ -426,7 +483,7 @@
                 <label class="sr-only" for="chatInternoMensaje">Respuesta para el cliente</label>
                 <textarea
                   id="chatInternoMensaje"
-                  class="form-control"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
                   rows="2"
                   maxlength="4000"
                   placeholder="Escribe la respuesta al cliente..."
@@ -435,7 +492,9 @@
                 ></textarea>
                 <div class="chat-compose-actions">
                   <div class="chat-adjunto">
-                    <label class="btn btn-sm btn-outline-ink mb-0">
+                    <label
+                      class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white mb-0"
+                    >
                       <i class="bi bi-paperclip"></i> Adjuntar
                       <input
                         type="file"
@@ -458,7 +517,7 @@
                     }
                   </div>
                   <button
-                    class="btn btn-sm btn-ink"
+                    class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white"
                     type="button"
                     [disabled]="enviandoChat()"
                     (click)="enviarRespuesta()"
@@ -495,10 +554,16 @@
                 <div class="conversion-head">
                   <i class="bi bi-file-earmark-check"></i>
                   <div>
-                    <span class="panel-kicker">Cotización generada</span>
+                    <span
+                      class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                      >Cotización generada</span
+                    >
                     <strong>{{ cotizacion.folio }}</strong>
                   </div>
-                  <span class="badge badge-soft-success">{{ moneda(cotizacion.total) }}</span>
+                  <span
+                    class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[#e7f6ee] text-[#18794e]"
+                    >{{ moneda(cotizacion.total) }}</span
+                  >
                 </div>
                 <div class="conversion-totals">
                   <div>
@@ -513,13 +578,16 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                   <button
-                    class="btn btn-sm btn-brand"
+                    class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
                     type="button"
                     (click)="abrirCotizacion(cotizacion)"
                   >
                     <i class="bi bi-pencil-square"></i> Abrir en cotizador
                   </button>
-                  <a class="btn btn-sm btn-outline-ink" routerLink="/detalle">
+                  <a
+                    class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                    routerLink="/detalle"
+                  >
                     <i class="bi bi-receipt"></i> Ver órdenes
                   </a>
                 </div>
@@ -532,7 +600,7 @@
                   <span>Abre la cotización para revisar partidas o convertirla en pedido.</span>
                 </div>
                 <button
-                  class="btn btn-sm btn-ink"
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white"
                   type="button"
                   (click)="abrirCotizacion({ id: solicitud.cotizacionId })"
                 >
@@ -542,7 +610,11 @@
             } @else {
               <div class="detail-cta">
                 @if (sinPartidas()) {
-                  <button class="btn btn-brand w-full" type="button" (click)="cotizarConDetalle()">
+                  <button
+                    class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] w-full"
+                    type="button"
+                    (click)="cotizarConDetalle()"
+                  >
                     <i class="bi bi-sliders"></i> Revisar partidas y precios
                   </button>
                   <p class="detail-note">
@@ -552,7 +624,7 @@
                   </p>
                 } @else {
                   <button
-                    class="btn btn-brand w-full"
+                    class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] w-full"
                     type="button"
                     [disabled]="accion() === 'convertir'"
                     (click)="convertir()"
@@ -564,7 +636,7 @@
                     }
                   </button>
                   <button
-                    class="btn btn-outline-ink w-full"
+                    class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white w-full"
                     type="button"
                     (click)="cotizarConDetalle()"
                   >
@@ -580,7 +652,9 @@
             }
           </aside>
         } @else {
-          <aside class="panel-card detail-panel detail-placeholder">
+          <aside
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 detail-panel detail-placeholder"
+          >
             <span class="icon-tile icon-tile-cyan"><i class="bi bi-inbox"></i></span>
             <h2>Selecciona una solicitud</h2>
             <p>

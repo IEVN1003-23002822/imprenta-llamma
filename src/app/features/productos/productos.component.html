@@ -1,9 +1,13 @@
-<div class="module-page productos-page">
-  <div class="llamma-container">
-    <header class="page-header flex flex-wrap items-end justify-between gap-4">
-      <div class="page-brand">
+<div class="pt-[2.75rem] pb-[5.5rem] productos-page">
+  <div
+    class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+  >
+    <header
+      class="mb-[2.2rem] [&_h1]:mb-[0.65rem] [&_h1]:text-[clamp(2.15rem,4.1vw,3.45rem)] [&_h1]:leading-[1.02] flex flex-wrap items-end justify-between gap-4"
+    >
+      <div class="flex items-start gap-[1.1rem] max-[575.98px]:gap-3">
         <img
-          class="page-brand-logo"
+          class="mt-[0.15rem] h-[54px] w-auto flex-none drop-shadow-[0_6px_14px_rgba(26,26,26,0.12)] max-[575.98px]:h-11"
           src="assets/images/logo-llamma-128.webp"
           srcset="assets/images/logo-llamma-128.webp 2x, assets/images/logo-llamma-256.webp 4x"
           alt="Imprenta Llamma Logo"
@@ -11,9 +15,12 @@
           height="54"
         />
         <div>
-          <span class="eyebrow">Catálogo público</span>
+          <span
+            class="mb-[0.9rem] inline-flex items-center gap-[0.6rem] text-[0.7rem] font-bold uppercase tracking-[0.16em] !text-[var(--llamma-yellow)] before:h-1 before:w-[1.6rem] before:rounded-full before:bg-[linear-gradient(90deg,var(--llamma-cyan),var(--llamma-magenta)_60%,var(--llamma-yellow))] before:content-['']"
+            >Catálogo público</span
+          >
           <h1>Productos que podemos transformar.</h1>
-          <p class="page-lead">
+          <p class="mb-0 max-w-[44rem] text-base text-[var(--llamma-muted)]">
             Gran formato, textil, promocionales y papelería creativa. Explora el catálogo, elige tus
             piezas y solicita una cotización a tu medida. Los precios son referenciales y se
             confirman al revisar medidas, materiales y archivo de diseño.
@@ -21,29 +28,49 @@
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a class="btn btn-brand" routerLink="/cotizar">
+        <a
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+          routerLink="/cotizar"
+        >
           <i class="bi bi-send"></i> Solicitar cotización
         </a>
         @if (puedeGestionar()) {
-          <button class="btn btn-outline-ink" type="button" (click)="abrirGestion()">
+          <button
+            class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+            type="button"
+            (click)="abrirGestion()"
+          >
             <i class="bi bi-sliders"></i> Gestionar catálogo
           </button>
         } @else {
-          <a class="btn btn-soft" routerLink="/login">
+          <a
+            class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
+            routerLink="/login"
+          >
             <i class="bi bi-shield-lock"></i> Acceso equipo
           </a>
         }
       </div>
     </header>
 
-    <section class="panel-card mb-6">
-      <div class="catalog-toolbar">
-        <div class="catalog-tabs" role="tablist" aria-label="Filtrar por línea de producción">
+    <section
+      class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 mb-6"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div
+          class="flex flex-wrap gap-[0.4rem]"
+          role="tablist"
+          aria-label="Filtrar por línea de producción"
+        >
           @for (opcion of lineas; track opcion.valor) {
             <button
-              class="filter-chip"
+              class="rounded-full border border-[var(--llamma-line)] bg-white px-[0.85rem] py-[0.4rem] text-[0.7rem] font-semibold text-[var(--llamma-muted)]"
               type="button"
-              [class.is-active]="linea() === opcion.valor"
+              [class]="
+                linea() === opcion.valor
+                  ? 'border-[var(--llamma-cyan)] bg-[rgba(var(--llamma-cyan-rgb),0.1)] text-[var(--llamma-cyan-deep)]'
+                  : ''
+              "
               (click)="filtrarPor(opcion.valor)"
             >
               {{ opcion.etiqueta }}
@@ -51,11 +78,13 @@
           }
         </div>
 
-        <div class="catalog-search">
+        <div
+          class="flex min-w-[15rem] items-center overflow-hidden rounded-[var(--llamma-radius-sm)] border border-[var(--llamma-line)] bg-white [&>input]:border-0 [&>input]:shadow-none [&>span]:border-0 [&>span]:bg-transparent [&>span]:text-[var(--llamma-muted)] max-[575.98px]:w-full max-[575.98px]:min-w-0"
+        >
           <span class="input-group-text"><i class="bi bi-search"></i></span>
           <input
             type="search"
-            class="form-control"
+            class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
             placeholder="Buscar producto..."
             aria-label="Buscar producto en el catálogo"
             [value]="busqueda()"
@@ -66,28 +95,41 @@
     </section>
 
     @if (error()) {
-      <div class="catalog-error mb-6" role="alert">
+      <div
+        class="flex items-center gap-[0.6rem] rounded-[var(--llamma-radius-sm)] border border-[rgba(180,35,24,0.2)] bg-[rgba(180,35,24,0.06)] px-4 py-[0.8rem] text-[0.76rem] text-[#b42318] mb-6"
+        role="alert"
+      >
         <i class="bi bi-exclamation-triangle-fill"></i>
         <span>{{ error() }}</span>
       </div>
     }
 
     @if (cargando()) {
-      <div class="panel-card catalog-empty">
+      <div
+        class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 flex flex-col items-center gap-[0.6rem] px-6 py-12 text-center [&_i]:text-[1.8rem] [&_i]:text-[var(--llamma-cyan-deep)] [&_p]:m-0 [&_p]:text-[0.8rem] [&_p]:text-[var(--llamma-muted)]"
+      >
         <i class="bi bi-arrow-repeat"></i>
         <p>Cargando catálogo...</p>
       </div>
     } @else if (!filtrados().length) {
-      <div class="panel-card catalog-empty">
+      <div
+        class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 flex flex-col items-center gap-[0.6rem] px-6 py-12 text-center [&_i]:text-[1.8rem] [&_i]:text-[var(--llamma-cyan-deep)] [&_p]:m-0 [&_p]:text-[0.8rem] [&_p]:text-[var(--llamma-muted)]"
+      >
         <i class="bi bi-search"></i>
         <p>No encontramos productos con ese filtro. Prueba con otra línea o palabra.</p>
       </div>
     } @else {
-      <div class="catalog-grid">
+      <div
+        class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))] max-[575.98px]:grid-cols-1"
+      >
         @for (producto of filtrados(); track producto.id) {
-          <article class="product-card">
+          <article
+            class="flex flex-col gap-[0.55rem] rounded-[var(--llamma-radius-sm)] border border-[var(--llamma-line)] border-t-4 border-t-[var(--llamma-cyan)] bg-white p-5 shadow-[var(--llamma-shadow-sm)] [&_h2]:mb-0 [&_h2]:mt-[0.2rem] [&_h2]:text-base [&_h2]:leading-[1.3] [&_p]:m-0 [&_p]:text-[0.74rem] [&_p]:leading-[1.55] [&_p]:text-[var(--llamma-muted)]"
+          >
             @if (producto.imagenUrl && !imagenesConError().has(producto.id)) {
-              <figure class="product-card-media">
+              <figure
+                class="relative -mx-5 -mt-5 mb-[0.55rem] aspect-[3/2] overflow-hidden border-b border-[var(--llamma-line)] bg-[#f3f1eb] [&_img]:block [&_img]:h-full [&_img]:w-full [&_img]:object-cover"
+              >
                 <img
                   [src]="producto.imagenUrl"
                   [alt]="'Foto de ' + producto.nombre"
@@ -97,32 +139,41 @@
                   decoding="async"
                   (error)="marcarImagenRota(producto.id)"
                 />
-                <span class="badge badge-soft-muted product-card-badge">
+                <span
+                  class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] badge-soft-muted absolute right-3 top-3"
+                >
                   {{ etiquetaLinea(producto.lineaProduccion) }}
                 </span>
               </figure>
             } @else {
-              <div class="product-card-head">
-                <span class="icon-tile icon-tile-cyan">
+              <div class="flex items-center justify-between gap-3">
+                <span
+                  class="inline-grid h-[2.9rem] w-[2.9rem] flex-none place-items-center rounded-[0.95rem] text-[1.18rem] bg-[rgba(var(--llamma-cyan-rgb),0.11)] text-[var(--llamma-cyan-deep)]"
+                >
                   <i class="bi {{ producto.icono || 'bi-box-seam' }}"></i>
                 </span>
-                <span class="badge badge-soft-muted">{{
-                  etiquetaLinea(producto.lineaProduccion)
-                }}</span>
+                <span
+                  class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] badge-soft-muted"
+                  >{{ etiquetaLinea(producto.lineaProduccion) }}</span
+                >
               </div>
             }
 
             <h2>{{ producto.nombre }}</h2>
             <p>{{ producto.descripcion || 'Producto personalizable según tu proyecto.' }}</p>
 
-            <div class="product-card-footer">
-              <div class="product-price">
+            <div
+              class="mt-auto flex items-end justify-between gap-3 border-t border-[var(--llamma-line)] pt-[0.85rem]"
+            >
+              <div
+                class="[&_small]:text-[0.64rem] [&_small]:text-[var(--llamma-muted)] [&_span]:block [&_span]:text-[0.6rem] [&_span]:font-bold [&_span]:uppercase [&_span]:tracking-[0.08em] [&_span]:text-[var(--llamma-muted)] [&_strong]:block [&_strong]:font-[family-name:var(--llamma-font-display)] [&_strong]:text-[1.05rem] [&_strong]:leading-[1.2]"
+              >
                 <span>Desde</span>
                 <strong>{{ moneda(producto.precioBase) }}</strong>
                 <small>por {{ unidad(producto.unidadVenta) }}</small>
               </div>
               <a
-                class="btn btn-sm btn-brand"
+                class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] px-2! py-1! text-sm! rounded!"
                 routerLink="/cotizar"
                 [queryParams]="{ producto: producto.id }"
               >
@@ -134,16 +185,24 @@
       </div>
     }
 
-    <section class="catalog-help">
+    <section
+      class="mt-10 flex flex-wrap items-center justify-between gap-6 rounded-[var(--llamma-radius)] bg-[var(--llamma-carbon)] px-[1.8rem] py-[1.6rem] text-white [&_h2]:mb-[0.4rem] [&_h2]:mt-[0.3rem] [&_h2]:text-[1.35rem] [&_h2]:text-white [&_p]:m-0 [&_p]:max-w-[40rem] [&_p]:text-[0.78rem] [&_p]:leading-[1.6] [&_p]:text-white/[0.72]"
+    >
       <div class="catalog-help-text">
-        <span class="eyebrow">¿No encuentras tu producto?</span>
+        <span
+          class="mb-[0.9rem] inline-flex items-center gap-[0.6rem] text-[0.7rem] font-bold uppercase tracking-[0.16em] !text-[var(--llamma-yellow)] before:h-1 before:w-[1.6rem] before:rounded-full before:bg-[linear-gradient(90deg,var(--llamma-cyan),var(--llamma-magenta)_60%,var(--llamma-yellow))] before:content-['']"
+          >¿No encuentras tu producto?</span
+        >
         <h2>Lo desarrollamos contigo.</h2>
         <p>
           Cuéntanos qué necesitas y armamos una propuesta con materiales, acabados y tiempos de
           producción para tu proyecto.
         </p>
       </div>
-      <a class="btn btn-yellow" routerLink="/cotizar">
+      <a
+        class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[var(--llamma-yellow)] text-[var(--llamma-carbon)] shadow-[0_8px_22px_rgba(var(--llamma-yellow-rgb),0.18)] hover:bg-[#f4e700] hover:text-[var(--llamma-carbon)]"
+        routerLink="/cotizar"
+      >
         <i class="bi bi-chat-square-text"></i> Describir mi proyecto
       </a>
     </section>
@@ -152,19 +211,25 @@
 
 @if (gestionAbierta()) {
   <div
-    class="modal fade show block"
+    class="fixed inset-0 z-[1055] block h-full w-full overflow-x-hidden overflow-y-auto outline-none"
     tabindex="-1"
     appModalAccesible
     (cerrar)="cerrarGestion()"
-    style="z-index: 1055"
   >
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
+    <div class="relative mx-auto flex min-h-full w-full items-center p-2 sm:p-7 max-w-[1140px]">
+      <div
+        class="pointer-events-auto relative flex max-h-[calc(100vh-1rem)] w-full flex-col rounded-lg border border-black/20 bg-white outline-none sm:max-h-[calc(100vh-3.5rem)]"
+      >
+        <div
+          class="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--llamma-line)] p-4"
+        >
           <div>
-            <span class="panel-kicker">Catálogo interno</span>
+            <span
+              class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+              >Catálogo interno</span
+            >
             <div class="flex flex-wrap items-center gap-2">
-              <h2 class="modal-title h5 mb-0">
+              <h2 class="text-xl mb-0" data-modal-title>
                 {{
                   vista() === 'formulario'
                     ? editando()
@@ -173,15 +238,23 @@
                     : 'Gestión de productos'
                 }}
               </h2>
-              <span class="badge badge-soft-muted">{{ resumenAdmin().total }} productos</span>
+              <span
+                class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] badge-soft-muted"
+                >{{ resumenAdmin().total }} productos</span
+              >
             </div>
           </div>
-          <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarGestion()">
+          <button
+            class="inline-grid h-9 w-9 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
+            type="button"
+            aria-label="Cerrar"
+            (click)="cerrarGestion()"
+          >
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
 
-        <div class="modal-body">
+        <div class="relative flex-auto overflow-y-auto p-4" data-modal-body>
           @if (vista() === 'lista') {
             <div class="grid grid-cols-12 gap-2 items-center mb-4">
               <div class="col-span-12 lg:col-span-6">
@@ -189,7 +262,7 @@
                   <span class="input-group-text"><i class="bi bi-search"></i></span>
                   <input
                     type="search"
-                    class="form-control"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
                     placeholder="Buscar producto interno…"
                     aria-label="Buscar producto interno"
                     [value]="busquedaAdmin()"
@@ -200,23 +273,32 @@
               <div
                 class="col-span-12 lg:col-span-6 flex flex-wrap items-center lg:justify-end gap-2"
               >
-                <span class="badge badge-soft-success"
+                <span
+                  class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] badge-soft-success"
                   >{{ resumenAdmin().publicados }} publicados</span
                 >
-                <span class="badge badge-soft-warning"
+                <span
+                  class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] badge-soft-warning"
                   >{{ resumenAdmin().borradores }} borradores</span
                 >
-                <span class="badge badge-soft-danger"
+                <span
+                  class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] badge-soft-danger"
                   >{{ resumenAdmin().inactivos }} inactivos</span
                 >
-                <button class="btn btn-brand btn-sm" type="button" (click)="abrirNuevo()">
+                <button
+                  class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] px-2! py-1! text-sm! rounded!"
+                  type="button"
+                  (click)="abrirNuevo()"
+                >
                   <i class="bi bi-plus-lg"></i> Nuevo producto
                 </button>
               </div>
             </div>
 
-            <div class="table-responsive">
-              <table class="table table-llamma align-middle">
+            <div class="overflow-x-auto">
+              <table
+                class="w-full align-top text-[var(--llamma-carbon)] [&>tbody>tr:hover]:bg-[#fbfaf7] [&>tbody>tr:last-child>td]:border-b-0 [&>tbody>tr>td]:border-b [&>tbody>tr>td]:border-[var(--llamma-line)] [&>tbody>tr>td]:bg-transparent [&>tbody>tr>td]:px-[1.1rem] [&>tbody>tr>td]:py-[0.95rem] [&>tbody>tr>td]:shadow-none [&>thead>tr>th]:whitespace-nowrap [&>thead>tr>th]:border-b [&>thead>tr>th]:border-[var(--llamma-line)] [&>thead>tr>th]:bg-[#f8f7f3] [&>thead>tr>th]:px-[1.1rem] [&>thead>tr>th]:py-[0.8rem] [&>thead>tr>th]:text-[0.64rem] [&>thead>tr>th]:font-bold [&>thead>tr>th]:uppercase [&>thead>tr>th]:tracking-[0.1em] [&>thead>tr>th]:text-[#7b7c80] align-middle"
+              >
                 <caption class="sr-only">
                   Catálogo de productos
                 </caption>
@@ -232,10 +314,14 @@
                 </thead>
                 <tbody>
                   @for (producto of filtradosAdmin(); track producto.id) {
-                    <tr [class.table-inactive]="!producto.activo">
+                    <tr [class.opacity-60]="!producto.activo">
                       <td>
-                        <div class="campaign-cell">
-                          <span class="icon-tile icon-tile-sm icon-tile-cyan">
+                        <div
+                          class="flex min-w-[14rem] items-center gap-[0.65rem] [&_small]:mt-[0.12rem] [&_small]:block [&_small]:line-clamp-2 [&_small]:text-[0.67rem] [&_small]:text-[var(--llamma-muted)] [&_strong]:block [&_strong]:text-[0.8rem] [&_strong]:font-semibold"
+                        >
+                          <span
+                            class="inline-grid h-[2.9rem] w-[2.9rem] flex-none place-items-center rounded-[0.95rem] text-[1.18rem] h-[2.35rem] w-[2.35rem] rounded-xl text-[0.98rem] bg-[rgba(var(--llamma-cyan-rgb),0.11)] text-[var(--llamma-cyan-deep)]"
+                          >
                             <i class="bi {{ producto.icono || 'bi-box-seam' }}"></i>
                           </span>
                           <div>
@@ -246,33 +332,38 @@
                       </td>
                       <td>{{ etiquetaCategoria(producto.categoria) }}</td>
                       <td>{{ etiquetaLinea(producto.lineaProduccion) }}</td>
-                      <td class="text-right cell-main">
+                      <td class="text-right text-[0.85rem] font-semibold">
                         {{ moneda(producto.precioBase) }}
-                        <small class="cell-muted"> / {{ unidad(producto.unidadVenta) }}</small>
+                        <small class="mt-[0.15rem] text-[0.72rem] text-[var(--llamma-muted)]">
+                          / {{ unidad(producto.unidadVenta) }}</small
+                        >
                       </td>
                       <td>
                         <div class="flex flex-wrap gap-1">
                           <span
-                            class="badge"
+                            class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
                             [class]="producto.activo ? 'badge-soft-success' : 'badge-soft-danger'"
                           >
                             {{ producto.activo ? 'Activo' : 'Inactivo' }}
                           </span>
                           <span
-                            class="badge"
+                            class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
                             [class]="producto.publicado ? 'badge-soft-cyan' : 'badge-soft-muted'"
                           >
                             {{ producto.publicado ? 'Publicado' : 'Borrador' }}
                           </span>
                           @if (producto.tieneReceta) {
-                            <span class="badge badge-soft-warning">Receta</span>
+                            <span
+                              class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] badge-soft-warning"
+                              >Receta</span
+                            >
                           }
                         </div>
                       </td>
                       <td class="text-right">
                         <div class="inline-flex gap-1">
                           <button
-                            class="btn btn-icon"
+                            class="inline-grid h-9 w-9 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
                             type="button"
                             aria-label="Editar producto"
                             title="Editar producto"
@@ -281,7 +372,7 @@
                             <i class="bi bi-pencil"></i>
                           </button>
                           <button
-                            class="btn btn-icon"
+                            class="inline-grid h-9 w-9 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
                             type="button"
                             [attr.aria-label]="
                               producto.publicado ? 'Ocultar del catálogo' : 'Publicar en catálogo'
@@ -298,7 +389,7 @@
                             ></i>
                           </button>
                           <button
-                            class="btn btn-icon"
+                            class="inline-grid h-9 w-9 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
                             type="button"
                             [attr.aria-label]="producto.activo ? 'Dar de baja' : 'Reactivar'"
                             [title]="producto.activo ? 'Dar de baja' : 'Reactivar'"
@@ -315,7 +406,7 @@
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="6" class="text-center text-llamma-muted py-12">
+                      <td colspan="6" class="text-center text-[var(--llamma-muted)] py-12">
                         <i class="bi bi-box-seam block text-2xl mb-2"></i>
                         {{
                           cargandoAdmin()
@@ -332,32 +423,60 @@
             <form [formGroup]="formulario" (ngSubmit)="guardar()" id="productoForm">
               <div class="grid grid-cols-12 gap-4">
                 <div class="col-span-12 md:col-span-7">
-                  <label class="form-label" for="prodNombre">Nombre *</label>
-                  <input id="prodNombre" class="form-control" formControlName="nombre" />
+                  <label
+                    class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                    for="prodNombre"
+                    >Nombre *</label
+                  >
+                  <input
+                    id="prodNombre"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                    formControlName="nombre"
+                  />
                   @if (formulario.controls.nombre.invalid && formulario.controls.nombre.touched) {
                     <small class="text-red-600">Indica al menos dos caracteres.</small>
                   }
                 </div>
                 <div class="col-span-12 md:col-span-5">
-                  <label class="form-label" for="prodCategoria">Categoría</label>
-                  <select id="prodCategoria" class="form-select" formControlName="categoria">
+                  <label
+                    class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                    for="prodCategoria"
+                    >Categoría</label
+                  >
+                  <select
+                    id="prodCategoria"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                    formControlName="categoria"
+                  >
                     @for (categoria of categorias; track categoria.valor) {
                       <option [value]="categoria.valor">{{ categoria.etiqueta }}</option>
                     }
                   </select>
                 </div>
                 <div class="col-span-12">
-                  <label class="form-label" for="prodDescripcion">Descripción</label>
+                  <label
+                    class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                    for="prodDescripcion"
+                    >Descripción</label
+                  >
                   <textarea
                     id="prodDescripcion"
-                    class="form-control"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
                     rows="2"
                     formControlName="descripcion"
                   ></textarea>
                 </div>
                 <div class="col-span-12 md:col-span-4">
-                  <label class="form-label" for="prodLinea">Línea de producción</label>
-                  <select id="prodLinea" class="form-select" formControlName="lineaProduccion">
+                  <label
+                    class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                    for="prodLinea"
+                    >Línea de producción</label
+                  >
+                  <select
+                    id="prodLinea"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                    formControlName="lineaProduccion"
+                  >
                     @for (linea of lineas; track linea.valor) {
                       @if (linea.valor) {
                         <option [value]="linea.valor">{{ linea.etiqueta }}</option>
@@ -366,68 +485,97 @@
                   </select>
                 </div>
                 <div class="col-span-12 md:col-span-4">
-                  <label class="form-label" for="prodPrecio">Precio base</label>
+                  <label
+                    class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                    for="prodPrecio"
+                    >Precio base</label
+                  >
                   <input
                     id="prodPrecio"
                     type="number"
                     min="0"
                     step="0.01"
-                    class="form-control"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
                     formControlName="precioBase"
                   />
                 </div>
                 <div class="col-span-12 md:col-span-4">
-                  <label class="form-label" for="prodUnidad">Unidad de venta</label>
-                  <select id="prodUnidad" class="form-select" formControlName="unidadVenta">
+                  <label
+                    class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                    for="prodUnidad"
+                    >Unidad de venta</label
+                  >
+                  <select
+                    id="prodUnidad"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                    formControlName="unidadVenta"
+                  >
                     @for (unidad of unidadesForm; track unidad.valor) {
                       <option [value]="unidad.valor">{{ unidad.etiqueta }}</option>
                     }
                   </select>
                 </div>
                 <div class="col-span-12 md:col-span-4">
-                  <label class="form-label" for="prodIcono">Icono (Bootstrap Icons)</label>
+                  <label
+                    class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                    for="prodIcono"
+                    >Icono (Bootstrap Icons)</label
+                  >
                   <input
                     id="prodIcono"
-                    class="form-control"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
                     formControlName="icono"
                     placeholder="bi-box-seam"
                   />
                 </div>
                 <div class="col-span-12 md:col-span-8">
-                  <label class="form-label" for="prodImagen">Foto del producto (opcional)</label>
+                  <label
+                    class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                    for="prodImagen"
+                    >Foto del producto (opcional)</label
+                  >
                   <input
                     id="prodImagen"
-                    class="form-control"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
                     formControlName="imagenUrl"
                     placeholder="assets/images/productos/playera.webp"
                     aria-describedby="prodImagenAyuda"
                   />
-                  <small id="prodImagenAyuda" class="cell-muted">
+                  <small
+                    id="prodImagenAyuda"
+                    class="mt-[0.15rem] text-[0.72rem] text-[var(--llamma-muted)]"
+                  >
                     Ruta local dentro de <code>assets</code> o URL del mismo dominio. Se muestra en
                     la tarjeta del catálogo.
                   </small>
                 </div>
                 <div class="col-span-12 md:col-span-6 flex flex-wrap items-center gap-4 md:pt-6">
-                  <div class="form-check form-switch mb-0">
+                  <label class="relative inline-flex cursor-pointer items-center gap-2">
                     <input
                       id="prodPublicado"
-                      class="form-check-input"
+                      class="peer sr-only"
                       type="checkbox"
                       formControlName="publicado"
                     />
-                    <label class="form-check-label small" for="prodPublicado"
-                      >Visible en catálogo</label
+                    <span
+                      class="relative inline-block h-5 w-9 rounded-full bg-[rgba(26,26,26,0.2)] transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-[var(--llamma-line)] after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--llamma-magenta)] peer-checked:after:translate-x-4"
+                    ></span>
+                    <span class="text-[0.82rem] text-[var(--llamma-muted)]"
+                      >Visible en catálogo</span
                     >
-                  </div>
-                  <div class="form-check form-switch mb-0">
+                  </label>
+                  <label class="relative inline-flex cursor-pointer items-center gap-2">
                     <input
                       id="prodActivo"
-                      class="form-check-input"
+                      class="peer sr-only"
                       type="checkbox"
                       formControlName="activo"
                     />
-                    <label class="form-check-label small" for="prodActivo">Activo</label>
-                  </div>
+                    <span
+                      class="relative inline-block h-5 w-9 rounded-full bg-[rgba(26,26,26,0.2)] transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-[var(--llamma-line)] after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--llamma-magenta)] peer-checked:after:translate-x-4"
+                    ></span>
+                    <span class="text-[0.82rem] text-[var(--llamma-muted)]">Activo</span>
+                  </label>
                 </div>
               </div>
 
@@ -442,13 +590,19 @@
           }
         </div>
 
-        <div class="modal-footer">
+        <div
+          class="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--llamma-line)] p-3"
+        >
           @if (vista() === 'formulario') {
-            <button class="btn btn-outline-ink" type="button" (click)="volverLista()">
+            <button
+              class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+              type="button"
+              (click)="volverLista()"
+            >
               Volver
             </button>
             <button
-              class="btn btn-brand"
+              class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
               type="button"
               [disabled]="guardando()"
               (click)="guardar()"
@@ -457,7 +611,11 @@
               {{ guardando() ? 'Guardando…' : 'Guardar producto' }}
             </button>
           } @else {
-            <button class="btn btn-outline-ink" type="button" (click)="cerrarGestion()">
+            <button
+              class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+              type="button"
+              (click)="cerrarGestion()"
+            >
               Cerrar
             </button>
           }
@@ -465,5 +623,5 @@
       </div>
     </div>
   </div>
-  <div class="modal-backdrop fade show"></div>
+  <div class="fixed inset-0 z-[1050] bg-black/50"></div>
 }

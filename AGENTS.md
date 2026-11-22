@@ -13,9 +13,16 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - `ng serve` ya aplica `proxy.conf.json` (`/api` → `127.0.0.1:5000`, configurado en `angular.json`).
   Todo el frontend usa rutas relativas (`LlammaService.apiUrl = '/api'`); sin ese proxy no hay datos.
 - La interfaz usa **Tailwind CSS v4** con el plugin de **Flowbite** (`.postcssrc.json` +
-  `src/styles.css`). Bootstrap ya no se carga: las clases semánticas de las plantillas (`navbar`,
-  `btn`, `modal`, `table`, `badge`, …) se conservan y se definen en la capa `components` de
-  `src/styles.css`. Bootstrap Icons sigue viniendo de `node_modules` (solo los glifos `bi-*`).
+  `src/styles.css`). Bootstrap ya no se carga. El shell (`app.html`) y los módulos `login` y
+  `clientes` usan utilidades Tailwind inline; `app.css`, `login.component.css` y
+  `clientes.component.css` solo conservan un comentario. También están migrados `no-encontrado`,
+  `aviso-privacidad`, `productos` y `seguimiento` (sin CSS propio). En `dashboard`, `solicitudes`,
+  `detalle` y
+  `produccion` las primitivas (contenedor, página, tarjetas, tablas, badges, formularios, modales y
+  paginación) también son utilidades Tailwind y solo queda CSS local para layouts complejos (kanban,
+  timeline, resúmenes y listas). El resto de módulos conserva clases semánticas (`btn`, `modal`,
+  `table`, `badge`, …) definidas en `src/styles.css`. Bootstrap Icons sigue viniendo de
+  `node_modules` (solo los glifos `bi-*`).
 - El contenedor propio es `.llamma-container`, no `.container`: Tailwind genera su propia utilidad
   `.container` y ambas chocarían. Para rejillas usa `grid grid-cols-12 gap-x-* gap-y-*`; no
   reintroduzcas `row`, `col-*`, `d-*` ni utilidades de Bootstrap.
@@ -129,7 +136,8 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   con `folio`/`correo` por query params. No vuelvas a incrustar el formulario de seguimiento en
   `/cotizar`.
 - Los modales usan la directiva `appModalAccesible` (`src/app/shared/modal-accesible.directive.ts`):
-  rol de diálogo, `aria-labelledby` al `.modal-title`, foco inicial, trampa de Tab, `Esc` mediante
+  rol de diálogo, `aria-labelledby` al `[data-modal-title]` (o `.modal-title` de módulos antiguos),
+  foco inicial dentro de `[data-modal-body]` (o `.modal-body`), trampa de Tab, `Esc` mediante
   `(cerrar)` y bloqueo de scroll. No dupliques esa lógica a mano.
 - La vista `/detalle` usa divulgación progresiva: los paneles secundarios (`produccion`, `calidad`,
   `pagos`, `entrega`, `archivos`) se pliegan con `estaAbierta()`/`alternarSeccion()` sobre un
