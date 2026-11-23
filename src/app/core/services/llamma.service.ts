@@ -20,12 +20,15 @@ import {
   ResumenDashboardApi,
   ResumenSolicitudes,
   RespuestaPaginada,
+  RolApi,
   SeguimientoSolicitud,
   SolicitudCotizacion,
   EstadoSolicitud,
   TableroProduccion,
   OrdenProduccionApi,
   ControlCalidadApi,
+  NuevoUsuarioPayload,
+  Usuario,
 } from '../models/llamma.models';
 
 /**
@@ -497,6 +500,20 @@ export class LlammaService {
       `${this.apiUrl}/produccion/ordenes/${id}/calidad`,
       body,
     );
+  }
+
+  /* ------------------------------- Usuarios ---------------------------- */
+
+  listarUsuarios(): Observable<{ items: Usuario[]; total: number }> {
+    return this.http.get<{ items: Usuario[]; total: number }>(`${this.apiUrl}/usuarios`);
+  }
+
+  listarRoles(): Observable<{ items: RolApi[]; total: number }> {
+    return this.http.get<{ items: RolApi[]; total: number }>(`${this.apiUrl}/roles`);
+  }
+
+  crearUsuario(body: NuevoUsuarioPayload): Observable<Usuario> {
+    return this.http.post<Usuario>(`${this.apiUrl}/usuarios`, body);
   }
 
   /* ------------------------------- Marketing --------------------------- */

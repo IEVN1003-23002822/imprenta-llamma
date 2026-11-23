@@ -198,6 +198,21 @@ export interface Usuario {
   ultimoAcceso?: string | null;
 }
 
+export interface RolApi {
+  id: number;
+  nombre: RolUsuario;
+  descripcion?: string | null;
+  permisos?: string[];
+}
+
+export interface NuevoUsuarioPayload {
+  nombre: string;
+  correo: string;
+  password: string;
+  rol: RolUsuario;
+  telefono?: string;
+}
+
 export interface ActividadMarketing {
   id: Identificador;
   nombre: string;
