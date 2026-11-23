@@ -80,6 +80,11 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - `npm run build` compila plantillas y aplica budgets; es la última compuerta del job `frontend` de
   `.github/workflows/ci.yml`, que también corre formato, lint y pruebas en cada push y pull request.
   El job `backend` instala `requirements.txt` y ejecuta las pruebas de flujo en SQLite.
+- E2E: `npm run test:e2e` (Playwright) usa un backend Flask aislado en `:5001` con SQLite en
+  `e2e/.tmp/` y un `ng serve` en `:4300` con `e2e/proxy.e2e.json`; nunca toca `llamma_db`.
+  `e2e/global-setup.ts` crea un `storageState` por rol (admin `ana`, ventas `diego`, marketing
+  `paola`). Los 4 proyectos son `chromium`, `firefox`, `webkit` y `mobile-chrome`. El job E2E de CI
+  aún no está aplicado; la propuesta vive en `AUDITORIA-E2E-PLAYWRIGHT.md`.
 - Budget de producción: 16 kB warning / 20 kB **error** por estilos de componente
   (`anyComponentStyle`). Los estilos compartidos van a `src/styles.css`.
 
