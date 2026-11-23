@@ -9,7 +9,6 @@ import {
   convertirSolicitud,
   crearCliente,
   crearMateriaPrima,
-  crearPedido,
   crearProducto,
   crearSolicitud,
   movimientosDe,
@@ -138,7 +137,7 @@ test.describe('Flujo de compra', () => {
     consola.assertLimpia();
   });
 
-  test('documenta H-01: inventario insuficiente se descuenta parcial', async () => {
+  test('rechaza el pedido si falta inventario y no descuenta nada', async () => {
     const sufijo = unico('insuficiente');
     const materia = await crearMateriaPrima(api, {
       nombre: `Tinta ${sufijo}`,
@@ -175,21 +174,27 @@ test.describe('Flujo de compra', () => {
       correo: correoUnico('insuficiente'),
     });
 
-    const pedido = await crearPedido(api, {
-      clienteId: cliente.id,
-      items: [{ productoId: producto.id, cantidad: 2 }],
+    const respuesta = await api.post('/api/pedidos', {
+      data: {
+        clienteId: cliente.id,
+        items: [{ productoId: producto.id, cantidad: 2 }],
+      },
     });
-    expect(pedido.total).toBeGreaterThan(0);
+    expect(respuesta.status(), await respuesta.text()).toBe(400);
+    const datos = await respuesta.json();
+    expect(datos.error).toBe('Inventario insuficiente');
+    expect(datos.detalles[0]).toMatchObject({
+      materiaPrimaId: materia.id,
+      requerido: 20,
+      disponible: 1,
+      faltante: 19,
+    });
 
-    expect(await stockDe(api, materia.nombre)).toBe(0);
-    const movimientos = await movimientosDe(api, materia.id);
-    expect(movimientos.filter((movimiento) => movimiento.tipo === 'salida')).toHaveLength(1);
-    expect(Number(movimientos[0].cantidad)).toBe(1);
-    // Requerido real = 10 × 2 = 20; el sistema no deja rastro de los 19 faltantes.
+    expect(await stockDe(api, materia.nombre)).toBe(1);
+    expect(await movimientosDe(api, materia.id)).toHaveLength(0);
   });
 
-  test('H-12: registrar el anticipo como pagado no reduce el saldo', async () => {
-    test.fail(true, 'H-12: convertir con anticipoPagado crea el Pago pero deja el saldo intacto.');
+  test('H-12: registrar el anticipo como pagado reduce el saldo', async () => {
     const sufijo = unico('anticipo');
     const cliente = await crearCliente(api, {
       nombre: `Cliente ${sufijo}`,

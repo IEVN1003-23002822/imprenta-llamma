@@ -20,7 +20,12 @@ from models import (
     Producto,
     utcnow,
 )
-from routes.comun import descontar_inventario, partidas_a_cotizacion, totales
+from routes.comun import (
+    InventarioInsuficiente,
+    descontar_inventario,
+    partidas_a_cotizacion,
+    totales,
+)
 from routes.helpers import campo, error, lista_items, no_encontrado, payload
 from utils import generar_folio, paginar, parse_decimal, parse_fecha, parse_int
 
@@ -255,10 +260,14 @@ def crear_pedido():
     orden.etapas.append(ProduccionEtapa(etapa="diseno", estado="en-proceso", inicio=utcnow()))
 
     db.session.add(pedido)
-    db.session.flush()
-    descontar_inventario(pedido, g.usuario)
+    try:
+        db.session.flush()
+        descontar_inventario(pedido, g.usuario)
+        db.session.commit()
+    except InventarioInsuficiente as exc:
+        db.session.rollback()
+        return jsonify({"error": "Inventario insuficiente", "detalles": exc.detalles}), 400
 
-    db.session.commit()
     return jsonify(pedido.to_dict()), 201
 
 

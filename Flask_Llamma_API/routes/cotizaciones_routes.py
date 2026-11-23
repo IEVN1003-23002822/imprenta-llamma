@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+from decimal import Decimal
 
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import or_
@@ -22,7 +23,11 @@ from models import (
     SolicitudCotizacion,
     utcnow,
 )
-from routes.comun import crear_cotizacion, descontar_inventario
+from routes.comun import (
+    InventarioInsuficiente,
+    crear_cotizacion,
+    descontar_inventario,
+)
 from routes.helpers import campo, error, no_encontrado, payload
 from utils import generar_folio, paginar, parse_fecha, parse_int
 
@@ -169,16 +174,21 @@ def convertir_cotizacion(cotizacion_id: int):
         )
 
     if campo(data, "anticipoPagado", "anticipo_pagado", default=False) in (True, "true", "1", 1):
+        anticipo = Decimal(str(cotizacion.anticipo or 0)).quantize(Decimal("0.01"))
         pedido.pagos.append(
             Pago(
                 tipo="anticipo",
                 metodo=str(campo(data, "metodoPago", default="transferencia")),
-                monto=cotizacion.anticipo,
+                monto=float(anticipo),
                 referencia=str(campo(data, "referenciaPago", default="") or "") or None,
                 confirmado=True,
                 registrado_por=g.usuario.id,
             )
         )
+        saldo_actual = Decimal(str(pedido.saldo or 0))
+        pedido.saldo = float(max(saldo_actual - anticipo, Decimal("0.00")))
+        if pedido.saldo <= 0 and pedido.estado == "confirmado":
+            pedido.estado = "en-produccion"
 
     orden = OrdenProduccion(
         etapa="diseno",
@@ -201,7 +211,12 @@ def convertir_cotizacion(cotizacion_id: int):
         cotizacion.solicitud.estado = "convertida"
 
     db.session.add(pedido)
-    db.session.flush()
-    descontar_inventario(pedido, g.usuario)
-    db.session.commit()
+    try:
+        db.session.flush()
+        descontar_inventario(pedido, g.usuario)
+        db.session.commit()
+    except InventarioInsuficiente as exc:
+        db.session.rollback()
+        return jsonify({"error": "Inventario insuficiente", "detalles": exc.detalles}), 400
+
     return jsonify(pedido.to_dict()), 201

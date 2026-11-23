@@ -201,8 +201,23 @@ def crear_cotizacion(
     return cotizacion
 
 
+class InventarioInsuficiente(ValueError):
+    """El pedido requiere más stock del disponible en uno o más insumos."""
+
+    def __init__(self, detalles: list[dict]):
+        super().__init__("Inventario insuficiente")
+        self.detalles = detalles
+
+
 def descontar_inventario(pedido: Pedido, usuario: Usuario) -> None:
-    """Descuenta insumos según la receta de cada producto del pedido."""
+    """Valida y descuenta insumos según la receta de cada producto del pedido.
+
+    Primero acumula el requerimiento de todas las partidas y valida el stock
+    completo; si falta aunque sea una unidad no se modifica nada. Solo cuando
+    el pedido es viable se descuenta y se registran los movimientos.
+    """
+    requerimientos: dict[int, dict] = {}
+
     for item in pedido.items:
         if not item.producto or not item.producto.receta:
             continue
@@ -219,21 +234,48 @@ def descontar_inventario(pedido: Pedido, usuario: Usuario) -> None:
                 / rendimiento
             )
             requerido = round(requerido, 4)
-            disponible = float(materia.stock_actual or 0)
-            descontado = min(max(requerido, 0), max(disponible, 0))
-            if descontado <= 0:
+            if requerido <= 0:
                 continue
-
-            materia.stock_actual = round(disponible - descontado, 4)
-            db.session.add(
-                MovimientoInventario(
-                    materia_prima_id=materia.id,
-                    tipo="salida",
-                    cantidad=descontado,
-                    unidad_medida=materia.unidad_medida,
-                    costo_unitario=materia.costo_unitario,
-                    referencia=pedido.folio,
-                    motivo=f"Consumo por producción de {item.descripcion}",
-                    usuario_id=usuario.id,
-                )
+            registro = requerimientos.setdefault(
+                materia.id,
+                {"materia": materia, "cantidad": 0.0},
             )
+            registro["cantidad"] = round(registro["cantidad"] + requerido, 4)
+
+    faltantes = []
+    for registro in requerimientos.values():
+        materia = registro["materia"]
+        requerido = registro["cantidad"]
+        disponible = max(float(materia.stock_actual or 0), 0)
+        if requerido > disponible + 1e-9:
+            faltantes.append(
+                {
+                    "materiaPrimaId": materia.id,
+                    "materia": materia.nombre,
+                    "unidadMedida": materia.unidad_medida,
+                    "requerido": round(requerido, 4),
+                    "disponible": round(disponible, 4),
+                    "faltante": round(requerido - disponible, 4),
+                }
+            )
+
+    if faltantes:
+        raise InventarioInsuficiente(faltantes)
+
+    for registro in requerimientos.values():
+        materia = registro["materia"]
+        requerido = registro["cantidad"]
+        disponible = max(float(materia.stock_actual or 0), 0)
+        materia.stock_actual = round(disponible - requerido, 4)
+        db.session.add(
+            MovimientoInventario(
+                materia_prima_id=materia.id,
+                tipo="salida",
+                cantidad=requerido,
+                unidad_medida=materia.unidad_medida,
+                costo_unitario=materia.costo_unitario,
+                referencia=pedido.folio,
+                motivo=f"Consumo por producción del pedido {pedido.folio}",
+                usuario_id=usuario.id,
+            )
+        )

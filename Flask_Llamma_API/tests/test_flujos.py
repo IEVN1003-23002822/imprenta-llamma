@@ -38,6 +38,7 @@ from models import (  # noqa: E402
     Cliente,
     MateriaPrima,
     MovimientoInventario,
+    Pedido,
     Producto,
     Proveedor,
     Receta,
@@ -346,9 +347,14 @@ class FlujosApiTest(unittest.TestCase):
         )
         self.assertAlmostEqual(float(movimiento.cantidad), 6.6, places=4)
 
-    def test_08_descuento_parcial_documenta_h01(self) -> None:
-        """Caracteriza H-01: si falta stock se descuenta solo lo disponible."""
+    def test_08_rechaza_pedido_si_falta_inventario(self) -> None:
+        """H-01: si falta stock no se descuenta nada ni se crea el pedido."""
         antes = float(MateriaPrima.query.get(self.tinta.id).stock_actual)
+        movimientos_antes = MovimientoInventario.query.filter_by(
+            materia_prima_id=self.tinta.id
+        ).count()
+        pedidos_antes = Pedido.query.count()
+
         respuesta = self.client.post(
             "/api/pedidos",
             headers=self._auth(self._token()),
@@ -357,17 +363,24 @@ class FlujosApiTest(unittest.TestCase):
                 "items": [{"productoId": self.producto_parcial.id, "cantidad": 2}],
             },
         )
-        self.assertEqual(respuesta.status_code, 201, respuesta.get_data(as_text=True))
-        despues = float(MateriaPrima.query.get(self.tinta.id).stock_actual)
-        self.assertAlmostEqual(antes - despues, antes, places=4)
-        self.assertAlmostEqual(despues, 0.0, places=4)
-        # Requerido = 4 * 2 = 8; solo se registran 5, sin movimiento de faltante.
-        movimiento = (
-            MovimientoInventario.query.filter_by(materia_prima_id=self.tinta.id)
-            .order_by(MovimientoInventario.id.desc())
-            .first()
+
+        self.assertEqual(respuesta.status_code, 400, respuesta.get_data(as_text=True))
+        datos = self._json(respuesta)
+        self.assertEqual(datos["error"], "Inventario insuficiente")
+        detalle = datos["detalles"][0]
+        self.assertEqual(detalle["materiaPrimaId"], self.tinta.id)
+        self.assertAlmostEqual(detalle["requerido"], 8.0, places=4)
+        self.assertAlmostEqual(detalle["disponible"], 5.0, places=4)
+        self.assertAlmostEqual(detalle["faltante"], 3.0, places=4)
+
+        self.assertAlmostEqual(
+            float(MateriaPrima.query.get(self.tinta.id).stock_actual), antes, places=4
         )
-        self.assertAlmostEqual(float(movimiento.cantidad), 5.0, places=4)
+        self.assertEqual(
+            MovimientoInventario.query.filter_by(materia_prima_id=self.tinta.id).count(),
+            movimientos_antes,
+        )
+        self.assertEqual(Pedido.query.count(), pedidos_antes)
 
     def test_09_pagos_validan_saldo(self) -> None:
         creado = self.client.post(
@@ -439,8 +452,6 @@ class FlujosApiTest(unittest.TestCase):
         self.assertEqual(coincidencias, 1)
 
     def test_12_estados_backend_y_frontend_coinciden(self) -> None:
-        import re
-
         import estados
 
         fuente = (RAIZ.parent / "src/app/core/models/estados.ts").read_text(encoding="utf-8")
@@ -452,6 +463,34 @@ class FlujosApiTest(unittest.TestCase):
                     fuente,
                     f"{nombre}: el frontend no declara '{valor}'",
                 )
+
+    def test_13_anticipo_pagado_reduce_saldo(self) -> None:
+        """H-12: el pago del anticipo debe liquidar el saldo del pedido."""
+        creada = self.client.post(
+            "/api/cotizaciones",
+            headers=self._auth(self._token()),
+            json={
+                "clienteId": self.cliente.id,
+                "items": [{"productoId": self.producto_sin_receta.id, "cantidad": 1}],
+            },
+        )
+        self.assertEqual(creada.status_code, 201, creada.get_data(as_text=True))
+        cotizacion = self._json(creada)
+        self.assertEqual(cotizacion["total"], 116.0)
+        self.assertEqual(cotizacion["anticipo"], 58.0)
+        self.assertEqual(cotizacion["saldo"], 58.0)
+
+        convertida = self.client.post(
+            f"/api/cotizaciones/{cotizacion['id']}/convertir-pedido",
+            headers=self._auth(self._token()),
+            json={"anticipoPagado": True},
+        )
+        self.assertEqual(convertida.status_code, 201, convertida.get_data(as_text=True))
+        pedido = self._json(convertida)
+        self.assertEqual(len(pedido["pagos"]), 1)
+        self.assertAlmostEqual(float(pedido["pagos"][0]["monto"]), 58.0, places=2)
+        self.assertEqual(pedido["saldo"], 0)
+        self.assertEqual(pedido["estado"], "en-produccion")
 
 
 if __name__ == "__main__":
