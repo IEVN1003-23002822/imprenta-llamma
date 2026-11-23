@@ -51,7 +51,7 @@ e2e/
 │   ├── cotizaciones/# conversión, cotizador manual y totales exactos
 │   ├── flujo-compra/# compra completa, pagos e inventario insuficiente
 │   ├── inventario/  # descuento por receta y movimiento de salida
-│   ├── usuarios/    # API de usuarios (la SPA no tiene pantalla de usuarios)
+│   ├── usuarios/    # alta y listado de usuarios por UI + restricción de rol
 │   └── smoke/       # portada, catálogo, LCP y consola
 ├── global-setup.ts
 ├── proxy.e2e.json
@@ -60,14 +60,10 @@ e2e/
 
 ## Limitaciones conocidas
 
-- **No existe `/usuarios` en la SPA**: las pruebas de alta/listado de usuarios son de API y se
-  reportan como `BLOQUEADO` para UI.
-- **`H-12`**: convertir una cotización con «anticipo pagado» crea el `Pago` pero no reduce el
-  saldo. La prueba está marcada con `test.fail()` y documentada en el reporte; no se corrigió
-  la app sin aprobación.
-- **`H-01`**: con stock insuficiente el pedido se crea igual y el inventario se descuenta solo
-  hasta lo disponible. La prueba caracteriza el comportamiento actual.
+- **`H-13`**: la API de productos acepta `precioBase` negativo; la UI lo bloquea. Pendiente de
+  aprobación para endurecer el backend.
+- **`H-16`**: el estimado público de lona y la cotización interna usan reglas de precio distintas.
 - El seguimiento público muestra el estado de la **solicitud/cotización**, no el avance del
-  pedido u orden de producción.
+  pedido u orden de producción (`H-15`).
 - La suite comparte una sola base SQLite y corre con `workers: 1` para que las escrituras sean
   deterministas.

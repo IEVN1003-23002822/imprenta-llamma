@@ -9,19 +9,23 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **16 archivos de spec, 32 pruebas, 4 proyectos → 128 ejecuciones por corrida**.
-- Corridas completas: **3 por proyecto (384 ejecuciones)**; todas verdes.
-- `32 passed` por proyecto, incluida **1 falla esperada** de H-12 marcada con `test.fail()`.
+- Suite creada: **16 archivos de spec, 33 pruebas, 4 proyectos → 132 ejecuciones por corrida**.
+- Corridas completas: **3 por proyecto (396 ejecuciones)**; todas verdes.
+- `33 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, catálogo, edición de productos,
   solicitud pública con adjunto, seguimiento, cotización (desde solicitud y manual), totales,
-  pedido, pago, producción, inventario y smoke.
-- Flujos con bug real: **H-01** (inventario parcial), **H-12** (anticipo no reduce saldo),
-  **H-13** (API acepta precio negativo), **H-16** (estimado público ≠ cotización interna).
-- Flujo bloqueado: **alta/listado de usuarios en UI** (la SPA no tiene ruta `/usuarios`); se cubre
-  por API y queda como `BLOQUEADO` para interfaz.
-- Veredicto global: **❌ BUGS_REALES_DETECTADOS** — los caminos felices pasan, pero hay defectos de
-  dinero e inventario que no se corrigieron sin aprobación.
-- CI de la app: `format` ✅ · `lint` ✅ · Vitest **54/54** ✅ · `build` ✅ · backend **12/12** ✅.
+  pedido, pago, producción, inventario, **alta de usuarios por UI** y smoke.
+- Bugs corregidos: **H-01** (inventario estricto) y **H-12** (anticipo liquida el saldo).
+- Bugs abiertos: **H-13** (API acepta precio negativo), **H-16** (estimado público ≠ cotización
+  interna), **H-15** (seguimiento no muestra producción) y **H-14** (imagen LCP lazy).
+- Veredicto global: **⚠️ FUNCIONA_CON_RIESGOS** — los flujos críticos pasan; quedan dos defectos
+  de dinero/precio fuera del alcance de esta iteración.
+- CI de la app: `format` ✅ · `lint` ✅ · Vitest **54/54** ✅ · `build` ✅ · backend **13/13** ✅.
+
+> **Actualización 2026-11-23:** se corrigieron H-01 y H-12 (commit `54accf4`), se creó el módulo
+> `/usuarios` solo para admin (commit `dc711d1`) y se estabilizó la suite. La corrida de Mobile
+> Chrome detectó una condición de carrera al leer los roles del formulario; se resolvió con una
+> espera semántica (`toBeAttached`) y las 3 corridas posteriores quedaron verdes.
 
 ## 2. Diagnóstico del entorno (FASE 0)
 
@@ -33,7 +37,7 @@ desarrollo del puerto 5000.**
 | Backend aislado | OK | SQLite `e2e/.tmp/e2e.db` + seed; `/api/health` 200 | — |
 | Frontend aislado | OK | `ng serve` :4300 con `e2e/proxy.e2e.json` | — |
 | Credenciales | Ajustadas | `ana`, `diego`, `paola` / `llamma2026` (no existen `admin@`/`vendedor@`) | Documentado |
-| Ruta `/usuarios` | Ausente | No hay componente ni ruta; solo API | `BLOQUEADO` para UI |
+| Ruta `/usuarios` | Disponible | Componente standalone, ruta admin y acceso en «Módulos» | ✅ RESUELTO |
 | Registro público | Ausente | No hay auto-registro de clientes/usuarios | Interpretado como alta interna por API |
 | DB de desarrollo | Intacta | La suite usa SQLite temporal | — |
 
@@ -48,7 +52,7 @@ e2e/
 ├── factories/                      # producto, solicitud, usuario, cotización, pedido
 ├── helpers/                        # api-setup, consola, esperas, navegación móvil, datos
 ├── tests/auth/                     # 6 pruebas
-├── tests/usuarios/                 # 4 pruebas de API (sin UI)
+├── tests/usuarios/                 # 5 pruebas de UI + restricción de rol
 ├── tests/productos/                # 6 pruebas
 ├── tests/solicitudes/              # 4 pruebas
 ├── tests/cotizaciones/             # 3 pruebas
@@ -75,10 +79,10 @@ por API.
 | Login fallido (mismo mensaje) | `auth/login-fallido.spec.ts` | PASS | ✅ FUNCIONA |
 | Rate limit (6.º intento) | `auth/rate-limit-login.spec.ts` | PASS 429 | ✅ FUNCIONA |
 | Logout y protección de ruta | `auth/logout.spec.ts` | PASS | ✅ FUNCIONA |
-| Alta de usuario | `usuarios/usuarios-api.spec.ts` | API PASS | 🚫 BLOQUEADO (sin UI) |
-| Usuario duplicado | `usuarios/usuarios-api.spec.ts` | PASS 409 | ✅ FUNCIONA (API) |
-| Password corta | `usuarios/usuarios-api.spec.ts` | PASS 400 | ✅ FUNCIONA (API) |
-| Rol inexistente / roles | `usuarios/usuarios-api.spec.ts` | PASS 400 | ✅ FUNCIONA (API) |
+| Alta de usuario | `usuarios/usuarios.spec.ts` | PASS (UI) | ✅ FUNCIONA |
+| Usuario duplicado | `usuarios/usuarios.spec.ts` | PASS 409 (UI) | ✅ FUNCIONA |
+| Password corta | `usuarios/usuarios.spec.ts` | PASS (validación UI) | ✅ FUNCIONA |
+| Rol inexistente / roles | `usuarios/usuarios.spec.ts` | PASS (select de roles) | ✅ FUNCIONA |
 | Catálogo público + imágenes | `smoke/productos-publicos.spec.ts` | PASS | ✅ FUNCIONA |
 | Editar precio | `productos/productos.spec.ts` | PASS | ✅ FUNCIONA |
 | Editar descripción | `productos/productos.spec.ts` | PASS | ✅ FUNCIONA |
@@ -94,44 +98,44 @@ por API.
 | Totales (unitario/base/estimado) | `cotizaciones/cotizaciones.spec.ts` | PASS | ✅ FUNCIONA |
 | Flujo de compra completo | `flujo-compra/flujo-compra.spec.ts` | PASS | ✅ FUNCIONA |
 | Pago sobre saldo (H-06) | `flujo-compra/pagos.spec.ts` | PASS 400 | ✅ FUNCIONA |
-| Inventario insuficiente | `flujo-compra/flujo-compra.spec.ts` | PASS (caracterización) | ❌ H-01 |
-| Anticipo pagado | `flujo-compra/flujo-compra.spec.ts` | EXPECTED FAIL | ❌ H-12 |
+| Inventario insuficiente | `flujo-compra/flujo-compra.spec.ts` | PASS (400) | ✅ FUNCIONA |
+| Anticipo pagado | `flujo-compra/flujo-compra.spec.ts` | PASS | ✅ FUNCIONA |
 | Descuento por receta | `inventario/descuento-por-pedido.spec.ts` | PASS | ✅ FUNCIONA |
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **32/32 en Chromium, Firefox, WebKit y Mobile Chrome**, tres corridas
+Matriz de proyectos: **33/33 en Chromium, Firefox, WebKit y Mobile Chrome**, tres corridas
 consecutivas por proyecto.
 
 ## 5. Bugs reales
 
-### H-12 — Crítico: el anticipo pagado no reduce el saldo
+### H-12 — Crítico: el anticipo pagado no reducía el saldo — **CORREGIDO**
 
-- **Reproducir:** `npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts -g "H-12"`
-  (la prueba está marcada como falla esperada para no romper la suite).
-- **Evidencia:** cotización de $1,000 + IVA = $1,160, anticipo $580, saldo $580. Al convertir con
-  `anticipoPagado: true` se crea **1 pago de $580**, pero el pedido conserva `saldo: 580`.
-- **Ubicación:** `Flask_Llamma_API/routes/cotizaciones_routes.py:171-186`.
-- **Impacto:** se puede cobrar dos veces el anticipo; el cliente ve saldo pendiente aunque ya pagó.
-- **Fix propuesto (NO aplicado):** al crear el `Pago` de anticipo, descontar `anticipo` de `saldo`
-  (o modelar el anticipo como parte del total pagado y recalcular). Requiere decisión de negocio.
+- **Test:** `npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts -g "H-12"` → **PASS**.
+- **Fix:** al crear el `Pago` de anticipo se descuenta el monto del `saldo` del pedido (Decimal,
+  2 decimales); si queda en 0 y el pedido estaba `confirmado`, pasa a `en-produccion`.
+- **Evidencia:** cotización $1,160, anticipo $580, saldo $580 → 1 pago de $580 y saldo **0**.
+- **Ubicación:** `Flask_Llamma_API/routes/cotizaciones_routes.py`.
+- **Commit:** `54accf4`.
 
-### H-13 — Alto: la API acepta precios negativos
+### H-13 — Alto: la API acepta precios negativos (abierto)
 
 - **Reproducir:** `POST /api/productos` con `precioBase: -50` → **201**.
 - **Ubicación:** `Flask_Llamma_API/routes/productos_routes.py:67` (sin validación) y
   `routes/comun.py:99` (usa `precio_base` sin `max(..., 0)` al cotizar).
 - **Impacto:** una cotización puede quedar con subtotal/total negativo.
-- **Fix propuesto (NO aplicado):** rechazar `precioBase < 0` en POST/PUT y aplicar `max(0, ...)` en
-  el fallback de `partidas_a_cotizacion`.
+- **Fix propuesto:** rechazar `precioBase < 0` en POST/PUT y aplicar `max(0, ...)` en el fallback de
+  `partidas_a_cotizacion`. **No aplicado** (fuera del alcance de esta iteración).
 
-### H-01 — Crítico: inventario insuficiente se descuenta parcial
+### H-01 — Crítico: inventario insuficiente se descontaba parcial — **CORREGIDO**
 
-- **Reproducir:** `npx playwright test e2e/tests/flujo-compra -g "H-01"`.
-- **Evidencia:** requerido 20 unidades, stock 1 → el pedido se crea (201), stock queda en 0 y solo
-  se registra un movimiento de salida por 1; no hay movimiento de faltante.
-- **Ubicación:** `routes/comun.py:223`.
-- **Fix propuesto (NO aplicado):** rechazar el pedido o registrar el faltante; decisión de negocio.
+- **Test:** `npx playwright test e2e/tests/flujo-compra -g "inventario"` → **PASS**.
+- **Fix:** `descontar_inventario` acumula el requerimiento por materia y valida todo el stock antes
+  de tocar la base. Si falta, lanza `InventarioInsuficiente` con `detalles`; las rutas de pedido y
+  conversión hacen rollback y responden `400 {"error":"Inventario insuficiente","detalles":[...]}`.
+- **Evidencia:** requerido 20, disponible 1 → 400, stock intacto en 1, 0 movimientos y 0 pedidos.
+- **Ubicación:** `routes/comun.py`, `routes/pedidos_routes.py`, `routes/cotizaciones_routes.py`.
+- **Commit:** `54accf4`.
 
 ### H-16 — Alto: el estimado público no coincide con la cotización interna
 
@@ -185,7 +189,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 128 pruebas (32 × 4)
+npx playwright test --list               # 132 pruebas (33 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -281,8 +285,7 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ## 10. Evidencia adjunta
 
 - `playwright-report/` — reporte HTML de la última corrida completa.
-- `test-results/` — trazas, screenshots y videos **solo de fallos** (H-12 es una falla esperada y no
-  genera adjuntos; su evidencia está en la respuesta de la API y en el reporte).
+- `test-results/` — trazas, screenshots y videos **solo de fallos**; la corrida final quedó verde.
 - `e2e/.auth/*.json` — sesiones generadas (ignoradas por Git).
 - `e2e/.tmp/e2e.db` — base SQLite de la corrida (ignorada por Git).
 
@@ -291,23 +294,21 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: parcial
-tests_totales: 32
+tests_totales: 33
 proyectos: [chromium, firefox, webkit, mobile-chrome]
 corridas_por_proyecto: 3
-tests_pass: 32
+tests_pass: 33
 tests_fail: 0
-fallas_esperadas: [H-12]
+fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing, login_fallido, rate_limit, logout,
-  catalogo, editar_precio, editar_descripcion, editar_imagen, publicar, solicitud_publica,
-  adjuntos, seguimiento, cotizacion_desde_solicitud, cotizacion_manual, totales, flujo_compra,
-  pago, produccion, inventario_receta, smoke, consola]
+  catalogo, editar_precio, editar_descripcion, editar_imagen, publicar, alta_usuarios_ui,
+  solicitud_publica, adjuntos, seguimiento, cotizacion_desde_solicitud, cotizacion_manual, totales,
+  flujo_compra, pago, produccion, inventario_estricto, anticipo_pagado, smoke, consola]
+bugs_corregidos: [H-01, H-12]
 flujos_con_bug:
-  - {id: H-01, flujo: inventario_insuficiente, severidad: critico, test: e2e/tests/flujo-compra/flujo-compra.spec.ts}
-  - {id: H-12, flujo: anticipo_pagado, severidad: critico, test: e2e/tests/flujo-compra/flujo-compra.spec.ts}
   - {id: H-13, flujo: precio_negativo_api, severidad: alto, test: evidencia POST /api/productos}
   - {id: H-16, flujo: estimado_vs_cotizacion, severidad: alto, test: analisis + flujo de compra}
-flujos_bloqueados:
-  - {id: H-17, flujo: alta_usuarios_ui, causa: "no existe ruta /usuarios"}
+flujos_bloqueados: []
 herramientas_alta: [axe-core, lighthouse-ci, pytest, github-actions-e2e]
 herramientas_media: [sentry, owasp-zap, toHaveScreenshot, docker-compose]
 herramientas_baja: [postman, bruno, k6]
@@ -318,8 +319,9 @@ config_playwright:
   db: "SQLite e2e/.tmp/e2e.db"
   projects: [chromium, firefox, webkit, mobile-chrome]
   trace: on-first-retry
+commits: [54accf4, dc711d1]
 ci_job_e2e_aprobado: false
-pendiente_usuario: "decidir H-01, H-12, H-13 y H-16; aprobar job CI e2e; evaluar axe-core y Lighthouse"
+pendiente_usuario: "decidir H-13 y H-16; aprobar job CI e2e; evaluar axe-core y Lighthouse"
 ```
 
 ## 12. Supuestos

@@ -69,3 +69,6 @@ node_modules/
 /playwright/.auth/
 /e2e/.auth/
 /e2e/.tmp/
+
+# Salida de repomix usada para contexto, no se versiona
+/repomix-output.xml

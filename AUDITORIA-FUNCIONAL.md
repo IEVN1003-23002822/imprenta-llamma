@@ -3,6 +3,10 @@
 Rama `audit/functional-llamma-2026-11-23` · tag `baseline-pre-audit-functional` · respaldo
 `../llamma-audit-backup-2026-11-23/` (207 archivos, 3.31 MB).
 
+> **Actualización 2026-11-23:** H-01 quedó corregido en `54accf4` (inventario estricto con 400 y
+> rollback) y H-12 se detectó/corrigió en la suite E2E. El resto del reporte conserva el estado de
+> la auditoría original; consulta `AUDITORIA-E2E-PLAYWRIGHT.md` para el estado vigente.
+
 Herramientas: Flask 3.1 + MySQL 8 local, Angular 22 + Vitest, Playwright 1.65 con Microsoft Edge
 (el MCP de Playwright apunta a Chrome, que no está instalado). Las pruebas nuevas del backend usan
 SQLite temporal y no tocan `llamma_db`.
@@ -69,7 +73,7 @@ Tiempos de respuesta medidos contra la API viva (5 muestras):
 
 | ID | Hallazgo | Categoría | Severidad | Ubicación | Evidencia | Estado |
 |---|---|---|---|---|---|---|
-| H-01 | Si el stock es menor al requerido se descuenta solo lo disponible y no se registra faltante | Lógica / inventario | Crítico | `Flask_Llamma_API/routes/comun.py:223` | `test_08_descuento_parcial_documenta_h01`: requerido 8, descontado 5, stock 0, sin movimiento de faltante | `REQUIERE_APROBACIÓN` |
+| H-01 | Si el stock es menor al requerido se descuenta solo lo disponible y no se registra faltante | Lógica / inventario | Crítico | `Flask_Llamma_API/routes/comun.py:223` | `test_08_descuento_parcial_documenta_h01`: requerido 8, descontado 5, stock 0, sin movimiento de faltante | **CORREGIDO** `54accf4` |
 | H-02 | `upsert_cliente` sobrescribe nombre, teléfono, empresa, dirección y RFC del cliente existente | Lógica / datos | Medio | `routes/comun.py:49` | Lectura de código + `test_11_cliente_recurrente_no_se_duplica` | `REQUIERE_APROBACIÓN` |
 | H-03 | `roleGuard` deja pasar si la ruta no declara `data.roles` | Seguridad | Medio | `src/app/core/guards/auth.guard.ts:28` | `auth.guard.spec.ts` lo fija como contrato (“deja pasar si la ruta no exige roles”) | `BLOQUEADO` |
 | H-04 | `includes('/public/')` omitía el token en URLs internas con `/public/` en el query | Seguridad / frontend | Bajo | `src/app/core/interceptors/auth.interceptor.ts:16` | Test nuevo falla sin fix y pasa con fix | **CORREGIDO** `e8dbb16` |

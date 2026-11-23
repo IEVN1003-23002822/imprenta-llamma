@@ -164,6 +164,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `data.roles` en `app.routes.ts`.
 - Pasar una OC a `recibida` (`PATCH /api/ordenes-compra/<id>/estado`) suma stock y crea un
   `MovimientoInventario` tipo `entrada`; no dupliques ese ajuste a mano.
+- `descontar_inventario` valida **todo** el stock de la receta antes de tocar la base. Si falta,
+  lanza `InventarioInsuficiente`, la ruta hace rollback y responde `400` con
+  `{ error: "Inventario insuficiente", detalles: [...] }`; no hay descuento parcial.
 
 ## Convenciones frontend
 
@@ -184,6 +187,8 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - La visibilidad de los accesos del menú «Módulos» se controla con `modulosVisibles` en `app.ts`.
   Marketing está en `false` por decisión de producto: su ruta, componente y permisos siguen
   activos. Cambia la bandera a `true` para reactivarlo; no borres la entrada de `app.html`.
+- `/usuarios` es solo para `admin` (`authGuard` + `roleGuard`), con tabla y alta en la misma
+  página. El acceso del menú «Módulos» se muestra con `auth.esAdmin()`.
 - La previsualización de mockups de `/cotizar` vive en `cotizar.component.*`: catálogo
   `MOCKUPS_CATALOGO` indexado por nombre de producto, imágenes en
   `src/assets/images/mockups/*.webp` y área de impresión en
