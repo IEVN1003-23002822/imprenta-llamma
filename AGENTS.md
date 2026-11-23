@@ -64,10 +64,12 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - `npm run lint` (ESLint + angular-eslint), `npm run format:check` (Prettier) y
   `npx ng test --watch=false` (Vitest + jsdom) deben quedar en verde antes de dar algo por terminado.
   `npm test` sin argumentos entra en modo watch si hay TTY.
-- Orden del CI: `format:check` → `lint` → `test -- --watch=false` → `build`.
-- El backend no tiene suite de pruebas: valida sintaxis con
-  `.venv\Scripts\python.exe -m compileall -q app.py auth.py config.py estados.py extensions.py
-  ratelimit.py seed.py utils.py models routes migrations` y prueba los endpoints contra la API viva.
+- Orden del CI frontend: `format:check` → `lint` → `test -- --watch=false` → `build`.
+- El backend tiene pruebas de flujo en `Flask_Llamma_API/tests/` con `unittest` y SQLite temporal
+  (no tocan `llamma_db`): `.venv\Scripts\python.exe -m unittest discover -s tests -v`.
+  Antes, valida sintaxis con `.venv\Scripts\python.exe -m compileall -q app.py auth.py config.py
+  estados.py extensions.py ratelimit.py seed.py utils.py models routes migrations tests` y, si hace
+  falta, prueba los endpoints contra la API viva.
 - Un solo spec: `npx ng test --watch=false --include=src/app/core/services/auth.service.spec.ts`
   (o `--filter='AuthService'` para filtrar por nombre).
 - Los specs viven junto al código (`src/app/**/*.spec.ts`) e importan `describe/it/expect/vi` de
@@ -75,8 +77,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   primero reenlaza `localStorage`/`sessionStorage` de jsdom frente a los globales experimentales de
   Node 26 y el segundo relativiza los `include` absolutos que `tinyglobby` no resuelve en Windows.
   El CI usa Node 22 y `npm test -- --watch=false`.
-- `npm run build` compila plantillas y aplica budgets; es la última compuerta del flujo
+- `npm run build` compila plantillas y aplica budgets; es la última compuerta del job `frontend` de
   `.github/workflows/ci.yml`, que también corre formato, lint y pruebas en cada push y pull request.
+  El job `backend` instala `requirements.txt` y ejecuta las pruebas de flujo en SQLite.
 - Budget de producción: 16 kB warning / 20 kB **error** por estilos de componente
   (`anyComponentStyle`). Los estilos compartidos van a `src/styles.css`.
 
