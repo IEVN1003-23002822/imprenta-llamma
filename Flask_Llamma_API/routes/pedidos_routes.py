@@ -293,8 +293,11 @@ def registrar_pago(pedido_id: int):
     if monto <= 0:
         return error("El monto del pago debe ser mayor a cero")
 
-    pagado = sum(float(p.monto or 0) for p in pedido.pagos if p.confirmado)
-    if monto > round(float(pedido.total or 0) - pagado, 2) + 0.01:
+    # El saldo del pedido ya descuenta el anticipo pactado al crearlo. Se usa
+    # ese saldo como tope: comparar contra `total - pagado` permitía cobrar de
+    # más cuando el anticipo aún no estaba registrado como pago.
+    saldo_actual = round(float(pedido.saldo or 0), 2)
+    if monto > saldo_actual + 0.01:
         return error("El pago excede el saldo pendiente del pedido")
 
     pago = Pago(
@@ -309,8 +312,8 @@ def registrar_pago(pedido_id: int):
     pedido.pagos.append(pago)
     db.session.flush()
 
-    pagado = sum(float(p.monto or 0) for p in pedido.pagos if p.confirmado)
-    pedido.saldo = round(max(float(pedido.total or 0) - pagado, 0), 2)
+    if pago.confirmado:
+        pedido.saldo = round(max(saldo_actual - monto, 0), 2)
     if pedido.saldo <= 0 and pedido.estado == "confirmado":
         pedido.estado = "en-produccion"
 
