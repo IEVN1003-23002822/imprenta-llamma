@@ -42,7 +42,7 @@ export class SeoService {
   private readonly meta = inject(Meta);
   private readonly document = inject(DOCUMENT);
   // PNG para las tarjetas sociales: WhatsApp y LinkedIn no siempre leen WebP.
-  private readonly imagen = 'assets/images/logo-llamma.png';
+  private readonly imagen = 'assets/images/logo-llamma.webp';
 
   constructor() {
     this.router.events

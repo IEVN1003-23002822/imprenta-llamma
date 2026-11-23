@@ -599,4 +599,49 @@ Escala: impacto y esfuerzo en **A**lto / **M**edio / **B**ajo. Esfuerzo en días
   (553.24 kB raw / 122.44 kB); **51/51** rutas en Edge, imágenes WebP con HTTP 200 y sin desbordes
   horizontales a 390 px.
 
+### Precios oficiales de playeras, tazas y lona (21 de noviembre de 2026)
+
+- **Catálogo.** Se separó la playera en dos SKU: `Playera DTF 29 × 29 cm` a `$220` y
+  `Playera DTF menor a 29 × 29 cm` a `$200`. La taza quedó en `$85` y la lona en `$220` por `1 m²`.
+- **Lona.** El cotizador aplica `$220 + $120 × (m² - 1)`, con una nota visible que explica la regla.
+  Para 3 m² el estimado es `$460`.
+- **Persistencia.** `seed.py` genera los nuevos precios y descripciones;
+  `migrations/precios_productos.py` actualizó la base existente y clonó la receta de la playera
+  menor. `MOCKUPS_CATALOGO` reconoce ambos nombres de playera.
+- **Verificación.** En Edge: lona 3 m² `$460`, playera 29 × 29 ×2 `$440`, playera menor ×2 `$400`,
+  taza ×4 `$340`; al agregar lona 3 m² el carrito muestra `$460`. `format:check`, `lint`,
+  **53/53** pruebas y `build` en verde.
+
+### Vistas previas del catálogo (22 de noviembre de 2026)
+
+- **Mapping producto → imagen.** Lona → `catalogo/gran-formato/lona-frontlit-impresa.webp`;
+  roll-up → `gran-formato/roll-up-premium.webp`; playeras → `textil/playera-dtf-29x29.webp` y
+  `textil/playera-dtf-menor-29x29.webp`; tote → `textil/tote-bag-manta.webp`; taza →
+  `promocionales/taza-ceramica-sublimada.webp`; sticker → `promocionales/sticker-troquelado.webp`;
+  tarjetas → `papeleria/tarjetas-couche-300g.webp`.
+- **Optimización.** 8 fuentes (5.51 MB) convertidas a WebP calidad 84, máx. 1000 px: **0.43 MB**.
+  Los originales de `Imagenes catalago/` quedan ignorados por Git.
+- **UI.** Las tarjetas con `imagen_url` muestran una vista cuadrada con `object-contain`; si la imagen
+  falla se conserva el icono de respaldo. Precios, badges, filtros y CTA no cambian.
+- **Persistencia.** `seed.py` incluye `imagen`; `migrations/imagenes_catalogo.py` actualizó los 8
+  productos existentes.
+- **Verificación.** Las 8 imágenes cargan en Edge (`complete=true`, dimensiones naturales), HTTP 200;
+  `format:check`, `lint`, **53/53** pruebas y `build` en verde (553.28 kB raw / 122.47 kB).
+
+### Limpieza y conversión de assets aplicada (23 de noviembre de 2026)
+
+- **Borrado.** Se eliminaron `Toni/` completo (14 PNG, `mockups.zip`, backups de cotizar y snapshot),
+  `repomix-output.xml` de la raíz y el snapshot interno de Toni. El working tree bajó de **254.57 MB a
+  14.78 MB**; los tracked pendientes de commit bajan de 123.90 MB a ~2.76 MB.
+- **Conversión.** `logo-llamma.png` → `src/assets/images/logo-llamma.webp` (23.9 KB, calidad 80) y
+  `favicon.ico` → `public/favicon.webp` (7.4 KB). El logo PNG queda como fuente; el ICO funciona como
+  fallback legacy.
+- **Referencias.** `index.html` usa `logo-llamma.webp` para OG/Twitter/JSON-LD y declara
+  `favicon.webp` antes de `favicon.ico`; `seo.service.ts` usa el logo WebP. Se eliminó el comentario
+  obsoleto de `Toni/mockups` en `cotizar.component.ts`.
+- **Validación.** `format:check`, `lint`, **53/53** pruebas y `build` en verde
+  (551.85 kB raw / 122.39 kB). Playwright capturó `/`, `/productos`, `/cotizar` y `/login`; `/favicon.webp`
+  y `/assets/images/logo-llamma.webp` responden HTTP 200. La suite Edge sigue en **51/51**, sin errores
+  de consola.
+
 

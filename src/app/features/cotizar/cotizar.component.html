@@ -269,6 +269,13 @@
                     Estimado de esta línea: <strong>{{ moneda(estimadoLinea()) }}</strong> + IVA ·
                     sujeto a revisión de diseño.
                   </p>
+                  @if (notaPrecio(); as nota) {
+                    <p
+                      class="mt-1 flex items-start gap-2 text-[0.72rem] leading-[1.45] text-[var(--llamma-muted)]"
+                    >
+                      <i class="bi bi-info-circle"></i><span>{{ nota }}</span>
+                    </p>
+                  }
                 }
 
                 @if (carrito().length) {

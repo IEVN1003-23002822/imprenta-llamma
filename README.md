@@ -179,7 +179,7 @@ Llamma/
 │   ├── main.ts
 │   ├── assets/
 │   │   └── images/
-│   │       └── logo-llamma.png
+│   │       └── logo-llamma.webp
 │   └── styles.css
 ├── proxy.conf.json
 ├── angular.json

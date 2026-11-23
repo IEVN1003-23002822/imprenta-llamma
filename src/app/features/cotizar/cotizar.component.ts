@@ -26,6 +26,8 @@ import {
 } from '../../core/models/llamma.models';
 
 const CLAVE_BORRADOR = 'llamma.cotizacion.borrador.v1';
+const LONA_BASE = 220;
+const LONA_ADICIONAL = 120;
 const DIAS_BORRADOR = 30;
 
 interface BorradorFormulario {
@@ -72,7 +74,7 @@ export interface MockupVista {
 
 /**
  * Vistas de mockup por nombre de producto. Las imágenes son copias WebP
- * optimizadas de `Toni/mockups` y viven en `src/assets/images/mockups/`.
+ * optimizadas y viven en `src/assets/images/mockups/`.
  * Las coordenadas son porcentajes, así que no dependen de la resolución.
  */
 const MOCKUPS_CATALOGO: Record<string, MockupVista[]> = {
@@ -118,7 +120,7 @@ const MOCKUPS_CATALOGO: Record<string, MockupVista[]> = {
       transform: 'perspective(700px) rotateY(-21.5deg) skewY(4.5deg)',
     },
   ],
-  'Playera DTF unisex': [
+  'Playera DTF 29 × 29 cm': [
     {
       id: 'playera-1',
       nombre: 'Espalda / Plana',
@@ -224,6 +226,8 @@ const MOCKUPS_CATALOGO: Record<string, MockupVista[]> = {
   ],
 };
 
+MOCKUPS_CATALOGO['Playera DTF menor a 29 × 29 cm'] = MOCKUPS_CATALOGO['Playera DTF 29 × 29 cm'];
+
 @Component({
   selector: 'app-cotizar',
   imports: [
@@ -285,9 +289,22 @@ export class CotizarComponent implements OnInit {
     () => this.productos().find((producto) => producto.id === this.productoId()) ?? null,
   );
 
-  readonly estimadoLinea = computed(
-    () => (this.productoActual()?.precioBase ?? 0) * this.cantidad(),
-  );
+  readonly estimadoLinea = computed(() => {
+    const producto = this.productoActual();
+    return producto ? this.precioLinea(producto, this.cantidad()) : 0;
+  });
+
+  readonly notaPrecio = computed(() => {
+    const producto = this.productoActual();
+    if (!producto) return null;
+    if (this.esLona(producto)) {
+      return `Lona: 1 m² base $${LONA_BASE} + $${LONA_ADICIONAL} por cada m² adicional.`;
+    }
+    if (producto.nombre.includes('Playera DTF')) {
+      return 'Playera: impresión 29 × 29 cm $220; impresión menor a 29 × 29 cm $200.';
+    }
+    return null;
+  });
 
   readonly totalEstimado = computed(() =>
     this.carrito().reduce((total, item) => total + (item.precioEstimado ?? 0), 0),
@@ -599,6 +616,17 @@ export class CotizarComponent implements OnInit {
     this.guardarBorrador();
   }
 
+  private esLona(producto: ProductoPublico): boolean {
+    return producto.nombre.toLowerCase().includes('lona');
+  }
+
+  private precioLinea(producto: ProductoPublico, cantidad: number): number {
+    if (this.esLona(producto)) {
+      return LONA_BASE + Math.max(0, cantidad - 1) * LONA_ADICIONAL;
+    }
+    return producto.precioBase * cantidad;
+  }
+
   cambiarEspecificaciones(evento: Event): void {
     this.especificaciones.set((evento.target as HTMLInputElement).value);
     this.guardarBorrador();
@@ -618,10 +646,10 @@ export class CotizarComponent implements OnInit {
       especificaciones:
         this.especificaciones().trim() ||
         (producto.unidadVenta === 'm2'
-          ? 'Medida exacta por confirmar en diseño'
+          ? 'Medida exacta por confirmar (1 m² base + m² adicionales)'
           : 'Especificaciones estándar'),
       cantidad,
-      precioEstimado: Math.round(producto.precioBase * cantidad * 100) / 100,
+      precioEstimado: Math.round(this.precioLinea(producto, cantidad) * 100) / 100,
     };
 
     this.carrito.update((items) => [...items, item]);
