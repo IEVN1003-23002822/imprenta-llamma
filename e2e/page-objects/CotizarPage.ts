@@ -36,16 +36,26 @@ export class CotizarPage {
     const selector = this.page.locator('#cotProducto');
     await expect(selector.locator('option').filter({ hasText: nombre })).toHaveCount(1);
     await selector.selectOption({ label: nombre });
+    const ancho = this.page.locator('#cotAncho');
+    if (await ancho.isVisible().catch(() => false)) {
+      await ancho.fill('1');
+      await this.page.locator('#cotAlto').fill('1');
+    }
     await this.page.locator('#cotCantidad').fill(String(cantidad));
     await this.page.getByRole('button', { name: /Agregar a mi solicitud/i }).click();
   }
 
-  async agregarProductoConMedidas(nombre: string, anchoCm: number, altoCm: number): Promise<void> {
+  async agregarProductoConMedidas(
+    nombre: string,
+    anchoMetros: number,
+    altoMetros: number,
+  ): Promise<void> {
     const selector = this.page.locator('#cotProducto');
     await expect(selector.locator('option').filter({ hasText: nombre })).toHaveCount(1);
     await selector.selectOption({ label: nombre });
-    await this.page.locator('#cotAncho').fill(String(anchoCm));
-    await this.page.locator('#cotAlto').fill(String(altoCm));
+    await this.page.locator('#cotAncho').fill(String(anchoMetros));
+    await this.page.locator('#cotAlto').fill(String(altoMetros));
+    await this.page.locator('#cotCantidad').fill('1');
     await this.page.getByRole('button', { name: /Agregar a mi solicitud/i }).click();
   }
 

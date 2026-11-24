@@ -67,7 +67,7 @@ test.describe('Cotizador dinámico por medidas', () => {
       telefono: '5551234567',
     });
     await cotizar.continuar();
-    await cotizar.agregarProductoConMedidas(producto.nombre, 10, 10);
+    await cotizar.agregarProductoConMedidas(producto.nombre, 0.1, 0.1);
     await expect(page.locator('main#contenido')).toContainText('0.01 m²');
     await cotizar.continuar();
     const solicitud = await cotizar.enviar('Necesito un estampado de diez por diez centímetros');

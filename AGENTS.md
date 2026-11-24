@@ -219,6 +219,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `MOCKUPS_CATALOGO` indexado por nombre de producto, imágenes en
   `src/assets/images/mockups/*.webp` y área de impresión en
   porcentajes. El calibrador interno solo se habilita con `/cotizar?calibrar=1`.
+- El visor 3D usa `CotizarMockup3dComponent` con `three` y modelos GLB en
+  `src/assets/models/`; las imágenes del cliente se optimizan en
+  `POST /api/public/mockups/preparar-imagen` (Pillow en `requirements.txt`).
 - Accesibilidad mínima obligatoria: skip link y `<main id="contenido">`, `aria-current="page"` en la
   navegación vía `esRuta()`, `<caption class="sr-only">` + `scope="col"` en cada tabla,
   nombre accesible en todo control y `aria-invalid`/`aria-describedby` con foco al primer error.

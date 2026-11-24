@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { CotizarMockup3dComponent } from './cotizar-mockup-3d/cotizar-mockup-3d.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -31,8 +32,6 @@ import {
 } from '../../core/models/llamma.models';
 
 const CLAVE_BORRADOR = 'llamma.cotizacion.borrador.v1';
-const LONA_BASE = 220;
-const LONA_ADICIONAL = 120;
 const DIAS_BORRADOR = 30;
 
 interface BorradorFormulario {
@@ -242,6 +241,7 @@ MOCKUPS_CATALOGO['Playera DTF menor a 29 × 29 cm'] = MOCKUPS_CATALOGO['Playera 
     CotizarComprobanteComponent,
     CotizarPasosComponent,
     CotizarResumenComponent,
+    CotizarMockup3dComponent,
   ],
   templateUrl: './cotizar.component.html',
   styleUrl: './cotizar.component.css',
@@ -258,14 +258,9 @@ export class CotizarComponent implements OnInit {
 
   readonly productoId = signal<number | null>(null);
   readonly cantidad = signal(1);
-  readonly anchoCm = signal<number | null>(null);
-  readonly altoCm = signal<number | null>(null);
-  readonly permiteMedidas = computed(() => this.productoActual()?.unidadVenta === 'm2');
-  readonly metrosCuadrados = computed(() => {
-    const ancho = this.anchoCm() ?? 0;
-    const alto = this.altoCm() ?? 0;
-    return Math.round(((ancho * alto) / 10000) * 10000) / 10000;
-  });
+  readonly anchoMetros = signal(2);
+  readonly altoMetros = signal(1);
+
   readonly especificaciones = signal('');
 
   readonly enviando = signal(false);
@@ -302,29 +297,25 @@ export class CotizarComponent implements OnInit {
     () => this.productos().find((producto) => producto.id === this.productoId()) ?? null,
   );
 
+  readonly esPorM2 = computed(() => this.productoActual()?.unidadVenta === 'm2');
+
+  readonly areaTotalM2 = computed(() => {
+    const area = this.anchoMetros() * this.altoMetros() * this.cantidad();
+    return Math.round(area * 100) / 100;
+  });
+
   readonly estimadoLinea = computed(() => {
     const producto = this.productoActual();
-    return producto ? this.precioLinea(producto, this.cantidad()) : 0;
+    if (!producto) return 0;
+    const factor = producto.unidadVenta === 'm2' ? this.areaTotalM2() : this.cantidad();
+    return Math.round(producto.precioBase * factor * 100) / 100;
   });
-
-  readonly notaPrecio = computed(() => {
-    const producto = this.productoActual();
-    if (!producto) return null;
-    if (this.esLona(producto)) {
-      return `Lona: 1 m² base $${LONA_BASE} + $${LONA_ADICIONAL} por cada m² adicional.`;
-    }
-    if (producto.nombre.includes('Playera DTF')) {
-      return 'Playera: impresión 29 × 29 cm $220; impresión menor a 29 × 29 cm $200.';
-    }
-    return null;
-  });
-
   readonly totalEstimado = computed(() =>
     this.carrito().reduce((total, item) => total + (item.precioEstimado ?? 0), 0),
   );
 
-  readonly totalPiezas = computed(() =>
-    this.carrito().reduce((total, item) => total + item.cantidad, 0),
+  readonly totalPiezas = computed(
+    () => Math.round(this.carrito().reduce((total, item) => total + item.cantidad, 0) * 100) / 100,
   );
 
   readonly ivaEstimado = computed(() => Math.round(this.totalEstimado() * 0.16 * 100) / 100);
@@ -348,6 +339,21 @@ export class CotizarComponent implements OnInit {
   readonly mostrarCalibrador = this.route.snapshot.queryParamMap.get('calibrar') === '1';
 
   readonly showPreviewModal = signal(false);
+
+  readonly showPreview3dModal = signal(false);
+
+  openPreview3d(): void {
+    this.showPreview3dModal.set(true);
+  }
+
+  closePreview3d(): void {
+    this.showPreview3dModal.set(false);
+  }
+
+  adjuntarCaptura3d(archivo: File): void {
+    this.archivos.update((actuales) => [...actuales, archivo]);
+  }
+
   readonly previewImage = signal<string | null>(null);
   readonly selectedMockupIndex = signal(0);
 
@@ -620,36 +626,27 @@ export class CotizarComponent implements OnInit {
   cambiarProducto(evento: Event): void {
     const valor = Number((evento.target as HTMLSelectElement).value);
     this.productoId.set(Number.isNaN(valor) ? null : valor);
-    this.anchoCm.set(null);
-    this.altoCm.set(null);
     this.guardarBorrador();
   }
 
   cambiarAncho(evento: Event): void {
     const valor = Number((evento.target as HTMLInputElement).value);
-    this.anchoCm.set(Number.isFinite(valor) && valor > 0 ? valor : null);
+    this.anchoMetros.set(
+      Number.isFinite(valor) && valor >= 0.1 ? Math.round(valor * 100) / 100 : 0.1,
+    );
   }
 
   cambiarAlto(evento: Event): void {
     const valor = Number((evento.target as HTMLInputElement).value);
-    this.altoCm.set(Number.isFinite(valor) && valor > 0 ? valor : null);
+    this.altoMetros.set(
+      Number.isFinite(valor) && valor >= 0.1 ? Math.round(valor * 100) / 100 : 0.1,
+    );
   }
 
   cambiarCantidad(evento: Event): void {
     const valor = Number((evento.target as HTMLInputElement).value);
     this.cantidad.set(Number.isFinite(valor) && valor > 0 ? Math.floor(valor) : 1);
     this.guardarBorrador();
-  }
-
-  private esLona(producto: ProductoPublico): boolean {
-    return producto.nombre.toLowerCase().includes('lona');
-  }
-
-  private precioLinea(producto: ProductoPublico, cantidad: number): number {
-    if (this.esLona(producto)) {
-      return LONA_BASE + Math.max(0, cantidad - 1) * LONA_ADICIONAL;
-    }
-    return producto.precioBase * cantidad;
   }
 
   cambiarEspecificaciones(evento: Event): void {
@@ -664,29 +661,36 @@ export class CotizarComponent implements OnInit {
       return;
     }
 
-    const cantidad =
-      this.permiteMedidas() && this.metrosCuadrados() > 0
-        ? this.metrosCuadrados()
-        : Math.max(this.cantidad(), 1);
-    const medida =
-      this.permiteMedidas() && this.metrosCuadrados() > 0
-        ? `${this.anchoCm()} × ${this.altoCm()} cm (${this.metrosCuadrados()} m²)`
-        : '';
+    const piezas = Math.max(this.cantidad(), 1);
+    const notas = this.especificaciones().trim();
+
+    let cantidadFinal = piezas;
+    let especificacionesFinal = notas || 'Especificaciones estándar';
+
+    if (producto.unidadVenta === 'm2') {
+      const ancho = this.anchoMetros();
+      const alto = this.altoMetros();
+      const totalM2 = this.areaTotalM2();
+      cantidadFinal = totalM2;
+      const textoMedida =
+        piezas > 1
+          ? `${piezas} lonas de ${ancho} × ${alto} m (${totalM2} m²)`
+          : `Medida ${ancho} × ${alto} m (${totalM2} m²)`;
+      especificacionesFinal = notas ? `${textoMedida} · ${notas}` : textoMedida;
+    }
+
     const item: ItemSolicitud = {
       productoId: producto.id,
       nombreProducto: producto.nombre,
-      especificaciones:
-        this.especificaciones().trim() ||
-        medida ||
-        (producto.unidadVenta === 'm2'
-          ? 'Medida exacta por confirmar (1 m² base + m² adicionales)'
-          : 'Especificaciones estándar'),
-      cantidad,
-      precioEstimado: Math.round(this.precioLinea(producto, cantidad) * 100) / 100,
+      especificaciones: especificacionesFinal,
+      cantidad: cantidadFinal,
+      precioEstimado: Math.round(producto.precioBase * cantidadFinal * 100) / 100,
     };
 
     this.carrito.update((items) => [...items, item]);
     this.cantidad.set(1);
+    this.anchoMetros.set(2);
+    this.altoMetros.set(1);
     this.especificaciones.set('');
     this.error.set(null);
     this.guardarBorrador();

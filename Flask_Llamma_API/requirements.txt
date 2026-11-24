@@ -3,3 +3,4 @@ Flask-Cors>=6.0,<7.0
 Flask-SQLAlchemy>=3.1,<4.0
 PyMySQL>=1.1,<2.0
 cryptography>=44.0
+Pillow>=11.0
