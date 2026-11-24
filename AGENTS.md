@@ -167,6 +167,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - `descontar_inventario` valida **todo** el stock de la receta antes de tocar la base. Si falta,
   lanza `InventarioInsuficiente`, la ruta hace rollback y responde `400` con
   `{ error: "Inventario insuficiente", detalles: [...] }`; no hay descuento parcial.
+- Las fechas de entrega (`fechaDeseada` en solicitudes y `fechaEntrega` en pedidos/conversión)
+  deben respetar **2 días hábiles**. La regla vive en `utils.calcular_fecha_minima_entrega()`,
+  los festivos en `config.DIAS_FESTIVOS` y la API responde `400` con
+  `MENSAJE_FECHA_MINIMA`. Ver `REGLAS-ENTREGA.md` para actualizar cierres cada año.
 
 ## Convenciones frontend
 
@@ -189,6 +193,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   activos. Cambia la bandera a `true` para reactivarlo; no borres la entrada de `app.html`.
 - `/usuarios` es solo para `admin` (`authGuard` + `roleGuard`), con tabla y alta en la misma
   página. El acceso del menú «Módulos» se muestra con `auth.esAdmin()`.
+- Las fechas de entrega usan `src/app/core/utils/fechas.ts` (misma regla que el backend) y
+  `src/app/core/config/dias-festivos.ts`; el `min` del input y la cláusula visible se alimentan
+  de esa utilidad. No dupliques listas de festivos en componentes.
 - La previsualización de mockups de `/cotizar` vive en `cotizar.component.*`: catálogo
   `MOCKUPS_CATALOGO` indexado por nombre de producto, imágenes en
   `src/assets/images/mockups/*.webp` y área de impresión en

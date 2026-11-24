@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from sqlalchemy.orm import joinedload, selectinload
@@ -28,7 +28,14 @@ from routes.helpers import (
     no_encontrado,
     payload,
 )
-from utils import generar_folio, guardar_archivo, parse_decimal, parse_fecha
+from utils import (
+    MENSAJE_FECHA_MINIMA,
+    calcular_fecha_minima_entrega,
+    generar_folio,
+    guardar_archivo,
+    parse_decimal,
+    parse_fecha,
+)
 
 public_bp = Blueprint("public", __name__)
 
@@ -163,6 +170,8 @@ def crear_solicitud():
         return error("El correo electrónico no es válido")
     if not mensaje and not lista_items(data):
         return error("Cuéntanos qué necesitas: agrega productos o escribe tu proyecto")
+    if fecha_deseada and fecha_deseada < calcular_fecha_minima_entrega(date.today()):
+        return error(MENSAJE_FECHA_MINIMA, 400, "fecha_invalida")
 
     items_brutos = lista_items(data)
 

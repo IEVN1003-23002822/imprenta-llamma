@@ -11,6 +11,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import {
+  MENSAJE_FECHA_MINIMA,
+  calcularFechaMinimaEntrega,
+  esFechaEntregaValida,
+} from '../../core/utils/fechas';
 import { EXTENSIONES_ARCHIVO, MAX_BYTES_ARCHIVO } from '../../core/models/estados';
 import { LlammaService } from '../../core/services/llamma.service';
 import { ModalAccesibleDirective } from '../../shared/modal-accesible.directive';
@@ -272,7 +277,7 @@ export class CotizarComponent implements OnInit {
 
   private persistenciaActiva = false;
 
-  readonly hoy = new Date().toISOString().slice(0, 10);
+  readonly fechaMinima = calcularFechaMinimaEntrega();
 
   readonly form = this.fb.nonNullable.group({
     nombreCliente: ['', [Validators.required, Validators.minLength(3)]],
@@ -706,6 +711,12 @@ export class CotizarComponent implements OnInit {
       this.form.markAllAsTouched();
       this.paso.set(1);
       this.error.set('Revisa los datos de contacto: nos falta información para responderte.');
+      setTimeout(() => this.enfocarPrimerError());
+      return;
+    }
+    if (!esFechaEntregaValida(this.form.controls.fechaDeseada.value)) {
+      this.paso.set(1);
+      this.error.set(MENSAJE_FECHA_MINIMA);
       setTimeout(() => this.enfocarPrimerError());
       return;
     }

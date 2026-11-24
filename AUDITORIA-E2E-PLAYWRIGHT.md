@@ -9,9 +9,9 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **16 archivos de spec, 33 pruebas, 4 proyectos → 132 ejecuciones por corrida**.
-- Corridas completas: **3 por proyecto (396 ejecuciones)**; todas verdes.
-- `33 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- Suite creada: **16 archivos de spec, 35 pruebas, 4 proyectos → 140 ejecuciones por corrida**.
+- Corridas completas: **3 por proyecto (420 ejecuciones)**; todas verdes.
+- `35 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, catálogo, edición de productos,
   solicitud pública con adjunto, seguimiento, cotización (desde solicitud y manual), totales,
   pedido, pago, producción, inventario, **alta de usuarios por UI** y smoke.
@@ -20,10 +20,11 @@ desarrollo del puerto 5000.**
   interna), **H-15** (seguimiento no muestra producción) y **H-14** (imagen LCP lazy).
 - Veredicto global: **⚠️ FUNCIONA_CON_RIESGOS** — los flujos críticos pasan; quedan dos defectos
   de dinero/precio fuera del alcance de esta iteración.
-- CI de la app: `format` ✅ · `lint` ✅ · Vitest **54/54** ✅ · `build` ✅ · backend **13/13** ✅.
+- CI de la app: `format` ✅ · `lint` ✅ · Vitest **59/59** ✅ · `build` ✅ · backend **20/20** ✅.
 
 > **Actualización 2026-11-23:** se corrigieron H-01 y H-12 (commit `54accf4`), se creó el módulo
-> `/usuarios` solo para admin (commit `dc711d1`) y se estabilizó la suite. La corrida de Mobile
+> `/usuarios` solo para admin (commit `dc711d1`), se implementaron las reglas de entrega de 2 días
+> hábiles (festivos + fines de semana) y se estabilizó la suite. La corrida de Mobile
 > Chrome detectó una condición de carrera al leer los roles del formulario; se resolvió con una
 > espera semántica (`toBeAttached`) y las 3 corridas posteriores quedaron verdes.
 
@@ -90,6 +91,8 @@ por API.
 | Publicar/despublicar | `productos/productos.spec.ts` | PASS | ✅ FUNCIONA |
 | Validaciones de producto | `productos/productos.spec.ts` | PASS (UI) | ⚠️ API acepta precio negativo (H-13) |
 | Solicitud pública | `solicitudes/solicitudes.spec.ts` | PASS | ✅ FUNCIONA |
+| Fecha mínima (UI + API) | `solicitudes/solicitudes.spec.ts` | PASS 400 / bloqueo UI | ✅ FUNCIONA |
+| Fecha mínima aceptada | `solicitudes/solicitudes.spec.ts` | PASS 201 | ✅ FUNCIONA |
 | Adjunto PDF + descarga | `solicitudes/solicitudes.spec.ts` | PASS | ✅ FUNCIONA |
 | Seguimiento correcto | `solicitudes/solicitudes.spec.ts` | PASS | ✅ FUNCIONA |
 | Seguimiento con correo ajeno | `solicitudes/solicitudes.spec.ts` | PASS 404 | ✅ FUNCIONA |
@@ -104,7 +107,7 @@ por API.
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **33/33 en Chromium, Firefox, WebKit y Mobile Chrome**, tres corridas
+Matriz de proyectos: **35/35 en Chromium, Firefox, WebKit y Mobile Chrome**, tres corridas
 consecutivas por proyecto.
 
 ## 5. Bugs reales
@@ -189,7 +192,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 132 pruebas (33 × 4)
+npx playwright test --list               # 140 pruebas (35 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -294,10 +297,10 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: parcial
-tests_totales: 33
+tests_totales: 35
 proyectos: [chromium, firefox, webkit, mobile-chrome]
 corridas_por_proyecto: 3
-tests_pass: 33
+tests_pass: 35
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing, login_fallido, rate_limit, logout,

@@ -24,6 +24,10 @@ export class CotizarPage {
     if (datos.empresa) await this.page.locator('#cotEmpresa').fill(datos.empresa);
   }
 
+  async fechaDeseada(fecha: string): Promise<void> {
+    await this.page.locator('#cotFecha').fill(fecha);
+  }
+
   async continuar(): Promise<void> {
     await this.page.getByRole('button', { name: /Continuar/ }).click();
   }

@@ -29,7 +29,14 @@ from routes.comun import (
     descontar_inventario,
 )
 from routes.helpers import campo, error, no_encontrado, payload
-from utils import generar_folio, paginar, parse_fecha, parse_int
+from utils import (
+    MENSAJE_FECHA_MINIMA,
+    calcular_fecha_minima_entrega,
+    generar_folio,
+    paginar,
+    parse_fecha,
+    parse_int,
+)
 
 cotizaciones_bp = Blueprint("cotizaciones", __name__)
 
@@ -142,6 +149,8 @@ def convertir_cotizacion(cotizacion_id: int):
 
     data = payload()
     fecha_entrega = parse_fecha(campo(data, "fechaEntrega", "fecha_entrega"))
+    if fecha_entrega and fecha_entrega < calcular_fecha_minima_entrega(date.today()):
+        return error(MENSAJE_FECHA_MINIMA, 400, "fecha_invalida")
     if not fecha_entrega:
         fecha_entrega = date.today() + timedelta(days=10)
 

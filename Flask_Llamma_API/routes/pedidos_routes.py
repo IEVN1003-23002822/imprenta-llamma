@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload, selectinload
@@ -27,7 +29,15 @@ from routes.comun import (
     totales,
 )
 from routes.helpers import campo, error, lista_items, no_encontrado, payload
-from utils import generar_folio, paginar, parse_decimal, parse_fecha, parse_int
+from utils import (
+    MENSAJE_FECHA_MINIMA,
+    calcular_fecha_minima_entrega,
+    generar_folio,
+    paginar,
+    parse_decimal,
+    parse_fecha,
+    parse_int,
+)
 
 pedidos_bp = Blueprint("pedidos", __name__)
 
@@ -234,12 +244,16 @@ def crear_pedido():
         return error("El pedido necesita al menos una partida")
 
     items, subtotal = partidas_a_cotizacion(items_brutos, data)
+    fecha_entrega = parse_fecha(campo(data, "fechaEntrega", "fecha_entrega"))
+    if fecha_entrega and fecha_entrega < calcular_fecha_minima_entrega(date.today()):
+        return error(MENSAJE_FECHA_MINIMA, 400, "fecha_invalida")
+
     pedido = Pedido(
         folio=generar_folio("LLM", Pedido, con_anio=False, relleno=4, inicio=1040),
         cliente_id=cliente.id,
         estado=str(campo(data, "estado", default="confirmado")),
         prioridad=str(campo(data, "prioridad", default="media")),
-        fecha_entrega=parse_fecha(campo(data, "fechaEntrega")),
+        fecha_entrega=fecha_entrega,
         notas=str(campo(data, "notas", default="") or "") or None,
         creado_por=g.usuario.id,
         **totales(subtotal),

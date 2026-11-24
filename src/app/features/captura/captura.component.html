@@ -221,6 +221,34 @@
             </div>
 
             @if (!yaConvertida()) {
+              <div class="mt-4">
+                <label
+                  class="mb-1 block text-[0.72rem] font-semibold text-[var(--llamma-carbon)]"
+                  for="cotFechaEntrega"
+                  >Fecha deseada de entrega</label
+                >
+                <input
+                  id="cotFechaEntrega"
+                  type="date"
+                  class="w-full rounded-[0.6rem] border border-[var(--llamma-line)] bg-white px-3 py-2 text-sm text-[var(--llamma-carbon)] outline-none transition focus:border-[var(--llamma-cyan)] focus:ring-4 focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)]"
+                  [min]="fechaMinima"
+                  [value]="fechaEntrega()"
+                  (input)="cambiarFechaEntrega($event)"
+                  aria-describedby="cotFechaEntregaAyuda"
+                />
+                <small
+                  id="cotFechaEntregaAyuda"
+                  class="mt-1 block text-[0.68rem] leading-[1.5] text-[var(--llamma-muted)]"
+                >
+                  ⏱️ 2 días hábiles. Sin entregas en fines de semana ni días festivos.
+                </small>
+                @if (fechaEntregaInvalida()) {
+                  <p class="mt-1 text-[0.68rem] font-medium text-[#b42318]" role="alert">
+                    La fecha debe respetar el margen mínimo de 2 días hábiles.
+                  </p>
+                }
+              </div>
+
               <div class="form-check capture-check">
                 <input
                   class="form-check-input"

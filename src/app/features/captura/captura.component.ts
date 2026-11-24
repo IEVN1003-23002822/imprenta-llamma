@@ -11,6 +11,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import {
+  MENSAJE_FECHA_MINIMA,
+  calcularFechaMinimaEntrega,
+  esFechaEntregaValida,
+} from '../../core/utils/fechas';
 import { ESTADOS_COTIZACION, badgeDe, etiquetaDe } from '../../core/models/estados';
 import { LlammaService } from '../../core/services/llamma.service';
 import {
@@ -48,6 +53,9 @@ export class CapturaComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly pedidoCreado = signal<string | null>(null);
   readonly anticipoPagado = signal(false);
+  readonly fechaMinima = calcularFechaMinimaEntrega();
+  readonly fechaEntrega = signal('');
+  readonly fechaEntregaInvalida = computed(() => !esFechaEntregaValida(this.fechaEntrega()));
 
   readonly productoId = signal<number | null>(null);
   readonly descripcion = signal('');
@@ -354,6 +362,11 @@ export class CapturaComponent implements OnInit {
     const cotizacion = this.cotizacion();
     if (!cotizacion || this.convirtiendo() || this.yaConvertida()) return;
 
+    if (!esFechaEntregaValida(this.fechaEntrega())) {
+      this.error.set(MENSAJE_FECHA_MINIMA);
+      return;
+    }
+
     this.convirtiendo.set(true);
     this.error.set(null);
 
@@ -362,6 +375,7 @@ export class CapturaComponent implements OnInit {
         anticipoPagado: this.anticipoPagado(),
         metodoPago: 'transferencia',
         prioridad: 'media',
+        fechaEntrega: this.fechaEntrega() || undefined,
       })
       .pipe(finalize(() => this.convirtiendo.set(false)))
       .subscribe({
@@ -385,6 +399,8 @@ export class CapturaComponent implements OnInit {
     this.error.set(null);
     this.partidas.set([]);
     this.solicitud.set(null);
+    this.anticipoPagado.set(false);
+    this.fechaEntrega.set('');
     this.form.reset({
       nombreCliente: '',
       empresa: '',
@@ -401,6 +417,10 @@ export class CapturaComponent implements OnInit {
 
   toggleAnticipo(evento: Event): void {
     this.anticipoPagado.set((evento.target as HTMLInputElement).checked);
+  }
+
+  cambiarFechaEntrega(evento: Event): void {
+    this.fechaEntrega.set((evento.target as HTMLInputElement).value);
   }
 
   etiquetaEstado(): string {

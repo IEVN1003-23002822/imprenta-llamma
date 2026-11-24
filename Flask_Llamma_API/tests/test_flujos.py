@@ -47,6 +47,7 @@ from models import (  # noqa: E402
     SolicitudArchivo,
     Usuario,
 )
+from utils import calcular_fecha_minima_entrega  # noqa: E402
 
 
 class FlujosApiTest(unittest.TestCase):
@@ -491,6 +492,78 @@ class FlujosApiTest(unittest.TestCase):
         self.assertAlmostEqual(float(pedido["pagos"][0]["monto"]), 58.0, places=2)
         self.assertEqual(pedido["saldo"], 0)
         self.assertEqual(pedido["estado"], "en-produccion")
+
+    def test_14_valida_fecha_minima_de_entrega(self) -> None:
+        minima = calcular_fecha_minima_entrega(date.today())
+        invalida = minima - timedelta(days=1)
+        mensaje = (
+            "La fecha de entrega solicitada no es válida. "
+            "El margen mínimo es de 2 días hábiles."
+        )
+
+        rechazada = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                "nombre": "Cliente Fecha",
+                "correo": "fecha-invalida@example.com",
+                "mensaje": "Quiero entrega urgente",
+                "fechaDeseada": invalida.isoformat(),
+            },
+        )
+        self.assertEqual(rechazada.status_code, 400, rechazada.get_data(as_text=True))
+        self.assertEqual(self._json(rechazada)["error"], mensaje)
+
+        aceptada = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                "nombre": "Cliente Fecha",
+                "correo": "fecha-valida@example.com",
+                "mensaje": "Quiero entrega en la fecha mínima",
+                "fechaDeseada": minima.isoformat(),
+            },
+        )
+        self.assertEqual(aceptada.status_code, 201, aceptada.get_data(as_text=True))
+        self.assertEqual(self._json(aceptada)["solicitud"]["fechaDeseada"], minima.isoformat())
+
+        pedido = self.client.post(
+            "/api/pedidos",
+            headers=self._auth(self._token()),
+            json={
+                "clienteId": self.cliente.id,
+                "items": [{"productoId": self.producto_sin_receta.id, "cantidad": 1}],
+                "fechaEntrega": invalida.isoformat(),
+            },
+        )
+        self.assertEqual(pedido.status_code, 400, pedido.get_data(as_text=True))
+        self.assertEqual(self._json(pedido)["error"], mensaje)
+
+    def test_15_conversion_rechaza_fecha_invalida(self) -> None:
+        minima = calcular_fecha_minima_entrega(date.today())
+        invalida = minima - timedelta(days=1)
+        mensaje = (
+            "La fecha de entrega solicitada no es válida. "
+            "El margen mínimo es de 2 días hábiles."
+        )
+        creada = self.client.post(
+            "/api/cotizaciones",
+            headers=self._auth(self._token()),
+            json={
+                "clienteId": self.cliente.id,
+                "items": [{"productoId": self.producto_sin_receta.id, "cantidad": 1}],
+            },
+        )
+        self.assertEqual(creada.status_code, 201, creada.get_data(as_text=True))
+        cotizacion = self._json(creada)
+        pedidos_antes = Pedido.query.count()
+
+        rechazada = self.client.post(
+            f"/api/cotizaciones/{cotizacion['id']}/convertir-pedido",
+            headers=self._auth(self._token()),
+            json={"fechaEntrega": invalida.isoformat()},
+        )
+        self.assertEqual(rechazada.status_code, 400, rechazada.get_data(as_text=True))
+        self.assertEqual(self._json(rechazada)["error"], mensaje)
+        self.assertEqual(Pedido.query.count(), pedidos_antes)
 
 
 if __name__ == "__main__":
