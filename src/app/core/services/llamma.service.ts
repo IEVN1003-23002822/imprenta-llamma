@@ -35,8 +35,34 @@ import {
  * protegidos por token de sesión. Todos los datos de la aplicación provienen
  * de estas llamadas: no hay arreglos en memoria.
  */
+
+export interface ImagenMockupPreparada {
+  dataUrl: string;
+  ancho: number;
+  alto: number;
+  anchoOriginal: number;
+  altoOriginal: number;
+  calidadImpresion: 'alta' | 'media' | 'baja';
+}
+
 @Injectable({ providedIn: 'root' })
 export class LlammaService {
+
+prepararImagenMockup(
+    archivo: File,
+    opciones?: { quitarFondo?: boolean; recortar?: boolean; umbral?: number },
+  ): Observable<ImagenMockupPreparada> {
+    const form = new FormData();
+    form.append('imagen', archivo, archivo.name);
+    if (opciones?.quitarFondo) form.append('quitarFondo', 'true');
+    if (opciones?.recortar === false) form.append('recortar', 'false');
+    if (opciones?.umbral != null) form.append('umbral', String(opciones.umbral));
+    return this.http.post<ImagenMockupPreparada>(
+      `${this.apiUrl}/public/mockups/preparar-imagen`,
+      form,
+    );
+  }
+
   private readonly http = inject(HttpClient);
   private readonly apiUrl = '/api';
   private catalogoPublico$: Observable<{ items: ProductoPublico[]; total: number }> | null = null;

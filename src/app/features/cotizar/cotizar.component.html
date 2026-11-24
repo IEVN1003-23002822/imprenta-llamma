@@ -217,29 +217,79 @@
                       }
                     </select>
                   </div>
-                  <div class="col-span-4 md:col-span-2">
-                    <label class="form-label" for="cotCantidad">Cantidad</label>
-                    <input
-                      id="cotCantidad"
-                      type="number"
-                      class="form-control"
-                      min="1"
-                      step="1"
-                      [value]="cantidad()"
-                      (input)="cambiarCantidad($event)"
-                    />
-                  </div>
-                  <div class="col-span-8 md:col-span-5">
-                    <label class="form-label" for="cotEspecificaciones">Especificaciones</label>
-                    <input
-                      id="cotEspecificaciones"
-                      type="text"
-                      class="form-control"
-                      placeholder="Medida, talla, acabado, número de tintas..."
-                      [value]="especificaciones()"
-                      (input)="cambiarEspecificaciones($event)"
-                    />
-                  </div>
+                  @if (esPorM2()) {
+                    <div class="col-span-4 md:col-span-2">
+                      <label class="form-label" for="cotAncho">Ancho (m)</label>
+                      <input
+                        id="cotAncho"
+                        type="number"
+                        class="form-control"
+                        min="0.1"
+                        step="0.1"
+                        [value]="anchoMetros()"
+                        (input)="cambiarAncho($event)"
+                      />
+                    </div>
+                    <div class="col-span-4 md:col-span-2">
+                      <label class="form-label" for="cotAlto">Alto (m)</label>
+                      <input
+                        id="cotAlto"
+                        type="number"
+                        class="form-control"
+                        min="0.1"
+                        step="0.1"
+                        [value]="altoMetros()"
+                        (input)="cambiarAlto($event)"
+                      />
+                    </div>
+                    <div class="col-span-4 md:col-span-3">
+                      <label class="form-label" for="cotCantidad">Lonas</label>
+                      <input
+                        id="cotCantidad"
+                        type="number"
+                        class="form-control"
+                        min="1"
+                        step="1"
+                        [value]="cantidad()"
+                        (input)="cambiarCantidad($event)"
+                      />
+                    </div>
+                    <div class="col-span-12">
+                      <label class="form-label" for="cotEspecificaciones">Especificaciones</label>
+                      <input
+                        id="cotEspecificaciones"
+                        type="text"
+                        class="form-control"
+                        placeholder="Acabado mate o brillante, ojillos, bastilla..."
+                        [value]="especificaciones()"
+                        (input)="cambiarEspecificaciones($event)"
+                      />
+                    </div>
+                  } @else {
+                    <div class="col-span-4 md:col-span-2">
+                      <label class="form-label" for="cotCantidad">Cantidad</label>
+                      <input
+                        id="cotCantidad"
+                        type="number"
+                        class="form-control"
+                        min="1"
+                        step="1"
+                        [value]="cantidad()"
+                        (input)="cambiarCantidad($event)"
+                      />
+                    </div>
+                    <div class="col-span-8 md:col-span-5">
+                      <label class="form-label" for="cotEspecificaciones">Especificaciones</label>
+                      <input
+                        id="cotEspecificaciones"
+                        type="text"
+                        class="form-control"
+                        placeholder="Medida, talla, acabado, número de tintas..."
+                        [value]="especificaciones()"
+                        (input)="cambiarEspecificaciones($event)"
+                      />
+                    </div>
+                  }
                   <div class="col-span-12 flex flex-wrap gap-2">
                     <button class="btn btn-ink" type="button" (click)="agregarProducto()">
                       <i class="bi bi-plus-lg"></i> Agregar a mi solicitud
@@ -247,6 +297,9 @@
                     <button class="btn btn-outline-ink" type="button" (click)="openPreview()">
                       <i class="bi bi-eye"></i> Previsualizar diseño
                     </button>
+                    <button class="btn btn-outline-ink" type="button" (click)="openPreview3d()">
+  <i class="bi bi-box"></i> Vista 3D
+</button>
                   </div>
                 </div>
 
@@ -265,10 +318,13 @@
                     </div>
                   </div>
                   <p class="line-estimate">
-                    <i class="bi bi-calculator"></i>
-                    Estimado de esta línea: <strong>{{ moneda(estimadoLinea()) }}</strong> + IVA ·
-                    sujeto a revisión de diseño.
-                  </p>
+                  <i class="bi bi-calculator"></i>
+                  @if (esPorM2()) {
+                    Área total: <strong>{{ areaTotalM2() }} m²</strong> ·
+                  }
+                  Estimado de esta línea: <strong>{{ moneda(estimadoLinea()) }}</strong> + IVA ·
+                  sujeto a revisión de diseño.
+                </p>
                 }
 
                 @if (carrito().length) {
@@ -733,4 +789,12 @@
       </div>
     </div>
   </div>
+}
+
+@if (showPreview3dModal()) {
+  <app-cotizar-mockup-3d
+    [productoNombre]="productoActual()?.nombre || 'Taza cerámica sublimada'"
+    (cerrar)="closePreview3d()"
+    (adjuntarCaptura)="adjuntarCaptura3d($event)"
+  />
 }

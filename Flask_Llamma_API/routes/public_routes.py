@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import os
+import base64
+from io import BytesIO
+from PIL import Image, ImageOps, UnidentifiedImageError
 from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
@@ -426,4 +429,78 @@ def descargar_adjunto_mensaje(folio: str, mensaje_id: int):
         mensaje.adjunto_guardado,
         as_attachment=True,
         download_name=mensaje.adjunto_nombre or mensaje.adjunto_guardado,
+    )
+
+@public_bp.post("/public/mockups/preparar-imagen")
+def preparar_imagen_mockup():
+    """Optimiza una imagen del cliente para usarla como capa en el visor 3D."""
+    espera = excedido(("mockup-imagen", cliente_ip(), 40, 60))
+    if espera is not None:
+        return demasiadas_peticiones(espera, "Procesaste muchas imágenes seguidas. Espera un momento.")
+
+    storage = request.files.get("imagen") or request.files.get("archivo")
+    if not storage or not storage.filename:
+        return error("Sube una imagen PNG, JPG o WEBP para previsualizarla")
+
+    quitar_fondo = (request.form.get("quitarFondo") or "").lower() in {"1", "true", "si", "sí"}
+    recortar = (request.form.get("recortar") or "true").lower() in {"1", "true", "si", "sí"}
+    try:
+        umbral = max(180, min(252, int(request.form.get("umbral", "240"))))
+    except ValueError:
+        umbral = 240
+
+    try:
+        imagen = Image.open(storage.stream)
+        imagen = ImageOps.exif_transpose(imagen).convert("RGBA")
+    except (UnidentifiedImageError, OSError):
+        return error("El archivo no es una imagen válida (usa PNG, JPG o WEBP)", 415, "imagen_invalida")
+
+    ancho_original, alto_original = imagen.size
+    lado_mayor = max(ancho_original, alto_original)
+    if lado_mayor >= 1200:
+        calidad = "alta"
+    elif lado_mayor >= 600:
+        calidad = "media"
+    else:
+        calidad = "baja"
+
+    # Tamaño ideal para textura WebGL en Three.js
+    imagen.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+
+    if quitar_fondo:
+        pixeles = imagen.getdata()
+        suavizado = max(0, umbral - 24)
+        nuevos = []
+        for r, g, b, a in pixeles:
+            if a == 0:
+                nuevos.append((r, g, b, 0))
+            elif r >= umbral and g >= umbral and b >= umbral:
+                nuevos.append((r, g, b, 0))
+            elif r >= suavizado and g >= suavizado and b >= suavizado:
+                # Borde semitransparente para evitar contornos dentados
+                brillo = min(r, g, b)
+                factor = 1.0 - (brillo - suavizado) / max(1, umbral - suavizado)
+                nuevos.append((r, g, b, int(a * factor)))
+            else:
+                nuevos.append((r, g, b, a))
+        imagen.putdata(nuevos)
+
+    if recortar:
+        caja = imagen.getbbox()
+        if caja:
+            imagen = imagen.crop(caja)
+
+    buffer = BytesIO()
+    imagen.save(buffer, format="PNG", optimize=True)
+    codificada = base64.b64encode(buffer.getvalue()).decode("ascii")
+
+    return jsonify(
+        {
+            "dataUrl": f"data:image/png;base64,{codificada}",
+            "ancho": imagen.width,
+            "alto": imagen.height,
+            "anchoOriginal": ancho_original,
+            "altoOriginal": alto_original,
+            "calidadImpresion": calidad,
+        }
     )
