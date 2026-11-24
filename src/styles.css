@@ -3,6 +3,44 @@
    Cian + Magenta + Amarillo proceso + Negro carbón
    ========================================================================== */
 
+/* Tailwind CSS v4 + Flowbite.
+   La base visual son las capas de Tailwind: `base` (preflight + tipografía),
+   `components` (contenedor, navegación, formularios, tablas, modales) y
+   `utilities`. Los componentes conservan los nombres de clase que usan las
+   plantillas, pero ya no dependen de Bootstrap. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css' layer(utilities);
+@plugin 'flowbite/plugin' {
+  forms: false;
+}
+
+@theme {
+  --color-llamma-cyan: #00aeef;
+  --color-llamma-cyan-deep: #008fca;
+  --color-llamma-magenta: #ec008c;
+  --color-llamma-yellow: #fff200;
+  --color-llamma-carbon: #1a1a1a;
+  --color-llamma-carbon-soft: #252525;
+  --color-llamma-ink: #101010;
+  --color-llamma-paper: #f5f4f0;
+  --color-llamma-paper-deep: #edece6;
+  --color-llamma-surface: #ffffff;
+  --color-llamma-muted: #6d6e74;
+  --color-llamma-line: #e4e2dc;
+
+  --radius-llamma-sm: 0.85rem;
+  --radius-llamma: 1.25rem;
+  --radius-llamma-lg: 1.75rem;
+
+  --font-sans: 'Inter', 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+
+  --shadow-llamma-sm: 0 8px 24px rgba(26, 26, 26, 0.06);
+  --shadow-llamma: 0 22px 60px rgba(26, 26, 26, 0.14);
+}
+
 :root {
   --llamma-cyan: #00aeef;
   --llamma-cyan-rgb: 0, 174, 239;
@@ -28,13 +66,853 @@
 
   --llamma-font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
   --llamma-font-body: 'Inter', 'Segoe UI', sans-serif;
+}
 
-  --bs-body-font-family: var(--llamma-font-body);
-  --bs-body-color: var(--llamma-carbon);
-  --bs-body-bg: var(--llamma-paper);
-  --bs-border-color: var(--llamma-line);
-  --bs-link-color: var(--llamma-carbon);
-  --bs-link-hover-color: var(--llamma-magenta);
+/* --------------------------------------------------------------------------
+   Base tipográfica
+   Tailwind aplica su preflight; aquí se conservan los valores por defecto de
+   Bootstrap que el diseño ya usaba (márgenes de títulos, párrafos y listas).
+   -------------------------------------------------------------------------- */
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .h1,
+  .h2,
+  .h3,
+  .h4,
+  .h5,
+  .h6 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  h1,
+  .h1 {
+    font-size: calc(1.375rem + 1.5vw);
+  }
+
+  h2,
+  .h2 {
+    font-size: calc(1.325rem + 0.9vw);
+  }
+
+  h3,
+  .h3 {
+    font-size: calc(1.3rem + 0.6vw);
+  }
+
+  h4,
+  .h4 {
+    font-size: calc(1.275rem + 0.3vw);
+  }
+
+  h5,
+  .h5 {
+    font-size: 1.25rem;
+  }
+
+  h6,
+  .h6 {
+    font-size: 1rem;
+  }
+
+  p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  ul,
+  ol {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  ul ul {
+    list-style: circle;
+  }
+
+  dl,
+  dd {
+    margin-bottom: 0.5rem;
+  }
+
+  dd {
+    margin-left: 0;
+  }
+
+  hr {
+    margin: 1rem 0;
+    color: inherit;
+    border: 0;
+    border-top: 1px solid;
+    opacity: 0.25;
+  }
+
+  small,
+  .small {
+    font-size: 0.875em;
+  }
+
+  label {
+    display: inline-block;
+  }
+
+  legend {
+    float: left;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    line-height: inherit;
+  }
+
+  legend + * {
+    clear: left;
+  }
+
+  table {
+    caption-side: bottom;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: inherit;
+    text-align: -webkit-match-parent;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  img,
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  [role='button'] {
+    cursor: pointer;
+  }
+
+  @media (min-width: 1200px) {
+    h1,
+    .h1 {
+      font-size: 2.5rem;
+    }
+
+    h2,
+    .h2 {
+      font-size: 2rem;
+    }
+
+    h3,
+    .h3 {
+      font-size: 1.75rem;
+    }
+
+    h4,
+    .h4 {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Componentes base
+   Nombres de clase que conservan las plantillas, reescritos con los tokens de
+   Llamma sobre la capa de componentes de Tailwind. Las utilidades y los estilos
+   propios de cada componente pueden sobrescribirlos.
+   -------------------------------------------------------------------------- */
+
+@layer components {
+  /* Contenedor y estructura */
+  .llamma-container {
+    width: 100%;
+    padding-inline: 0.75rem;
+    margin-inline: auto;
+  }
+
+  @media (min-width: 576px) {
+    .llamma-container {
+      max-width: 540px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .llamma-container {
+      max-width: 720px;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .llamma-container {
+      max-width: 960px;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .llamma-container {
+      max-width: 1140px;
+    }
+  }
+
+  @media (min-width: 1400px) {
+    .llamma-container {
+      max-width: 1320px;
+    }
+  }
+
+  .fade {
+    transition: opacity 0.15s linear;
+  }
+
+  .fade:not(.show) {
+    opacity: 0;
+  }
+
+  /* Navegación */
+
+  /* Menús desplegables */
+  .dropdown {
+    position: relative;
+  }
+
+  .dropdown-toggle {
+    white-space: nowrap;
+  }
+
+  .dropdown-toggle::after {
+    display: inline-block;
+    margin-left: 0.255em;
+    vertical-align: 0.255em;
+    content: '';
+    border-top: 0.3em solid;
+    border-right: 0.3em solid transparent;
+    border-bottom: 0;
+    border-left: 0.3em solid transparent;
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    z-index: 1000;
+    display: none;
+    min-width: 10rem;
+    padding: 0.5rem 0;
+    margin: 0;
+    font-size: 1rem;
+    color: var(--llamma-carbon);
+    text-align: left;
+    list-style: none;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 0.375rem;
+  }
+
+  @media (min-width: 992px) {
+    .navbar-expand-lg .navbar-nav .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+    }
+  }
+
+  .dropdown-menu.show {
+    display: block;
+  }
+
+  .dropdown-menu-end {
+    right: 0;
+    left: auto;
+  }
+
+  .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.25rem 1rem;
+    clear: both;
+    font-weight: 400;
+    color: var(--llamma-carbon);
+    text-align: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+  }
+
+  .dropdown-item:hover,
+  .dropdown-item:focus {
+    background-color: var(--llamma-paper-deep);
+  }
+
+  .dropdown-divider {
+    height: 0;
+    margin: 0.5rem 0;
+    overflow: hidden;
+    border-top: 1px solid var(--llamma-line);
+    opacity: 0.25;
+  }
+
+  /* Botones */
+  .btn {
+    --llamma-btn-padding-y: 0.62rem;
+    --llamma-btn-padding-x: 1.05rem;
+    --llamma-btn-font-size: 1rem;
+    --llamma-btn-font-weight: 600;
+    --llamma-btn-border-radius: 0.72rem;
+    display: inline-block;
+    padding: var(--llamma-btn-padding-y) var(--llamma-btn-padding-x);
+    font-family: inherit;
+    font-size: var(--llamma-btn-font-size);
+    font-weight: var(--llamma-btn-font-weight);
+    line-height: 1.5;
+    color: var(--llamma-btn-color, var(--llamma-carbon));
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid var(--llamma-btn-border-color, transparent);
+    border-radius: var(--llamma-btn-border-radius);
+    background-color: var(--llamma-btn-bg, transparent);
+    transition:
+      color 0.15s ease-in-out,
+      background-color 0.15s ease-in-out,
+      border-color 0.15s ease-in-out,
+      box-shadow 0.15s ease-in-out;
+  }
+
+  .btn:hover {
+    color: var(--llamma-btn-hover-color, var(--llamma-btn-color, var(--llamma-carbon)));
+    background-color: var(--llamma-btn-hover-bg, var(--llamma-btn-bg, transparent));
+    border-color: var(--llamma-btn-hover-border-color, var(--llamma-btn-border-color, transparent));
+  }
+
+  .btn:disabled,
+  .btn.disabled {
+    pointer-events: none;
+    opacity: 0.65;
+  }
+
+  .btn-sm {
+    --llamma-btn-padding-y: 0.25rem;
+    --llamma-btn-padding-x: 0.5rem;
+    --llamma-btn-font-size: 0.875rem;
+    --llamma-btn-border-radius: 0.25rem;
+  }
+
+  .btn-lg {
+    --llamma-btn-padding-y: 0.5rem;
+    --llamma-btn-padding-x: 1rem;
+    --llamma-btn-font-size: 1.25rem;
+    --llamma-btn-border-radius: 0.5rem;
+  }
+
+  .btn-outline-dark {
+    --llamma-btn-color: #212529;
+    --llamma-btn-border-color: #212529;
+    --llamma-btn-hover-color: #fff;
+    --llamma-btn-hover-bg: #212529;
+    --llamma-btn-hover-border-color: #212529;
+  }
+
+  /* Formularios */
+  .form-label {
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--llamma-carbon);
+    appearance: none;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid var(--llamma-line);
+    border-radius: 0.375rem;
+    transition:
+      border-color 0.15s ease-in-out,
+      box-shadow 0.15s ease-in-out;
+  }
+
+  .form-control:focus {
+    color: var(--llamma-carbon);
+    background-color: #fff;
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+
+  .form-control:disabled,
+  .form-control[readonly] {
+    background-color: #e9ecef;
+    opacity: 1;
+  }
+
+  .form-control[type='file'] {
+    overflow: hidden;
+  }
+
+  .form-select {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--llamma-carbon);
+    appearance: none;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    border: 1px solid var(--llamma-line);
+    border-radius: 0.375rem;
+    transition:
+      border-color 0.15s ease-in-out,
+      box-shadow 0.15s ease-in-out;
+  }
+
+  .form-select:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+
+  .form-select:disabled {
+    background-color: #e9ecef;
+  }
+
+  .form-check {
+    display: block;
+    min-height: 1.5rem;
+    padding-left: 1.5em;
+    margin-bottom: 0.125rem;
+  }
+
+  .form-check .form-check-input {
+    float: left;
+    margin-left: -1.5em;
+  }
+
+  .form-check-input {
+    flex-shrink: 0;
+    width: 1em;
+    height: 1em;
+    margin-top: 0.25em;
+    vertical-align: top;
+    appearance: none;
+    background-color: #fff;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    border: 1px solid var(--llamma-line);
+    border-radius: 0.25em;
+    print-color-adjust: exact;
+  }
+
+  .form-check-input[type='radio'] {
+    border-radius: 50%;
+  }
+
+  .form-check-input:checked {
+    background-color: var(--llamma-magenta);
+    border-color: var(--llamma-magenta);
+  }
+
+  .form-check-input:checked[type='checkbox'] {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+  }
+
+  .form-check-input:checked[type='radio'] {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e");
+  }
+
+  .form-check-input:disabled {
+    pointer-events: none;
+    filter: none;
+    opacity: 0.5;
+  }
+
+  .form-check-label {
+    display: inline-block;
+  }
+
+  .form-switch {
+    padding-left: 2.5em;
+  }
+
+  .form-switch .form-check-input {
+    width: 2em;
+    margin-left: -2.5em;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+    background-position: left center;
+    border-radius: 2em;
+    transition: background-position 0.15s ease-in-out;
+  }
+
+  .form-switch .form-check-input:checked {
+    background-position: right center;
+  }
+
+  .input-group {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .input-group > .form-control,
+  .input-group > .form-select {
+    position: relative;
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+  }
+
+  .input-group > .form-control:focus,
+  .input-group > .form-select:focus {
+    z-index: 5;
+  }
+
+  .input-group .btn {
+    position: relative;
+    z-index: 2;
+  }
+
+  .input-group-text {
+    display: flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--llamma-muted);
+    text-align: center;
+    white-space: nowrap;
+    background-color: #f2f1ec;
+    border: 1px solid var(--llamma-line);
+    border-radius: 0.375rem;
+  }
+
+  .input-group > :not(:first-child) {
+    margin-left: -1px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .input-group > :not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  /* Tablas */
+  .table {
+    width: 100%;
+    margin-bottom: 1rem;
+    color: var(--llamma-carbon);
+    vertical-align: top;
+    border-color: var(--llamma-line);
+  }
+
+  .table > :not(caption) > * > * {
+    padding: 0.5rem;
+    background-color: transparent;
+    border-bottom: 1px solid var(--llamma-line);
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Paginación */
+  .pagination {
+    display: flex;
+    padding-left: 0;
+    margin-bottom: 1rem;
+    font-size: 0.76rem;
+    list-style: none;
+  }
+
+  .page-link {
+    position: relative;
+    display: block;
+    padding: 0.375rem 0.75rem;
+    color: var(--llamma-carbon);
+    text-decoration: none;
+    background-color: transparent;
+    border: 1px solid var(--llamma-line);
+    transition:
+      color 0.15s ease-in-out,
+      background-color 0.15s ease-in-out,
+      border-color 0.15s ease-in-out,
+      box-shadow 0.15s ease-in-out;
+  }
+
+  .page-link:hover {
+    color: var(--llamma-magenta);
+    background-color: rgba(var(--llamma-magenta-rgb), 0.06);
+    border-color: var(--llamma-line);
+  }
+
+  .page-link:focus-visible {
+    color: var(--llamma-magenta);
+    background-color: rgba(var(--llamma-magenta-rgb), 0.06);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(var(--llamma-cyan-rgb), 0.15);
+  }
+
+  .page-item:not(:first-child) .page-link {
+    margin-left: -1px;
+  }
+
+  .page-item.active .page-link {
+    z-index: 3;
+    color: #fff;
+    background-color: var(--llamma-carbon);
+    border-color: var(--llamma-carbon);
+  }
+
+  .page-item.disabled .page-link {
+    color: #b8b6af;
+    pointer-events: none;
+    background-color: transparent;
+    border-color: var(--llamma-line);
+  }
+
+  .pagination-sm .page-link {
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Alertas y badges */
+  .alert {
+    position: relative;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: inherit;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+  }
+
+  .alert-danger {
+    color: #58151c;
+    background-color: #f8d7da;
+    border-color: #f1aeb5;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.42rem 0.65rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Spinner */
+  .spinner-border {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    vertical-align: -0.125em;
+    border: 0.25em solid currentcolor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+  }
+
+  .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.2em;
+  }
+
+  @keyframes spinner-border {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Modales */
+  .modal {
+    --llamma-modal-margin: 0.5rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1055;
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    outline: 0;
+  }
+
+  .modal-dialog {
+    position: relative;
+    width: auto;
+    margin: var(--llamma-modal-margin);
+    pointer-events: none;
+  }
+
+  .modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+    transform: translate(0, -50px);
+  }
+
+  .modal.show .modal-dialog {
+    transform: none;
+  }
+
+  .modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - var(--llamma-modal-margin) * 2);
+  }
+
+  .modal-dialog-scrollable {
+    height: calc(100% - var(--llamma-modal-margin) * 2);
+  }
+
+  .modal-dialog-scrollable .modal-content {
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  .modal-dialog-scrollable .modal-body {
+    overflow-y: auto;
+  }
+
+  .modal-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    pointer-events: auto;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0, 0, 0, 0.175);
+    border-radius: 0.5rem;
+    outline: 0;
+  }
+
+  .modal-header {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid var(--llamma-line);
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+  }
+
+  .modal-title {
+    margin-bottom: 0;
+    line-height: 1.5;
+  }
+
+  .modal-body {
+    position: relative;
+    flex: 1 1 auto;
+    padding: 1rem;
+  }
+
+  .modal-footer {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: transparent;
+    border-top: 1px solid var(--llamma-line);
+    border-bottom-right-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1050;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+  }
+
+  .modal-backdrop.fade {
+    opacity: 0;
+  }
+
+  .modal-backdrop.show {
+    opacity: 0.5;
+  }
+
+  @media (min-width: 576px) {
+    .modal {
+      --llamma-modal-margin: 1.75rem;
+    }
+
+    .modal-dialog {
+      max-width: 500px;
+      margin: var(--llamma-modal-margin) auto;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .modal-lg {
+      max-width: 800px;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .modal-xl {
+      max-width: 1140px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fade,
+    .form-control,
+    .form-select,
+    .form-switch .form-check-input,
+    .btn,
+    .page-link,
+    .modal.fade .modal-dialog {
+      transition: none;
+    }
+  }
 }
 
 body {
@@ -86,137 +964,6 @@ button:focus-visible,
    Shell, navegación y pie de página
    -------------------------------------------------------------------------- */
 
-.ink-strip {
-  height: 5px;
-  background: linear-gradient(
-    90deg,
-    var(--llamma-cyan) 0 25%,
-    var(--llamma-magenta) 25% 50%,
-    var(--llamma-yellow) 50% 75%,
-    var(--llamma-carbon) 75% 100%
-  );
-}
-
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.app-main {
-  flex: 1;
-}
-
-.navbar-llamma {
-  padding: 0.9rem 0;
-  background: rgba(26, 26, 26, 0.97);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-}
-
-.brand-lockup {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-.brand-logo {
-  display: block;
-  width: auto;
-  height: 44px;
-  flex: 0 0 auto;
-  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.3));
-}
-
-.navbar-llamma .brand-lockup {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.brand-text strong {
-  font-family: var(--llamma-font-display);
-  font-size: 1.15rem;
-  letter-spacing: 0.22em;
-  line-height: 1;
-  color: #fff;
-}
-
-.brand-text small {
-  margin-top: 0.32rem;
-  font-size: 0.57rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  line-height: 1;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.navbar-llamma .nav-link {
-  padding: 0.55rem 0.85rem !important;
-  border-radius: 0.65rem;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.88rem;
-  font-weight: 500;
-}
-
-.navbar-llamma .nav-link:hover,
-.navbar-llamma .nav-link.active {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.075);
-}
-
-.navbar-llamma .nav-link.active {
-  box-shadow: inset 0 -2px 0 var(--llamma-cyan);
-}
-
-.navbar-llamma .navbar-toggler {
-  border-color: rgba(255, 255, 255, 0.2);
-  padding: 0.4rem 0.55rem;
-}
-
-.navbar-llamma .navbar-toggler:focus {
-  box-shadow: 0 0 0 0.2rem rgba(var(--llamma-cyan-rgb), 0.25);
-}
-
-.navbar-llamma .dropdown-menu-llamma {
-  margin-top: 0.7rem;
-  padding: 0.5rem;
-  background: #232323;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-}
-
-.navbar-llamma .dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.62rem 0.75rem;
-  border-radius: 0.6rem;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.88rem;
-}
-
-.navbar-llamma .dropdown-item i {
-  width: 1.1rem;
-  color: var(--llamma-cyan);
-}
-
-.navbar-llamma .dropdown-item:hover,
-.navbar-llamma .dropdown-item:focus {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-.navbar-llamma .dropdown-divider {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
 /* --------------------------------------------------------------------------
    Tipografía y utilidades
    -------------------------------------------------------------------------- */
@@ -238,7 +985,12 @@ button:focus-visible,
   width: 1.6rem;
   height: 4px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--llamma-cyan), var(--llamma-magenta) 60%, var(--llamma-yellow));
+  background: linear-gradient(
+    90deg,
+    var(--llamma-cyan),
+    var(--llamma-magenta) 60%,
+    var(--llamma-yellow)
+  );
 }
 
 .eyebrow-light {
@@ -306,23 +1058,18 @@ button:focus-visible,
    Botones
    -------------------------------------------------------------------------- */
 
-.btn {
-  --bs-btn-font-weight: 600;
-  --bs-btn-border-radius: 0.72rem;
-  --bs-btn-padding-y: 0.62rem;
-  --bs-btn-padding-x: 1.05rem;
-}
-
+/* Variante accesible del degradado de marca: blanco sobre #0077a3 = 5.04:1
+   y sobre #c4006f = 5.87:1. Los tonos vivos siguen en acentos y fondos. */
 .btn-brand {
   border: 0;
-  background: linear-gradient(115deg, var(--llamma-cyan) 0%, var(--llamma-magenta) 100%);
+  background: linear-gradient(115deg, #0077a3 0%, #c4006f 100%);
   color: #fff;
   box-shadow: 0 10px 28px rgba(var(--llamma-magenta-rgb), 0.24);
 }
 
 .btn-brand:hover,
 .btn-brand:focus {
-  background: linear-gradient(115deg, var(--llamma-cyan-deep) 0%, #cf007b 100%);
+  background: linear-gradient(115deg, #00688c 0%, #b30066 100%);
   color: #fff;
   box-shadow: 0 14px 34px rgba(var(--llamma-magenta-rgb), 0.3);
 }
@@ -453,9 +1200,9 @@ button:focus-visible,
    Página, tarjetas y encabezados internos
    -------------------------------------------------------------------------- */
 
-/* Las columnas de Bootstrap son flex items: sin min-width: 0 su contenido
-   (tablas, correos, folios) puede empujar el ancho y desbordar la fila. */
-.row > [class*='col-'] {
+/* Las utilidades de rejilla de Tailwind no estrechan el contenido; las celdas
+   con tablas, correos o folios necesitan poder encogerse. */
+.grid > [class*='col-span-'] {
   min-width: 0;
 }
 
@@ -581,14 +1328,6 @@ button:focus-visible,
 /* --------------------------------------------------------------------------
    Badges, iconos y avatares
    -------------------------------------------------------------------------- */
-
-.badge {
-  padding: 0.42rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
 
 .badge-soft-cyan {
   background: rgba(var(--llamma-cyan-rgb), 0.11);
@@ -783,7 +1522,6 @@ button:focus-visible,
    -------------------------------------------------------------------------- */
 
 .table-llamma {
-  --bs-table-bg: transparent;
   margin-bottom: 0;
   color: var(--llamma-carbon);
 }
@@ -883,25 +1621,6 @@ button:focus-visible,
   font-size: 0.82rem;
   font-weight: 700;
   white-space: nowrap;
-}
-
-.pagination {
-  --bs-pagination-color: var(--llamma-carbon);
-  --bs-pagination-bg: transparent;
-  --bs-pagination-border-color: var(--llamma-line);
-  --bs-pagination-hover-color: var(--llamma-magenta);
-  --bs-pagination-hover-bg: rgba(var(--llamma-magenta-rgb), 0.06);
-  --bs-pagination-hover-border-color: var(--llamma-line);
-  --bs-pagination-focus-color: var(--llamma-magenta);
-  --bs-pagination-focus-bg: rgba(var(--llamma-magenta-rgb), 0.06);
-  --bs-pagination-focus-box-shadow: 0 0 0 0.2rem rgba(var(--llamma-cyan-rgb), 0.15);
-  --bs-pagination-active-color: #fff;
-  --bs-pagination-active-bg: var(--llamma-carbon);
-  --bs-pagination-active-border-color: var(--llamma-carbon);
-  --bs-pagination-disabled-color: #b8b6af;
-  --bs-pagination-disabled-bg: transparent;
-  --bs-pagination-disabled-border-color: var(--llamma-line);
-  --bs-pagination-font-size: 0.76rem;
 }
 
 .pagination .page-link {
@@ -1786,10 +2505,6 @@ button:focus-visible,
 }
 
 @media (max-width: 767.98px) {
-  .row {
-    --bs-gutter-x: 1.5rem;
-  }
-
   .section-pad {
     padding: 3.75rem 0;
   }
@@ -2165,5 +2880,181 @@ button:focus-visible,
 
   .chat-compose-actions .btn {
     width: 100%;
+  }
+}
+/* --------------------------------------------------------------------------
+   Accesibilidad compartida: salto al contenido, validaci�n y modales
+   -------------------------------------------------------------------------- */
+
+.field-error {
+  display: block;
+  margin-top: 0.25rem;
+  color: #b42318;
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+
+.field-hint {
+  margin-top: 0.3rem;
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+}
+
+.field-optional {
+  color: var(--llamma-muted);
+  font-size: 0.68rem;
+  font-weight: 400;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #d92d20;
+}
+
+.request-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(180, 35, 24, 0.26);
+  border-radius: 0.7rem;
+  background: #fdecec;
+  color: #a01212;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.request-error i {
+  margin-top: 0.1rem;
+}
+
+body.modal-abierto {
+  overflow: hidden;
+}
+
+/* Placeholder de las secciones diferidas de la portada. */
+.defer-skeleton {
+  min-height: 22rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius, 1rem);
+  background:
+    linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.65) 50%, transparent 70%),
+    #f3f1eb;
+  background-size: 220% 100%;
+  animation: defer-brillo 1.4s ease-in-out infinite;
+}
+
+@keyframes defer-brillo {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .defer-skeleton {
+    animation: none;
+  }
+}
+
+/* Portafolio y testimonios de la portada (se ocultan si no hay contenido). */
+.testimonial-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  box-shadow: var(--llamma-shadow-sm);
+}
+
+.testimonial-card blockquote {
+  margin: 0;
+}
+
+.testimonial-card blockquote p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.testimonial-card blockquote p::before {
+  content: '“';
+}
+
+.testimonial-card blockquote p::after {
+  content: '”';
+}
+
+.testimonial-card footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.75rem;
+}
+
+.testimonial-card footer span {
+  color: var(--llamma-muted);
+}
+
+/* ------------------------- Carrito del cotizador --------------------------- */
+/* Compartido por el paso de productos y el comprobante de solicitud. */
+
+.min-w-0 {
+  min-width: 0;
+}
+
+.cart-list {
+  margin-top: 1.2rem;
+  border-top: 1px solid var(--llamma-line);
+}
+
+.cart-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--llamma-line);
+}
+
+.cart-index {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  border-radius: 0.45rem;
+  background: rgba(var(--llamma-cyan-rgb), 0.12);
+  color: var(--llamma-cyan-deep);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.cart-row strong {
+  display: block;
+  font-size: 0.78rem;
+}
+
+.cart-row small {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.cart-amount {
+  font-family: var(--llamma-font-display);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+  .cart-row {
+    flex-wrap: wrap;
   }
 }

@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import os
+import base64
+from io import BytesIO
+from PIL import Image, ImageOps, UnidentifiedImageError
 from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
+from sqlalchemy.orm import joinedload, selectinload
 
 from extensions import db
 from models import (
@@ -17,6 +21,7 @@ from models import (
     SolicitudItem,
     utcnow,
 )
+from ratelimit import cliente_ip, demasiadas_peticiones, excedido
 from routes.helpers import (
     MAX_MENSAJE_CHAT,
     campo,
@@ -33,10 +38,34 @@ public_bp = Blueprint("public", __name__)
 
 def _solicitud_por_credenciales(folio: str, correo: str) -> SolicitudCotizacion | None:
     """Busca una solicitud solo si folio y correo coinciden."""
-    solicitud = SolicitudCotizacion.query.filter_by(folio=folio.strip().upper()).first()
+    solicitud = (
+        SolicitudCotizacion.query.options(
+            selectinload(SolicitudCotizacion.items),
+            selectinload(SolicitudCotizacion.archivos),
+            selectinload(SolicitudCotizacion.cotizaciones),
+            selectinload(SolicitudCotizacion.mensajes).joinedload(MensajeChat.usuario),
+        )
+        .filter_by(folio=folio.strip().upper())
+        .first()
+    )
     if not solicitud or solicitud.correo.lower() != correo.strip().lower():
         return None
     return solicitud
+
+
+def _limitar_consultas(folio: str):
+    """Evita enumerar folios a fuerza de probar folio + correo."""
+    espera = excedido(
+        (
+            "consulta-publica",
+            f"{cliente_ip()}|{folio.strip().upper()[:20]}",
+            current_app.config["PUBLICO_MAX_CONSULTAS"],
+            current_app.config["PUBLICO_VENTANA_CONSULTAS_SEGUNDOS"],
+        )
+    )
+    if espera is None:
+        return None
+    return demasiadas_peticiones(espera, "Demasiadas consultas. Espera un momento.")
 
 
 @public_bp.get("/health")
@@ -107,6 +136,19 @@ def opciones_publicas():
 
 @public_bp.post("/public/solicitudes")
 def crear_solicitud():
+    espera = excedido(
+        (
+            "solicitud-publica",
+            cliente_ip(),
+            current_app.config["PUBLICO_MAX_SOLICITUDES"],
+            current_app.config["PUBLICO_VENTANA_SEGUNDOS"],
+        )
+    )
+    if espera is not None:
+        return demasiadas_peticiones(
+            espera, "Recibimos varias solicitudes desde tu conexión. Intenta más tarde."
+        )
+
     data = payload()
 
     nombre = str(campo(data, "nombreCliente", "nombre_cliente", "nombre", default="")).strip()
@@ -229,6 +271,10 @@ def crear_solicitud():
 
 @public_bp.get("/public/solicitudes/<folio>")
 def consultar_solicitud(folio: str):
+    limitado = _limitar_consultas(folio)
+    if limitado:
+        return limitado
+
     correo = (request.args.get("correo") or "").strip().lower()
     if not correo:
         return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")
@@ -269,6 +315,10 @@ def consultar_solicitud(folio: str):
 
 @public_bp.get("/public/solicitudes/<folio>/mensajes")
 def listar_mensajes_solicitud(folio: str):
+    limitado = _limitar_consultas(folio)
+    if limitado:
+        return limitado
+
     correo = (request.args.get("correo") or "").strip().lower()
     if not correo:
         return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")
@@ -288,6 +338,19 @@ def listar_mensajes_solicitud(folio: str):
 
 @public_bp.post("/public/solicitudes/<folio>/mensajes")
 def enviar_mensaje_solicitud(folio: str):
+    espera = excedido(
+        (
+            "chat-publico",
+            f"{cliente_ip()}|{folio.strip().upper()[:20]}",
+            current_app.config["CHAT_MAX_MENSAJES"],
+            current_app.config["CHAT_VENTANA_SEGUNDOS"],
+        )
+    )
+    if espera is not None:
+        return demasiadas_peticiones(
+            espera, "Enviaste varios mensajes seguidos. Espera un momento para continuar."
+        )
+
     data = payload()
     correo = str(campo(data, "correo", "email", default="")).strip().lower()
     if not correo:
@@ -341,6 +404,10 @@ def enviar_mensaje_solicitud(folio: str):
 
 @public_bp.get("/public/solicitudes/<folio>/mensajes/<int:mensaje_id>/archivo")
 def descargar_adjunto_mensaje(folio: str, mensaje_id: int):
+    limitado = _limitar_consultas(folio)
+    if limitado:
+        return limitado
+
     correo = (request.args.get("correo") or "").strip().lower()
     if not correo:
         return error("Indica el correo con el que registraste la solicitud", 400, "correo_requerido")
@@ -362,4 +429,78 @@ def descargar_adjunto_mensaje(folio: str, mensaje_id: int):
         mensaje.adjunto_guardado,
         as_attachment=True,
         download_name=mensaje.adjunto_nombre or mensaje.adjunto_guardado,
+    )
+
+@public_bp.post("/public/mockups/preparar-imagen")
+def preparar_imagen_mockup():
+    """Optimiza una imagen del cliente para usarla como capa en el visor 3D."""
+    espera = excedido(("mockup-imagen", cliente_ip(), 40, 60))
+    if espera is not None:
+        return demasiadas_peticiones(espera, "Procesaste muchas imágenes seguidas. Espera un momento.")
+
+    storage = request.files.get("imagen") or request.files.get("archivo")
+    if not storage or not storage.filename:
+        return error("Sube una imagen PNG, JPG o WEBP para previsualizarla")
+
+    quitar_fondo = (request.form.get("quitarFondo") or "").lower() in {"1", "true", "si", "sí"}
+    recortar = (request.form.get("recortar") or "true").lower() in {"1", "true", "si", "sí"}
+    try:
+        umbral = max(180, min(252, int(request.form.get("umbral", "240"))))
+    except ValueError:
+        umbral = 240
+
+    try:
+        imagen = Image.open(storage.stream)
+        imagen = ImageOps.exif_transpose(imagen).convert("RGBA")
+    except (UnidentifiedImageError, OSError):
+        return error("El archivo no es una imagen válida (usa PNG, JPG o WEBP)", 415, "imagen_invalida")
+
+    ancho_original, alto_original = imagen.size
+    lado_mayor = max(ancho_original, alto_original)
+    if lado_mayor >= 1200:
+        calidad = "alta"
+    elif lado_mayor >= 600:
+        calidad = "media"
+    else:
+        calidad = "baja"
+
+    # Tamaño ideal para textura WebGL en Three.js
+    imagen.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+
+    if quitar_fondo:
+        pixeles = imagen.getdata()
+        suavizado = max(0, umbral - 24)
+        nuevos = []
+        for r, g, b, a in pixeles:
+            if a == 0:
+                nuevos.append((r, g, b, 0))
+            elif r >= umbral and g >= umbral and b >= umbral:
+                nuevos.append((r, g, b, 0))
+            elif r >= suavizado and g >= suavizado and b >= suavizado:
+                # Borde semitransparente para evitar contornos dentados
+                brillo = min(r, g, b)
+                factor = 1.0 - (brillo - suavizado) / max(1, umbral - suavizado)
+                nuevos.append((r, g, b, int(a * factor)))
+            else:
+                nuevos.append((r, g, b, a))
+        imagen.putdata(nuevos)
+
+    if recortar:
+        caja = imagen.getbbox()
+        if caja:
+            imagen = imagen.crop(caja)
+
+    buffer = BytesIO()
+    imagen.save(buffer, format="PNG", optimize=True)
+    codificada = base64.b64encode(buffer.getvalue()).decode("ascii")
+
+    return jsonify(
+        {
+            "dataUrl": f"data:image/png;base64,{codificada}",
+            "ancho": imagen.width,
+            "alto": imagen.height,
+            "anchoOriginal": ancho_original,
+            "altoOriginal": alto_original,
+            "calidadImpresion": calidad,
+        }
     )

@@ -1,0 +1,674 @@
+<div class="pt-[2.75rem] pb-[5.5rem] solicitudes-page">
+  <div
+    class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+  >
+    <header
+      class="mb-[2.2rem] [&_h1]:mb-[0.65rem] [&_h1]:text-[clamp(2.15rem,4.1vw,3.45rem)] [&_h1]:leading-[1.02] flex flex-wrap items-end justify-between gap-4"
+    >
+      <div>
+        <span
+          class="mb-[0.9rem] inline-flex items-center gap-[0.6rem] text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[var(--llamma-magenta)] before:h-1 before:w-[1.6rem] before:rounded-full before:bg-[linear-gradient(90deg,var(--llamma-cyan),var(--llamma-magenta)_60%,var(--llamma-yellow))] before:content-['']"
+          >Bandeja comercial</span
+        >
+        <h1>Solicitudes entrantes.</h1>
+        <p class="mb-0 max-w-[44rem] text-base text-[var(--llamma-muted)]">
+          Cada solicitud del portal llega aquí con su folio, partidas y archivos. Atiéndela,
+          conviértela en cotización y da seguimiento al cliente sin salir del panel.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+          type="button"
+          (click)="cargar()"
+          [disabled]="cargando()"
+        >
+          <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+        <a
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+          routerLink="/captura"
+        >
+          <i class="bi bi-plus-lg"></i> Nueva cotización
+        </a>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-12 gap-4 mb-6">
+      <div class="col-span-6 xl:col-span-3">
+        <div class="inbox-stat inbox-stat-cyan">
+          <span class="icon-tile icon-tile-cyan"><i class="bi bi-inbox"></i></span>
+          <div>
+            <strong>{{ nuevoConteo() }}</strong>
+            <span>Solicitudes nuevas</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-span-6 xl:col-span-3">
+        <div class="inbox-stat">
+          <span class="icon-tile icon-tile-warning"><i class="bi bi-hourglass-split"></i></span>
+          <div>
+            <strong>{{ store.resumen().enRevision }}</strong>
+            <span>En revisión</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-span-6 xl:col-span-3">
+        <div class="inbox-stat">
+          <span class="icon-tile icon-tile-magenta"><i class="bi bi-file-earmark-text"></i></span>
+          <div>
+            <strong>{{ store.resumen().porEstado.cotizada }}</strong>
+            <span>Cotizadas</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-span-6 xl:col-span-3">
+        <div class="inbox-stat">
+          <span class="icon-tile icon-tile-ink"><i class="bi bi-collection"></i></span>
+          <div>
+            <strong>{{ store.resumen().total }}</strong>
+            <span>Total histórico</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section
+      class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 mb-6"
+    >
+      <div class="filter-row">
+        <div class="inbox-tabs" role="tablist" aria-label="Filtrar solicitudes por estado">
+          @for (opcion of opciones; track opcion.valor) {
+            <button
+              class="filter-chip"
+              type="button"
+              [class.is-active]="estadoFiltro() === opcion.valor"
+              (click)="filtrarPor(opcion.valor)"
+            >
+              {{ opcion.etiqueta }}
+            </button>
+          }
+        </div>
+
+        <div class="inbox-search">
+          <div class="flex w-full flex-1 flex-wrap items-stretch">
+            <span
+              class="flex items-center whitespace-nowrap rounded-l-[0.72rem] border border-r-0 border-[var(--llamma-line)] bg-[#f2f1ec] px-3 py-1.5 text-[0.85rem] font-normal leading-normal text-[var(--llamma-muted)]"
+              ><i class="bi bi-search"></i
+            ></span>
+            <input
+              type="search"
+              class="block min-h-[2.8rem] w-full min-w-0 flex-1 w-auto! -ml-px rounded-l-none! rounded-r-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+              placeholder="Folio, cliente o correo..."
+              aria-label="Buscar solicitudes por folio, cliente o correo"
+              [value]="texto()"
+              (input)="actualizarTexto($event)"
+              (keyup.enter)="buscar()"
+            />
+          </div>
+          <button
+            class="inline-block cursor-pointer select-none whitespace-nowrap rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white"
+            type="button"
+            (click)="buscar()"
+          >
+            <i class="bi bi-funnel-fill"></i> Buscar
+          </button>
+          @if (hayFiltros()) {
+            <button
+              class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
+              type="button"
+              aria-label="Limpiar filtros"
+              (click)="limpiar()"
+            >
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          }
+        </div>
+      </div>
+    </section>
+
+    @if (error()) {
+      <div class="inbox-alert" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 xl:col-span-7">
+        <section
+          class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 inbox-panel"
+        >
+          <div
+            class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em]"
+          >
+            <div>
+              <span
+                class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                >Bandeja</span
+              >
+              <h2>Solicitudes recibidas</h2>
+            </div>
+            <span
+              class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[rgba(26,26,26,0.06)] text-[var(--llamma-muted)]"
+              >{{ total() }} resultados</span
+            >
+          </div>
+
+          @if (cargando()) {
+            <div class="inbox-loading">
+              <i class="bi bi-arrow-repeat"></i>
+              <span>Cargando solicitudes...</span>
+            </div>
+          } @else if (!solicitudes().length) {
+            <div class="inbox-empty">
+              <i class="bi bi-inbox"></i>
+              <strong>Sin solicitudes para este filtro</strong>
+              <p>Prueba con otro estado o limpia la búsqueda para ver toda la bandeja.</p>
+            </div>
+          } @else {
+            <div class="request-list">
+              @for (solicitud of solicitudes(); track solicitud.id) {
+                <button
+                  class="request-row"
+                  type="button"
+                  [class.is-active]="seleccionada()?.id === solicitud.id"
+                  (click)="abrir(solicitud.id)"
+                >
+                  <span class="avatar avatar-magenta">{{
+                    iniciales(solicitud.nombreCliente)
+                  }}</span>
+
+                  <span class="request-main">
+                    <span class="request-top">
+                      <strong>{{ solicitud.nombreCliente }}</strong>
+                      <span
+                        class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                        [class]="claseEstado(solicitud.estado)"
+                      >
+                        {{ etiquetaEstado(solicitud.estado) }}
+                      </span>
+                    </span>
+                    <span class="request-company">
+                      {{ solicitud.empresa || 'Cliente particular' }} · {{ solicitud.folio }}
+                    </span>
+                    @if (solicitud.mensaje) {
+                      <span class="request-preview">{{ solicitud.mensaje }}</span>
+                    }
+                    <span class="request-meta">
+                      <span
+                        ><i class="bi bi-box-seam"></i>
+                        {{ solicitud.totalItems ?? 0 }} partidas</span
+                      >
+                      <span
+                        ><i class="bi bi-paperclip"></i>
+                        {{ solicitud.totalArchivos ?? 0 }} archivos</span
+                      >
+                      <span
+                        ><i class="bi bi-calendar3"></i>
+                        {{ fechaHora(solicitud.fechaCreacion) }}</span
+                      >
+                    </span>
+                  </span>
+
+                  <i class="bi bi-chevron-right request-chevron"></i>
+                </button>
+              }
+            </div>
+
+            @if (paginas() > 1) {
+              <div class="inbox-pager">
+                <button
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
+                  type="button"
+                  [disabled]="pagina() <= 1"
+                  (click)="cambiarPagina(-1)"
+                >
+                  <i class="bi bi-arrow-left"></i> Anterior
+                </button>
+                <span>Página {{ pagina() }} de {{ paginas() }}</span>
+                <button
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
+                  type="button"
+                  [disabled]="pagina() >= paginas()"
+                  (click)="cambiarPagina(1)"
+                >
+                  Siguiente <i class="bi bi-arrow-right"></i>
+                </button>
+              </div>
+            }
+          }
+        </section>
+      </div>
+
+      <div class="col-span-12 xl:col-span-5">
+        @if (detalleCargando() || seleccionada()) {
+          <button
+            class="detail-backdrop"
+            type="button"
+            aria-label="Cerrar detalle de la solicitud"
+            (click)="cerrarDetalle()"
+          ></button>
+        }
+
+        @if (detalleCargando()) {
+          <aside
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 detail-panel detail-panel-open"
+            role="region"
+            aria-label="Detalle de la solicitud"
+          >
+            <div class="inbox-loading">
+              <i class="bi bi-arrow-repeat"></i>
+              <span>Abriendo solicitud...</span>
+            </div>
+          </aside>
+        } @else if (seleccionada(); as solicitud) {
+          <aside
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 detail-panel detail-panel-open"
+            role="region"
+            aria-label="Detalle de la solicitud"
+          >
+            <div class="detail-head">
+              <div>
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Solicitud {{ solicitud.folio }}</span
+                >
+                <h2>{{ solicitud.nombreCliente }}</h2>
+              </div>
+              <button
+                class="inline-grid h-9 w-9 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
+                type="button"
+                aria-label="Cerrar detalle"
+                (click)="cerrarDetalle()"
+              >
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            <div class="detail-state">
+              <span
+                class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                [class]="claseEstado(solicitud.estado)"
+              >
+                {{ etiquetaEstado(solicitud.estado) }}
+              </span>
+              <select
+                class="block min-h-[2.8rem] w-full w-auto! min-w-[9.5rem] rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                aria-label="Cambiar estado de la solicitud"
+                [value]="solicitud.estado"
+                [disabled]="accion() === 'estado'"
+                (change)="cambiarEstado($any($event.target).value)"
+              >
+                <option value="nueva">Nueva</option>
+                <option value="en-revision">En revisión</option>
+                <option value="cotizada">Cotizada</option>
+                <option value="convertida">Convertida</option>
+                <option value="descartada">Descartada</option>
+              </select>
+            </div>
+
+            <div class="detail-contact">
+              <div>
+                <i class="bi bi-envelope"></i>
+                <a [href]="'mailto:' + solicitud.correo">{{ solicitud.correo }}</a>
+              </div>
+              @if (solicitud.telefono) {
+                <div><i class="bi bi-telephone"></i> {{ solicitud.telefono }}</div>
+              }
+              <div><i class="bi bi-tag"></i> {{ solicitud.segmento }} · {{ solicitud.origen }}</div>
+            </div>
+
+            <div class="detail-actions">
+              @if (solicitud.telefono) {
+                <a
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                  [href]="whatsapp(solicitud.telefono)"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <i class="bi bi-whatsapp"></i> WhatsApp
+                </a>
+              }
+              <a
+                class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                [href]="'mailto:' + solicitud.correo"
+              >
+                <i class="bi bi-envelope"></i> Correo
+              </a>
+              <button
+                class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                type="button"
+                (click)="copiarCorreo(solicitud.correo)"
+              >
+                <i
+                  class="bi"
+                  [class.bi-clipboard]="!correoCopiado()"
+                  [class.bi-clipboard-check]="correoCopiado()"
+                ></i>
+                {{ correoCopiado() ? 'Copiado' : 'Copiar correo' }}
+              </button>
+            </div>
+
+            <div class="detail-grid">
+              <div>
+                <span>Recibida</span>
+                <strong>{{ fechaHora(solicitud.fechaCreacion) }}</strong>
+              </div>
+              <div>
+                <span>Entrega deseada</span>
+                <strong>{{ fecha(solicitud.fechaDeseada) }}</strong>
+              </div>
+              <div>
+                <span>Método</span>
+                <strong>{{ solicitud.metodoEntrega }}</strong>
+              </div>
+              <div>
+                <span>Partidas</span>
+                <strong>{{ solicitud.itemsSolicitados?.length ?? 0 }}</strong>
+              </div>
+            </div>
+
+            @if (solicitud.mensaje) {
+              <div class="detail-message">
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Mensaje del cliente</span
+                >
+                <p>{{ solicitud.mensaje }}</p>
+              </div>
+            }
+
+            <div class="detail-items">
+              <span
+                class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                >Partidas solicitadas</span
+              >
+              @for (item of solicitud.itemsSolicitados ?? []; track $index) {
+                <div class="detail-item">
+                  <div class="grow min-w-0">
+                    <strong>{{ item.nombreProducto }}</strong>
+                    <small>{{ item.especificaciones || 'Sin especificaciones' }}</small>
+                  </div>
+                  <span class="detail-qty">×{{ item.cantidad }}</span>
+                  @if (item.precioEstimado) {
+                    <strong class="detail-amount">{{ moneda(item.precioEstimado) }}</strong>
+                  }
+                </div>
+              } @empty {
+                <p class="detail-empty">El cliente no agregó productos; revisa su mensaje.</p>
+              }
+            </div>
+
+            @if (solicitud.archivosAdjuntos?.length) {
+              <div class="detail-files">
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Archivos adjuntos</span
+                >
+                @for (archivo of solicitud.archivosAdjuntos; track archivo.id) {
+                  <button class="file-row" type="button" (click)="descargar(archivo)">
+                    <i class="bi bi-paperclip"></i>
+                    <span class="file-row-name">{{ archivo.nombreOriginal }}</span>
+                    <small>{{ tamano(archivo.tamanoBytes) }}</small>
+                    <i class="bi bi-download"></i>
+                  </button>
+                }
+              </div>
+            }
+
+            <div class="chat-panel">
+              <div class="chat-head">
+                <div>
+                  <span
+                    class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                    >Chat con el cliente</span
+                  >
+                  <h3>Conversación de la solicitud</h3>
+                </div>
+                <button
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                  type="button"
+                  (click)="refrescarChat()"
+                >
+                  <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+              </div>
+
+              <div #hiloChat class="chat-thread" role="log" aria-live="polite">
+                @for (mensaje of mensajes(); track mensaje.id) {
+                  <div
+                    class="chat-bubble"
+                    [class.chat-bubble-propio]="mensaje.remitenteTipo === 'interno'"
+                  >
+                    <div class="chat-meta">
+                      <strong>{{
+                        mensaje.remitenteTipo === 'interno' ? mensaje.autor : 'Cliente'
+                      }}</strong>
+                      <time>{{ fechaHora(mensaje.creadoEn) }}</time>
+                    </div>
+                    @if (mensaje.mensaje) {
+                      <p>{{ mensaje.mensaje }}</p>
+                    }
+                    @if (mensaje.adjunto) {
+                      <button
+                        class="chat-file"
+                        type="button"
+                        [disabled]="descargandoAdjunto() === mensaje.id"
+                        (click)="descargarAdjuntoChat(mensaje)"
+                      >
+                        <i class="bi bi-paperclip"></i>
+                        <span class="chat-file-name">{{ mensaje.adjunto.nombre }}</span>
+                        <small>{{ tamano(mensaje.adjunto.tamanoBytes) }}</small>
+                        <i class="bi bi-download"></i>
+                      </button>
+                    }
+                  </div>
+                } @empty {
+                  <p class="chat-empty">
+                    <i class="bi bi-chat-dots"></i>
+                    Todavía no hay mensajes con este cliente. Envía la primera respuesta.
+                  </p>
+                }
+              </div>
+
+              @if (errorChat()) {
+                <div class="inbox-alert" role="alert">
+                  <i class="bi bi-exclamation-triangle-fill"></i>
+                  <span>{{ errorChat() }}</span>
+                </div>
+              }
+
+              <div class="chat-compose">
+                <label class="sr-only" for="chatInternoMensaje">Respuesta para el cliente</label>
+                <textarea
+                  id="chatInternoMensaje"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                  rows="2"
+                  maxlength="4000"
+                  placeholder="Escribe la respuesta al cliente..."
+                  [value]="borradorChat()"
+                  (input)="actualizarBorradorChat($event)"
+                ></textarea>
+                <div class="chat-compose-actions">
+                  <div class="chat-adjunto">
+                    <label
+                      class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white mb-0"
+                    >
+                      <i class="bi bi-paperclip"></i> Adjuntar
+                      <input
+                        type="file"
+                        hidden
+                        accept=".pdf,.ai,.psd,.png,.jpg,.jpeg,.svg,.zip"
+                        (change)="seleccionarAdjuntoChat($event)"
+                      />
+                    </label>
+                    @if (adjuntoChat(); as archivo) {
+                      <span class="chat-adjunto-chip">
+                        {{ archivo.name }}
+                        <button
+                          type="button"
+                          aria-label="Quitar adjunto"
+                          (click)="quitarAdjuntoChat()"
+                        >
+                          <i class="bi bi-x"></i>
+                        </button>
+                      </span>
+                    }
+                  </div>
+                  <button
+                    class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white"
+                    type="button"
+                    [disabled]="enviandoChat()"
+                    (click)="enviarRespuesta()"
+                  >
+                    @if (enviandoChat()) {
+                      <i class="bi bi-hourglass-split"></i> Enviando...
+                    } @else {
+                      <i class="bi bi-send"></i> Responder
+                    }
+                  </button>
+                </div>
+                <small class="chat-hint">
+                  El cliente verá la respuesta al consultar su folio y correo en el portal.
+                </small>
+              </div>
+            </div>
+
+            @if (aviso()) {
+              <div class="inbox-success" role="status">
+                <i class="bi bi-check2-circle"></i>
+                <span>{{ aviso() }}</span>
+              </div>
+            }
+
+            @if (errorAccion()) {
+              <div class="inbox-alert" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ errorAccion() }}</span>
+              </div>
+            }
+
+            @if (cotizacionCreada(); as cotizacion) {
+              <div class="conversion-result">
+                <div class="conversion-head">
+                  <i class="bi bi-file-earmark-check"></i>
+                  <div>
+                    <span
+                      class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                      >Cotización generada</span
+                    >
+                    <strong>{{ cotizacion.folio }}</strong>
+                  </div>
+                  <span
+                    class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[#e7f6ee] text-[#18794e]"
+                    >{{ moneda(cotizacion.total) }}</span
+                  >
+                </div>
+                <div class="conversion-totals">
+                  <div>
+                    <span>Subtotal</span><strong>{{ moneda(cotizacion.subtotal) }}</strong>
+                  </div>
+                  <div>
+                    <span>IVA</span><strong>{{ moneda(cotizacion.impuestos) }}</strong>
+                  </div>
+                  <div>
+                    <span>Anticipo 50%</span><strong>{{ moneda(cotizacion.anticipo) }}</strong>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+                    type="button"
+                    (click)="abrirCotizacion(cotizacion)"
+                  >
+                    <i class="bi bi-pencil-square"></i> Abrir en cotizador
+                  </button>
+                  <a
+                    class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                    routerLink="/detalle"
+                  >
+                    <i class="bi bi-receipt"></i> Ver órdenes
+                  </a>
+                </div>
+              </div>
+            } @else if (solicitud.cotizacionId) {
+              <div class="conversion-locked">
+                <i class="bi bi-file-earmark-check"></i>
+                <div>
+                  <strong>Esta solicitud ya está cotizada</strong>
+                  <span>Abre la cotización para revisar partidas o convertirla en pedido.</span>
+                </div>
+                <button
+                  class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white"
+                  type="button"
+                  (click)="abrirCotizacion({ id: solicitud.cotizacionId })"
+                >
+                  Abrir
+                </button>
+              </div>
+            } @else {
+              <div class="detail-cta">
+                @if (sinPartidas()) {
+                  <button
+                    class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] w-full"
+                    type="button"
+                    (click)="cotizarConDetalle()"
+                  >
+                    <i class="bi bi-sliders"></i> Revisar partidas y precios
+                  </button>
+                  <p class="detail-note">
+                    <i class="bi bi-info-circle"></i>
+                    La solicitud llegó solo con mensaje. Agrega las partidas en el cotizador para
+                    generar la cotización.
+                  </p>
+                } @else {
+                  <button
+                    class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] w-full"
+                    type="button"
+                    [disabled]="accion() === 'convertir'"
+                    (click)="convertir()"
+                  >
+                    @if (accion() === 'convertir') {
+                      <i class="bi bi-hourglass-split"></i> Generando cotización...
+                    } @else {
+                      <i class="bi bi-lightning-charge"></i> Convertir en cotización
+                    }
+                  </button>
+                  <button
+                    class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white w-full"
+                    type="button"
+                    (click)="cotizarConDetalle()"
+                  >
+                    <i class="bi bi-sliders"></i> Revisar partidas y precios
+                  </button>
+                  <p class="detail-note">
+                    <i class="bi bi-info-circle"></i>
+                    La conversión usa el estimado de las partidas. Si necesitas ajustar precios,
+                    revisa primero en el cotizador.
+                  </p>
+                }
+              </div>
+            }
+          </aside>
+        } @else {
+          <aside
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 detail-panel detail-placeholder"
+          >
+            <span class="icon-tile icon-tile-cyan"><i class="bi bi-inbox"></i></span>
+            <h2>Selecciona una solicitud</h2>
+            <p>
+              Haz clic en cualquier fila de la bandeja para ver el detalle, los archivos del cliente
+              y las acciones de cotización.
+            </p>
+            <div class="placeholder-steps">
+              <span><i class="bi bi-1-circle"></i> Revisa el mensaje</span>
+              <span><i class="bi bi-2-circle"></i> Ajusta partidas</span>
+              <span><i class="bi bi-3-circle"></i> Genera la cotización</span>
+            </div>
+          </aside>
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,141 @@
+/* Stepper del cotizador y aviso de borrador. */
+
+.quote-steps {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.quote-steps li {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.quote-step {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  height: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--llamma-line);
+  border-radius: var(--llamma-radius-sm);
+  background: #fff;
+  color: var(--llamma-carbon);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.quote-step:hover {
+  border-color: var(--llamma-cyan);
+}
+
+.quote-step.is-active {
+  border-color: var(--llamma-cyan);
+  background: #fff;
+  box-shadow: 0 0 0 0.2rem rgba(var(--llamma-cyan-rgb), 0.18);
+}
+
+.quote-step.is-done {
+  background: rgba(var(--llamma-cyan-rgb), 0.06);
+}
+
+.quote-step-number {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(26, 26, 26, 0.06);
+  font-family: var(--llamma-font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.quote-step.is-active .quote-step-number {
+  background: var(--llamma-cyan);
+  color: #fff;
+}
+
+.quote-step.is-done .quote-step-number {
+  background: rgba(var(--llamma-cyan-rgb), 0.18);
+  color: var(--llamma-cyan-deep);
+}
+
+.quote-step-text {
+  min-width: 0;
+}
+
+.quote-step-text strong {
+  display: block;
+  font-size: 0.78rem;
+}
+
+.quote-step-text small {
+  display: block;
+  overflow: hidden;
+  color: var(--llamma-muted);
+  font-size: 0.64rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draft-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed rgba(var(--llamma-cyan-rgb), 0.55);
+  border-radius: var(--llamma-radius-sm);
+  background: rgba(var(--llamma-cyan-rgb), 0.06);
+}
+
+.draft-banner > i {
+  color: var(--llamma-cyan-deep);
+  font-size: 1.2rem;
+}
+
+.draft-banner-text {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.draft-banner-text strong {
+  font-size: 0.8rem;
+}
+
+.draft-banner-text p {
+  margin: 0.2rem 0 0;
+  color: var(--llamma-muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.draft-banner-text .draft-files {
+  color: #8a5a00;
+}
+
+.draft-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 575.98px) {
+  .quote-steps {
+    flex-direction: column;
+  }
+
+  .quote-step-text small {
+    white-space: normal;
+  }
+}

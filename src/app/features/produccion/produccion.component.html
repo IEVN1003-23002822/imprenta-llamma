@@ -1,0 +1,675 @@
+<div class="pt-[2.75rem] pb-[5.5rem] produccion-page">
+  <div
+    class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+  >
+    <header
+      class="mb-[2.2rem] [&_h1]:mb-[0.65rem] [&_h1]:text-[clamp(2.15rem,4.1vw,3.45rem)] [&_h1]:leading-[1.02] flex flex-wrap items-end justify-between gap-4"
+    >
+      <div>
+        <span
+          class="mb-[0.9rem] inline-flex items-center gap-[0.6rem] text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[var(--llamma-magenta)] before:h-1 before:w-[1.6rem] before:rounded-full before:bg-[linear-gradient(90deg,var(--llamma-cyan),var(--llamma-magenta)_60%,var(--llamma-yellow))] before:content-['']"
+          >Taller y calidad</span
+        >
+        <h1>Producción en tiempo real.</h1>
+        <p class="mb-0 max-w-[44rem] text-base text-[var(--llamma-muted)]">
+          Tablero de etapas, responsables y control de calidad. Visualiza qué está en el taller y
+          qué necesita atención antes de la entrega.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span
+          class="inline-flex items-center gap-2 rounded-xl border border-[var(--llamma-line)] bg-white px-[0.9rem] py-[0.62rem] text-[0.82rem] font-semibold text-[var(--llamma-muted)] shadow-[var(--llamma-shadow-sm)] [&_i]:text-[var(--llamma-magenta)]"
+        >
+          <i class="bi bi-calendar3"></i>
+          Hoy · {{ hoy | date: 'dd MMM yyyy' }}
+        </span>
+        <button
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+          type="button"
+          (click)="exportar()"
+        >
+          <i class="bi bi-file-earmark-bar-graph"></i> Reporte de turno
+        </button>
+      </div>
+    </header>
+
+    @if (error()) {
+      <div
+        class="relative mb-4 rounded-md border p-4 border-[#f1aeb5] bg-[#f8d7da] text-[#58151c] flex items-center gap-2"
+        role="alert"
+      >
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <span class="grow">{{ error() }}</span>
+        <button
+          class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[#212529] text-[#212529] hover:bg-[#212529] hover:text-white"
+          type="button"
+          (click)="cargar()"
+        >
+          Reintentar
+        </button>
+      </div>
+    }
+
+    <div class="grid grid-cols-12 gap-4 mb-6">
+      @for (stat of estadisticas(); track stat.etiqueta) {
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+          <div class="prod-stat">
+            <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
+              <i class="bi" [class]="'bi ' + stat.icono"></i>
+            </span>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="kanban-head-bar">
+      <div>
+        <span
+          class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+          >Flujo del taller</span
+        >
+        <h2>Tablero de producción</h2>
+      </div>
+      <div class="flex items-center gap-2">
+        @if (cargando()) {
+          <span
+            class="inline-block h-4 w-4 animate-spin rounded-full border-[0.2em] border-current border-r-transparent align-[-0.125em] text-[var(--llamma-cyan-deep)]"
+            aria-hidden="true"
+          ></span>
+        }
+        <span class="kanban-hint hidden xl:inline-flex">
+          <i class="bi bi-arrows-expand"></i> Desplázate para ver las 8 etapas
+        </span>
+        <span
+          class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[rgba(26,26,26,0.06)] text-[var(--llamma-muted)]"
+          >{{ ordenes().length }} órdenes en piso</span
+        >
+      </div>
+    </div>
+
+    <div class="kanban-scroll mb-6">
+      <div class="kanban-board">
+        @for (columna of columnas(); track columna.valor) {
+          <section class="kanban-col">
+            <header class="kanban-col-head">
+              <span [class]="dotEtapa(columna.valor)"></span>
+              <strong>{{ columna.etiqueta }}</strong>
+              <span class="kanban-count">{{ columna.ordenes.length }}</span>
+            </header>
+
+            @for (orden of columna.ordenes; track orden.id) {
+              <article
+                class="task-card"
+                [class.is-featured]="orden.estado === 'pausada' || orden.estado === 'rechazada'"
+              >
+                <div class="task-top">
+                  <span class="order-id">#{{ orden.pedidoFolio ?? orden.pedidoId }}</span>
+                  <span
+                    class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] px-[0.45rem]! py-[0.28rem]! text-[0.55rem]!"
+                    [class]="claseEstado(orden.estado)"
+                    >{{ etiquetaEstado(orden.estado) }}</span
+                  >
+                </div>
+                <strong class="task-title">{{ titulo(orden) }}</strong>
+                <span class="task-client"><i class="bi bi-person"></i> {{ cliente(orden) }}</span>
+                <div class="task-meta">
+                  <span><i class="bi bi-clock"></i> Entrega {{ fechaEntrega(orden) }}</span>
+                  <span
+                    ><i class="bi bi-person-badge"></i>
+                    {{ orden.responsable || 'Sin asignar' }}</span
+                  >
+                </div>
+                @if (orden.estado === 'pausada' && orden.observaciones) {
+                  <p class="task-note">
+                    <i class="bi bi-exclamation-triangle"></i> {{ orden.observaciones }}
+                  </p>
+                }
+                <div class="task-foot">
+                  <span class="task-progress-track"
+                    ><span [style.width]="progreso(orden) + '%'"></span
+                  ></span>
+                  <span>{{ progreso(orden) }}%</span>
+                </div>
+
+                @if (puedeGestionar()) {
+                  <div class="task-actions">
+                    <button
+                      class="inline-grid h-7 w-7 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[0.7rem] text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
+                      type="button"
+                      aria-label="Regresar etapa"
+                      title="Regresar etapa"
+                      [disabled]="!puedeRetroceder(orden) || moviendoId() === orden.id"
+                      (click)="mover(orden, -1)"
+                    >
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button
+                      class="inline-grid h-7 w-7 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[0.7rem] text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
+                      type="button"
+                      aria-label="Avanzar etapa"
+                      title="Avanzar etapa"
+                      [disabled]="!puedeAvanzar(orden) || moviendoId() === orden.id"
+                      (click)="mover(orden, 1)"
+                    >
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <button
+                      class="inline-grid h-7 w-7 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[0.7rem] text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 ms-auto"
+                      type="button"
+                      aria-label="Abrir orden"
+                      title="Abrir orden"
+                      (click)="abrirDetalle(orden)"
+                    >
+                      <i class="bi bi-arrows-angle-expand"></i>
+                    </button>
+                  </div>
+                } @else {
+                  <div class="task-actions">
+                    <button
+                      class="inline-grid h-7 w-7 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[0.7rem] text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 ms-auto"
+                      type="button"
+                      aria-label="Abrir orden"
+                      title="Abrir orden"
+                      (click)="abrirDetalle(orden)"
+                    >
+                      <i class="bi bi-arrows-angle-expand"></i>
+                    </button>
+                  </div>
+                }
+              </article>
+            } @empty {
+              <p class="kanban-empty"><i class="bi bi-inbox"></i> Sin órdenes en esta etapa</p>
+            }
+          </section>
+        }
+      </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 xl:col-span-7">
+        <section
+          class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 h-full"
+        >
+          <div
+            class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em]"
+          >
+            <div>
+              <span
+                class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                >Capacidad del taller</span
+              >
+              <h2>Carga por etapa</h2>
+            </div>
+            <span
+              class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[#e7f6ee] text-[#18794e]"
+            >
+              {{ ordenes().length ? 'Operación en curso' : 'Sin paros' }}
+            </span>
+          </div>
+
+          <div class="stage-load">
+            @for (columna of resumenEtapas(); track columna.valor) {
+              <div class="stage-load-row">
+                <span class="stage-load-name">
+                  <i class="bi" [class]="'bi ' + columna.icono"></i> {{ columna.etiqueta }}
+                </span>
+                <div class="stage-meter">
+                  <span [style.width]="columna.porcentaje + '%'"></span>
+                </div>
+                <strong>{{ columna.total }}</strong>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+
+      <div class="col-span-12 xl:col-span-5">
+        <section
+          class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 h-full flex flex-col"
+        >
+          <div
+            class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em]"
+          >
+            <div>
+              <span
+                class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                >Calidad</span
+              >
+              <h2>Últimos controles</h2>
+            </div>
+            <span
+              class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+              [class]="controlesPendientes() ? 'badge-soft-warning' : 'badge-soft-success'"
+            >
+              {{ controlesPendientes() ? controlesPendientes() + ' por atender' : 'Todo en orden' }}
+            </span>
+          </div>
+
+          <div class="quality-list">
+            @for (fila of calidadReciente(); track fila.control.id) {
+              <div class="quality-row" [class.is-done]="fila.control.aprobado">
+                <span class="quality-check">
+                  <i
+                    class="bi"
+                    [class]="fila.control.aprobado ? 'bi-check-lg' : 'bi-hourglass-split'"
+                  ></i>
+                </span>
+                <div>
+                  <strong>{{ fila.control.criterio }}</strong>
+                  <small>
+                    #{{ fila.folio }} · {{ fila.control.revisadoPor || 'Sin revisor' }} ·
+                    {{ fechaHora(fila.control.fecha) }}
+                  </small>
+                </div>
+                <span
+                  class="inline-block ml-auto whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                  [class]="fila.control.aprobado ? 'badge-soft-success' : 'badge-soft-warning'"
+                >
+                  {{ fila.control.aprobado ? 'OK' : 'Pendiente' }}
+                </span>
+              </div>
+            } @empty {
+              <p class="text-[var(--llamma-muted)] mb-0 text-[0.875em]">
+                Aún no hay controles de calidad registrados. Abre una orden para capturar el
+                primero.
+              </p>
+            }
+          </div>
+
+          <div class="quote-note">
+            <i class="bi bi-shield-check"></i>
+            <span
+              >Ninguna orden sale del taller sin el checklist de calidad completo y firmado.</span
+            >
+          </div>
+
+          <a
+            class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white w-full mt-auto"
+            routerLink="/detalle"
+          >
+            <i class="bi bi-receipt"></i> Ver detalle de la orden
+          </a>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (seleccionada(); as orden) {
+  <div
+    class="fixed inset-0 z-[1055] h-full w-full overflow-x-hidden overflow-y-auto outline-none block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarDetalle()"
+  >
+    <div class="relative mx-auto flex min-h-full w-full items-center p-2 sm:p-7 max-w-[1140px]">
+      <div
+        class="pointer-events-auto relative flex max-h-[calc(100vh-1rem)] w-full flex-col rounded-lg border border-black/20 bg-white outline-none sm:max-h-[calc(100vh-3.5rem)]"
+      >
+        <div
+          class="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--llamma-line)] p-4"
+        >
+          <div>
+            <span
+              class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+              >Orden de producción</span
+            >
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-xl mb-0" data-modal-title>
+                #{{ orden.pedidoFolio ?? orden.pedidoId }}
+              </h2>
+              <span
+                class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                [class]="claseEstado(orden.estado)"
+                >{{ etiquetaEstado(orden.estado) }}</span
+              >
+              <span
+                class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[rgba(26,26,26,0.06)] text-[var(--llamma-muted)]"
+              >
+                <i class="bi" [class]="'bi ' + iconoEtapa(orden.etapa)"></i>
+                {{ etiquetaEtapa(orden.etapa) }}
+              </span>
+            </div>
+          </div>
+          <button
+            class="inline-grid h-9 w-9 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
+            type="button"
+            aria-label="Cerrar"
+            (click)="cerrarDetalle()"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="relative flex-auto overflow-y-auto p-4" data-modal-body>
+          <div class="grid grid-cols-12 gap-6">
+            <div class="col-span-12 lg:col-span-5">
+              <div class="order-brief mb-4">
+                <span class="order-brief-icon"><i class="bi bi-printer"></i></span>
+                <div>
+                  <strong>{{ titulo(orden) }}</strong>
+                  <span>{{ cliente(orden) }}</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-6">
+                  <span
+                    class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                    >Entrega</span
+                  >
+                  <strong class="block">{{ fechaEntrega(orden) }}</strong>
+                </div>
+                <div class="col-span-6">
+                  <span
+                    class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                    >Prioridad</span
+                  >
+                  <span
+                    class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                    [class]="clasePrioridad(orden)"
+                    >{{ prioridad(orden) }}</span
+                  >
+                </div>
+                <div class="col-span-6">
+                  <span
+                    class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                    >Responsable</span
+                  >
+                  <strong class="block">{{ orden.responsable || 'Sin asignar' }}</strong>
+                </div>
+                <div class="col-span-6">
+                  <span
+                    class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                    >Inicio</span
+                  >
+                  <strong class="block">{{ fechaHora(orden.fechaInicio) }}</strong>
+                </div>
+              </div>
+
+              <div class="stage-list mt-4">
+                @for (etapa of orden.historialEtapas; track etapa.id) {
+                  <div
+                    class="stage-list-item"
+                    [class.is-done]="etapa.estado === 'completada'"
+                    [class.is-active]="etapa.estado === 'en-proceso'"
+                  >
+                    <span class="stage-list-dot"
+                      ><i class="bi" [class]="'bi ' + iconoEtapa(etapa.etapa)"></i
+                    ></span>
+                    <div class="grow min-w-0">
+                      <strong>{{ etiquetaEtapa(etapa.etapa) }}</strong>
+                      <small>
+                        {{ etapa.responsable || 'Sin responsable' }} ·
+                        {{
+                          etapa.fin
+                            ? fechaHora(etapa.fin)
+                            : etapa.inicio
+                              ? fechaHora(etapa.inicio)
+                              : 'Programado'
+                        }}
+                      </small>
+                    </div>
+                    <span
+                      class="inline-block ml-auto whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] text-[0.55rem]!"
+                      [class]="
+                        etapa.estado === 'completada'
+                          ? 'badge-soft-success'
+                          : etapa.estado === 'en-proceso'
+                            ? 'badge-soft-cyan'
+                            : 'badge-soft-muted'
+                      "
+                    >
+                      {{ etapa.estado }}
+                    </span>
+                  </div>
+                } @empty {
+                  <p class="text-[var(--llamma-muted)] mb-0 text-[0.875em]">
+                    Sin historial de etapas.
+                  </p>
+                }
+              </div>
+
+              <p
+                class="mt-[0.9rem] flex items-center gap-[0.45rem] text-[0.7rem] text-[var(--llamma-muted)] [&_i]:text-[var(--llamma-magenta)] mt-4 mb-0"
+              >
+                <i class="bi bi-journal-text"></i>
+                {{ orden.observaciones || 'Sin observaciones registradas.' }}
+              </p>
+            </div>
+
+            <div class="col-span-12 lg:col-span-7">
+              @if (puedeGestionar()) {
+                <form [formGroup]="ordenForm" (ngSubmit)="guardarCambios()">
+                  <div class="grid grid-cols-12 gap-4">
+                    <div class="col-span-12 md:col-span-6">
+                      <label
+                        class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                        for="prodEtapa"
+                        >Etapa actual</label
+                      >
+                      <select
+                        id="prodEtapa"
+                        class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                        formControlName="etapa"
+                      >
+                        @for (etapa of etapas; track etapa.valor) {
+                          <option [value]="etapa.valor">{{ etapa.etiqueta }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="col-span-12 md:col-span-6">
+                      <label
+                        class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                        for="prodEstado"
+                        >Estado</label
+                      >
+                      <select
+                        id="prodEstado"
+                        class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                        formControlName="estado"
+                      >
+                        @for (estado of estados; track estado.valor) {
+                          <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="col-span-12">
+                      <label
+                        class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                        for="prodObs"
+                        >Observaciones</label
+                      >
+                      <textarea
+                        id="prodObs"
+                        class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                        rows="2"
+                        formControlName="observaciones"
+                      ></textarea>
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap gap-2 mt-4">
+                    <button
+                      class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+                      type="submit"
+                      [disabled]="guardando()"
+                    >
+                      <i
+                        class="bi"
+                        [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"
+                      ></i>
+                      {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
+                    </button>
+                    @if (orden.estado !== 'completada') {
+                      <button
+                        class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                        type="button"
+                        [disabled]="guardando()"
+                        (click)="completar(orden)"
+                      >
+                        <i class="bi bi-flag"></i> Completar orden
+                      </button>
+                    }
+                  </div>
+                </form>
+              }
+
+              <div
+                class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em] mt-6"
+              >
+                <div>
+                  <span
+                    class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                    >Checklist de calidad</span
+                  >
+                  <h2>Controles de la orden</h2>
+                </div>
+                <span
+                  class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[rgba(26,26,26,0.06)] text-[var(--llamma-muted)]"
+                  >{{ controlesDe(orden).length }} registros</span
+                >
+              </div>
+
+              <div class="overflow-x-auto">
+                <table
+                  class="w-full align-top mb-0 text-[var(--llamma-carbon)] [&>tbody>tr:hover]:bg-[#fbfaf7] [&>tbody>tr:last-child>td]:border-b-0 [&>tbody>tr>td]:border-b [&>tbody>tr>td]:border-[var(--llamma-line)] [&>tbody>tr>td]:bg-transparent [&>tbody>tr>td]:px-[1.1rem] [&>tbody>tr>td]:py-[0.95rem] [&>tbody>tr>td]:shadow-none [&>thead>tr>th]:whitespace-nowrap [&>thead>tr>th]:border-b [&>thead>tr>th]:border-[var(--llamma-line)] [&>thead>tr>th]:bg-[#f8f7f3] [&>thead>tr>th]:px-[1.1rem] [&>thead>tr>th]:py-[0.8rem] [&>thead>tr>th]:text-[0.64rem] [&>thead>tr>th]:font-bold [&>thead>tr>th]:uppercase [&>thead>tr>th]:tracking-[0.1em] [&>thead>tr>th]:text-[#7b7c80] align-middle"
+                >
+                  <caption class="sr-only">
+                    Controles de calidad de la orden
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Criterio</th>
+                      <th scope="col">Resultado</th>
+                      <th scope="col">Revisó</th>
+                      <th scope="col" class="text-right">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (control of controlesDe(orden); track control.id) {
+                      <tr>
+                        <td>
+                          <div class="text-[0.85rem] font-semibold">{{ control.criterio }}</div>
+                          <div class="mt-[0.15rem] text-[0.72rem] text-[var(--llamma-muted)]">
+                            {{ control.observaciones || 'Sin observaciones' }}
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            class="inline-block ml-auto whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                            [class]="control.aprobado ? 'badge-soft-success' : 'badge-soft-danger'"
+                          >
+                            {{ control.aprobado ? 'Aprobado' : 'Rechazado' }}
+                          </span>
+                        </td>
+                        <td>{{ control.revisadoPor || '—' }}</td>
+                        <td
+                          class="text-right mt-[0.15rem] text-[0.72rem] text-[var(--llamma-muted)]"
+                        >
+                          {{ fechaHora(control.fecha) }}
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="4" class="text-center text-[var(--llamma-muted)] py-6">
+                          Aún no hay controles registrados para esta orden.
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              @if (puedeGestionar()) {
+                <form
+                  class="quality-form"
+                  [formGroup]="calidadForm"
+                  (ngSubmit)="registrarCalidad()"
+                >
+                  <span
+                    class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                    >Nuevo control</span
+                  >
+                  <div class="grid grid-cols-12 gap-2 mt-1">
+                    <div class="col-span-12 md:col-span-6">
+                      <input
+                        class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                        placeholder="Criterio: color, medidas, empaque…"
+                        aria-label="Criterio de calidad"
+                        formControlName="criterio"
+                      />
+                      @if (
+                        calidadForm.controls.criterio.invalid &&
+                        calidadForm.controls.criterio.touched
+                      ) {
+                        <small class="text-red-600">Describe el criterio a revisar.</small>
+                      }
+                    </div>
+                    <div class="col-span-12 md:col-span-6">
+                      <input
+                        class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                        placeholder="Observaciones"
+                        aria-label="Observaciones de calidad"
+                        formControlName="observaciones"
+                      />
+                    </div>
+                    <div class="col-span-12 flex flex-wrap items-center gap-4">
+                      <label class="relative inline-flex cursor-pointer items-center gap-2">
+                        <input
+                          id="calidadAprobado"
+                          class="peer sr-only"
+                          type="checkbox"
+                          formControlName="aprobado"
+                        />
+                        <span
+                          class="relative inline-block h-5 w-9 rounded-full bg-[rgba(26,26,26,0.2)] transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-[var(--llamma-line)] after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--llamma-magenta)] peer-checked:after:translate-x-4"
+                        ></span>
+                        <span class="text-[0.82rem] text-[var(--llamma-muted)]">Aprobado</span>
+                      </label>
+                      <button
+                        class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white ms-auto"
+                        type="submit"
+                        [disabled]="registrandoCalidad()"
+                      >
+                        <i
+                          class="bi"
+                          [class]="
+                            registrandoCalidad() ? 'bi-arrow-repeat spin' : 'bi-clipboard-check'
+                          "
+                        ></i>
+                        {{ registrandoCalidad() ? 'Registrando…' : 'Registrar control' }}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--llamma-line)] p-3"
+        >
+          <button
+            class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+            type="button"
+            (click)="cerrarDetalle()"
+          >
+            Cerrar
+          </button>
+          <a
+            class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+            routerLink="/detalle"
+            [queryParams]="{ pedido: orden.pedidoId }"
+          >
+            <i class="bi bi-receipt"></i> Ver pedido
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fixed inset-0 z-[1050] bg-black/50"></div>
+}

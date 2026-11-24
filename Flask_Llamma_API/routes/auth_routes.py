@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 
 from auth import crear_sesion, revocar_sesion, role_required, token_required
 from extensions import db
 from models import SesionUsuario, Usuario, utcnow
+from ratelimit import cliente_ip, demasiadas_peticiones, excedido, reiniciar
 from routes.helpers import campo, error, payload
 
 auth_bp = Blueprint("auth", __name__)
@@ -21,12 +22,38 @@ def login():
     if not correo or not password:
         return error("Correo y contraseña son obligatorios")
 
+    # Frena la fuerza bruta por IP y por cuenta sin bloquear a todo un taller
+    # que comparte salida a internet.
+    espera = excedido(
+        (
+            "login-ip",
+            cliente_ip(),
+            current_app.config["LOGIN_MAX_INTENTOS"],
+            current_app.config["LOGIN_VENTANA_SEGUNDOS"],
+        ),
+        (
+            "login-cuenta",
+            correo,
+            current_app.config["LOGIN_MAX_POR_CUENTA"],
+            current_app.config["LOGIN_VENTANA_CUENTA_SEGUNDOS"],
+        ),
+    )
+    if espera is not None:
+        current_app.logger.warning("Login limitado para %s desde %s", correo, cliente_ip())
+        return demasiadas_peticiones(
+            espera, "Demasiados intentos de acceso. Espera antes de volver a intentarlo."
+        )
+
     usuario = Usuario.query.filter(db.func.lower(Usuario.correo) == correo).first()
     if not usuario or not usuario.check_password(password):
+        current_app.logger.warning("Login fallido para %s desde %s", correo, cliente_ip())
         return error("Credenciales incorrectas", 401, "credenciales_invalidas")
     if not usuario.activo:
+        current_app.logger.warning("Login de cuenta inactiva: %s", correo)
         return error("La cuenta está desactivada", 403, "cuenta_inactiva")
 
+    reiniciar("login-cuenta", correo)
+    reiniciar("login-ip", cliente_ip())
     token = crear_sesion(usuario)
     sesion = SesionUsuario.query.filter_by(usuario_id=usuario.id).order_by(
         SesionUsuario.creado_en.desc()

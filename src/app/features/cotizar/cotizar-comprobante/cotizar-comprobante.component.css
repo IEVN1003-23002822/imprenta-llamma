@@ -1,0 +1,113 @@
+/* Confirmación de la solicitud enviada. */
+
+.request-success {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 2.2rem;
+  border-top: 6px solid var(--llamma-cyan);
+}
+
+.success-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 3.1rem;
+  height: 3.1rem;
+  margin-bottom: 0.9rem;
+  border-radius: 50%;
+  background: rgba(var(--llamma-cyan-rgb), 0.12);
+  color: var(--llamma-cyan-deep);
+  font-size: 1.5rem;
+}
+
+.request-success h2 {
+  margin: 0.35rem 0 0.6rem;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+}
+
+.request-success-lead {
+  max-width: 46rem;
+  margin-bottom: 1.4rem;
+  color: var(--llamma-muted);
+  font-size: 0.86rem;
+  line-height: 1.65;
+}
+
+.folio-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.4rem;
+  border: 1px dashed #cfcdc5;
+  border-radius: 0.85rem;
+  background: #fbfaf7;
+}
+
+.folio-box span {
+  display: block;
+  color: var(--llamma-muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.folio-box strong {
+  display: block;
+  font-family: var(--llamma-font-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
+}
+
+.request-success-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  padding: 1rem 0 1.4rem;
+}
+
+.request-success-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.request-success-grid strong {
+  font-size: 0.85rem;
+}
+
+.success-lines {
+  padding-bottom: 1.3rem;
+}
+
+.success-lines .cart-list {
+  margin-top: 0.5rem;
+}
+
+.success-message {
+  margin: 0.9rem 0 0;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--llamma-cyan);
+  background: #fbfaf7;
+  color: var(--llamma-muted);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 991.98px) {
+  .request-success-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .request-success {
+    padding: 1.4rem;
+  }
+
+  .request-success-grid {
+    grid-template-columns: 1fr;
+  }
+}

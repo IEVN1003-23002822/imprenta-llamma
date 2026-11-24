@@ -1,180 +1,422 @@
-<div class="ink-strip" aria-hidden="true"></div>
+<div class="flex min-h-screen flex-col">
+  <a
+    class="fixed left-3 top-3 z-[2000] -translate-y-[160%] rounded-lg bg-[var(--llamma-carbon)] px-4 py-[0.6rem] font-semibold text-white transition-transform duration-[180ms] focus-visible:translate-y-0 focus-visible:text-white focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--llamma-yellow)]"
+    href="#contenido"
+    >Saltar al contenido principal</a
+  >
+  <div
+    class="h-[5px] bg-[linear-gradient(90deg,var(--llamma-cyan)_0_25%,var(--llamma-magenta)_25%_50%,var(--llamma-yellow)_50%_75%,var(--llamma-carbon)_75%_100%)]"
+    aria-hidden="true"
+  ></div>
 
-<nav class="navbar navbar-expand-lg navbar-dark navbar-llamma sticky-top">
-  <div class="container">
-    <a class="navbar-brand brand-lockup" routerLink="/" aria-label="Llamma, ir al inicio">
-      <img
-        class="brand-logo"
-        src="assets/images/logo-llamma.png"
-        alt="Imprenta Llamma Logo"
-        width="31"
-        height="44"
-      >
-      <span class="brand-text">
-        <strong>LLAMMA</strong>
-        <small>Imprimimos tus ideas</small>
-      </span>
-    </a>
-
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#llammaNav"
-      aria-controls="llammaNav"
-      aria-expanded="false"
-      aria-label="Abrir menú de navegación"
+  <nav
+    class="relative flex flex-wrap items-center justify-between lg:flex-nowrap lg:justify-start border-b border-white/[0.08] bg-[rgba(26,26,26,0.97)] py-[0.9rem] backdrop-blur-[16px] sticky top-0 z-[1020]"
+  >
+    <div
+      class="mx-auto flex w-full flex-wrap items-center justify-between px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
     >
-      <span class="navbar-toggler-icon"></span>
-    </button>
+      <a
+        class="mr-4 whitespace-nowrap py-0 text-xl no-underline inline-flex items-center gap-[0.8rem]"
+        routerLink="/"
+        aria-label="Llamma, ir al inicio"
+      >
+        <img
+          class="block h-11 w-auto flex-none drop-shadow-[0_5px_12px_rgba(0,0,0,0.3)]"
+          src="assets/images/logo-llamma-128.webp"
+          srcset="assets/images/logo-llamma-128.webp 2x, assets/images/logo-llamma-256.webp 4x"
+          alt="Imprenta Llamma Logo"
+          width="31"
+          height="44"
+        />
+        <span
+          class="flex flex-col [&_small]:mt-[0.32rem] [&_small]:text-[0.57rem] [&_small]:font-semibold [&_small]:uppercase [&_small]:leading-none [&_small]:tracking-[0.16em] [&_small]:text-white/[0.50] [&_strong]:font-[family-name:var(--llamma-font-display)] [&_strong]:text-[1.15rem] [&_strong]:leading-none [&_strong]:tracking-[0.22em] [&_strong]:text-white"
+        >
+          <strong>LLAMMA</strong>
+          <small>Imprimimos tus ideas</small>
+        </span>
+      </a>
 
-    <div class="collapse navbar-collapse" id="llammaNav">
-      <ul class="navbar-nav mx-auto mb-3 mb-lg-0">
-        @if (!auth.autenticado()) {
-          <li class="nav-item">
-            <a
-              class="nav-link"
-              routerLink="/"
-              routerLinkActive="active"
-              [routerLinkActiveOptions]="{ exact: true }"
-              >Inicio</a
-            >
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/productos" routerLinkActive="active">Catálogo</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/cotizar" routerLinkActive="active"
-              >Solicitar cotización</a
-            >
-          </li>
-        } @else {
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link nav-link-badge" routerLink="/solicitudes" routerLinkActive="active">
-              Solicitudes
-              @if (store.resumen().nuevas > 0) {
-                <span class="nav-count" [attr.aria-label]="store.resumen().nuevas + ' solicitudes nuevas'">
-                  {{ store.resumen().nuevas }}
-                </span>
-              }
-            </a>
-          </li>
-          @if (auth.tieneRol('admin', 'ventas')) {
-            <li class="nav-item">
-              <a class="nav-link" routerLink="/captura" routerLinkActive="active">Cotizador</a>
+      <button
+        class="rounded-md border border-white/20 bg-transparent px-[0.55rem] py-[0.4rem] text-xl leading-none text-white/[0.65] transition-shadow focus:shadow-[0_0_0_0.2rem_rgba(var(--llamma-cyan-rgb),0.25)] lg:hidden"
+        type="button"
+        (click)="alternarMenu()"
+        aria-controls="llammaNav"
+        [attr.aria-expanded]="menuAbierto()"
+        aria-label="Abrir menú de navegación"
+      >
+        <span
+          class="inline-flex h-[1.5em] w-[1.5em] flex-col justify-center gap-[0.28em]"
+          aria-hidden="true"
+          ><span class="h-0.5 w-full bg-white/[0.75]"></span
+          ><span class="h-0.5 w-full bg-white/[0.75]"></span
+          ><span class="h-0.5 w-full bg-white/[0.75]"></span
+        ></span>
+      </button>
+
+      <div
+        class="basis-full grow items-center lg:flex lg:basis-auto"
+        id="llammaNav"
+        [class.hidden]="!menuAbierto()"
+        [class.flex]="menuAbierto()"
+      >
+        <ul class="mx-auto mb-6 flex list-none flex-col p-0 lg:mb-0 lg:flex-row">
+          @if (!auth.autenticado()) {
+            <li>
+              <a
+                class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white"
+                routerLink="/"
+                routerLinkActive="bg-white/[0.075] text-white shadow-[inset_0_-2px_0_var(--llamma-cyan)]"
+                [routerLinkActiveOptions]="{ exact: true }"
+                [attr.aria-current]="esRuta('/') ? 'page' : null"
+                >Inicio</a
+              >
+            </li>
+            <li>
+              <a
+                class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white"
+                routerLink="/productos"
+                routerLinkActive="bg-white/[0.075] text-white shadow-[inset_0_-2px_0_var(--llamma-cyan)]"
+                [attr.aria-current]="esRuta('/productos') ? 'page' : null"
+                >Catálogo</a
+              >
+            </li>
+            <li>
+              <a
+                class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white"
+                routerLink="/cotizar"
+                routerLinkActive="bg-white/[0.075] text-white shadow-[inset_0_-2px_0_var(--llamma-cyan)]"
+                [attr.aria-current]="esRuta('/cotizar') ? 'page' : null"
+                >Solicitar cotización</a
+              >
+            </li>
+            <li>
+              <a
+                class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white"
+                routerLink="/seguimiento"
+                routerLinkActive="bg-white/[0.075] text-white shadow-[inset_0_-2px_0_var(--llamma-cyan)]"
+                [attr.aria-current]="esRuta('/seguimiento') ? 'page' : null"
+                >Seguimiento</a
+              >
+            </li>
+          } @else {
+            <li>
+              <a
+                class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white"
+                routerLink="/dashboard"
+                routerLinkActive="bg-white/[0.075] text-white shadow-[inset_0_-2px_0_var(--llamma-cyan)]"
+                [attr.aria-current]="esRuta('/dashboard') ? 'page' : null"
+                >Dashboard</a
+              >
+            </li>
+            <li>
+              <a
+                class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white inline-flex items-center gap-[0.4rem]"
+                routerLink="/solicitudes"
+                routerLinkActive="bg-white/[0.075] text-white shadow-[inset_0_-2px_0_var(--llamma-cyan)]"
+                [attr.aria-current]="esRuta('/solicitudes') ? 'page' : null"
+              >
+                Solicitudes
+                @if (store.resumen().nuevas > 0) {
+                  <span
+                    class="inline-grid h-[1.35rem] min-w-[1.35rem] place-items-center rounded-full bg-[var(--llamma-yellow)] px-[0.32rem] text-[0.62rem] font-extrabold leading-none text-[var(--llamma-carbon)]"
+                    [attr.aria-label]="store.resumen().nuevas + ' solicitudes nuevas'"
+                  >
+                    {{ store.resumen().nuevas }}
+                  </span>
+                }
+              </a>
+            </li>
+            @if (auth.tieneRol('admin', 'ventas')) {
+              <li>
+                <a
+                  class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white"
+                  routerLink="/captura"
+                  routerLinkActive="bg-white/[0.075] text-white shadow-[inset_0_-2px_0_var(--llamma-cyan)]"
+                  [attr.aria-current]="esRuta('/captura') ? 'page' : null"
+                  >Cotizador</a
+                >
+              </li>
+            }
+            <li class="relative">
+              <a
+                class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white whitespace-nowrap after:ml-[0.255em] after:inline-block after:border-x-[0.3em] after:border-t-[0.3em] after:border-x-transparent after:border-t-current after:align-[0.255em] after:content-['']"
+                href="#"
+                role="button"
+                (click)="alternarModulos($event)"
+                [attr.aria-expanded]="modulosAbiertos()"
+              >
+                Módulos
+              </a>
+              <ul
+                class="absolute left-0 top-full z-[1000] mt-[0.7rem] min-w-[10rem] list-none rounded-2xl border border-white/10 bg-[#232323] p-2 text-left shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+                [class.hidden]="!modulosAbiertos()"
+              >
+                @if (auth.tieneRol('admin', 'ventas', 'produccion')) {
+                  <li>
+                    <a
+                      class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
+                      routerLink="/detalle"
+                      [attr.aria-current]="esRuta('/detalle') ? 'page' : null"
+                      ><i class="bi bi-receipt"></i> Detalle de órdenes</a
+                    >
+                  </li>
+                }
+                <li>
+                  <a
+                    class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
+                    routerLink="/consultas"
+                    [attr.aria-current]="esRuta('/consultas') ? 'page' : null"
+                    ><i class="bi bi-funnel"></i> Consultas</a
+                  >
+                </li>
+                @if (auth.tieneRol('admin', 'inventario', 'produccion')) {
+                  <li>
+                    <a
+                      class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
+                      routerLink="/inventario"
+                      [attr.aria-current]="esRuta('/inventario') ? 'page' : null"
+                      ><i class="bi bi-box-seam"></i> Inventario</a
+                    >
+                  </li>
+                }
+                @if (auth.tieneRol('admin', 'inventario')) {
+                  <li>
+                    <a
+                      class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
+                      routerLink="/abastecimiento"
+                      [attr.aria-current]="esRuta('/abastecimiento') ? 'page' : null"
+                      ><i class="bi bi-cart-plus"></i> Abastecimiento</a
+                    >
+                  </li>
+                }
+                @if (auth.tieneRol('admin', 'produccion')) {
+                  <li>
+                    <a
+                      class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
+                      routerLink="/produccion"
+                      [attr.aria-current]="esRuta('/produccion') ? 'page' : null"
+                      ><i class="bi bi-gear-wide-connected"></i> Producción</a
+                    >
+                  </li>
+                }
+                @if (auth.tieneRol('admin', 'ventas', 'marketing')) {
+                  <li>
+                    <a
+                      class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
+                      routerLink="/clientes"
+                      [attr.aria-current]="esRuta('/clientes') ? 'page' : null"
+                      ><i class="bi bi-people"></i> Clientes</a
+                    >
+                  </li>
+                }
+                @if (modulosVisibles.marketing && auth.tieneRol('admin', 'marketing')) {
+                  <li>
+                    <a
+                      class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
+                      routerLink="/marketing"
+                      [attr.aria-current]="esRuta('/marketing') ? 'page' : null"
+                      ><i class="bi bi-megaphone"></i> Marketing</a
+                    >
+                  </li>
+                }
+                <li><hr class="my-2 h-0 overflow-hidden border-t border-white/10 opacity-25" /></li>
+                <li>
+                  <a
+                    class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
+                    routerLink="/"
+                    target="_self"
+                    ><i class="bi bi-globe2"></i> Ver sitio público</a
+                  >
+                </li>
+              </ul>
             </li>
           }
-          <li class="nav-item dropdown">
-            <a
-              class="nav-link dropdown-toggle"
-              href="#"
-              role="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              Módulos
-            </a>
-            <ul class="dropdown-menu dropdown-menu-llamma">
-              @if (auth.tieneRol('admin', 'ventas', 'produccion')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/detalle"
-                    ><i class="bi bi-receipt"></i> Detalle de órdenes</a
-                  >
-                </li>
-              }
-              <li>
-                <a class="dropdown-item" routerLink="/consultas"
-                  ><i class="bi bi-funnel"></i> Consultas</a
-                >
-              </li>
-              @if (auth.tieneRol('admin', 'inventario', 'produccion')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/inventario"
-                    ><i class="bi bi-box-seam"></i> Inventario</a
-                  >
-                </li>
-              }
-              @if (auth.tieneRol('admin', 'inventario')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/abastecimiento"
-                    ><i class="bi bi-cart-plus"></i> Abastecimiento</a
-                  >
-                </li>
-              }
-              @if (auth.tieneRol('admin', 'produccion')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/produccion"
-                    ><i class="bi bi-gear-wide-connected"></i> Producción</a
-                  >
-                </li>
-              }
-              @if (auth.tieneRol('admin', 'ventas', 'marketing')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/clientes"
-                    ><i class="bi bi-people"></i> Clientes</a
-                  >
-                </li>
-              }
-              @if (auth.tieneRol('admin', 'marketing')) {
-                <li>
-                  <a class="dropdown-item" routerLink="/marketing"
-                    ><i class="bi bi-megaphone"></i> Marketing</a
-                  >
-                </li>
-              }
-              <li><hr class="dropdown-divider" /></li>
-              <li>
-                <a class="dropdown-item" routerLink="/" target="_self"
-                  ><i class="bi bi-globe2"></i> Ver sitio público</a
-                >
-              </li>
-            </ul>
-          </li>
-        }
-      </ul>
+        </ul>
 
-      <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-lg-center gap-2">
-        @if (!auth.autenticado()) {
-          <a class="btn btn-sm btn-outline-light-soft" routerLink="/login">
-            <i class="bi bi-shield-lock"></i> Acceso equipo
-          </a>
-        } @else {
-          <div class="user-chip">
-            <span class="user-avatar">{{ iniciales }}</span>
-            <span class="user-meta">
-              <strong>{{ auth.nombre() }}</strong>
-              <small>{{ auth.rol() }}</small>
-            </span>
-          </div>
-          <button class="btn btn-sm btn-outline-light-soft" type="button" (click)="cerrarSesion()">
-            <i class="bi bi-box-arrow-right"></i> Salir
-          </button>
-        }
+        <div class="flex flex-col sm:flex-row items-stretch lg:items-center gap-2">
+          @if (!auth.autenticado()) {
+            <a
+              class="inline-block cursor-pointer select-none rounded px-2! py-1! text-center align-middle text-sm! font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-white/20 bg-transparent text-[0.88rem] text-white/[0.86] hover:border-white/50 hover:bg-white/[0.09] hover:text-white"
+              routerLink="/login"
+            >
+              <i class="bi bi-shield-lock"></i> Acceso equipo
+            </a>
+          } @else {
+            <div
+              class="flex items-center gap-[0.55rem] rounded-full border border-white/[0.16] bg-white/[0.06] py-[0.3rem] pl-[0.35rem] pr-[0.65rem] max-lg:self-start"
+            >
+              <span
+                class="grid h-8 w-8 place-items-center rounded-full bg-[var(--llamma-cyan)] font-[family-name:var(--llamma-font-display)] text-[0.68rem] font-bold text-[var(--llamma-carbon)]"
+                >{{ iniciales }}</span
+              >
+              <span
+                class="flex flex-col leading-[1.15] [&_small]:text-[0.58rem] [&_small]:font-semibold [&_small]:uppercase [&_small]:tracking-[0.06em] [&_small]:text-white/[0.55] [&_strong]:text-[0.72rem] [&_strong]:font-semibold [&_strong]:text-white"
+              >
+                <strong>{{ auth.nombre() }}</strong>
+                <small>{{ auth.rol() }}</small>
+              </span>
+            </div>
+            <button
+              class="inline-block cursor-pointer select-none rounded px-2! py-1! text-center align-middle text-sm! font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-white/20 bg-transparent text-[0.88rem] text-white/[0.86] hover:border-white/50 hover:bg-white/[0.09] hover:text-white"
+              type="button"
+              (click)="cerrarSesion()"
+            >
+              <i class="bi bi-box-arrow-right"></i> Salir
+            </button>
+          }
+        </div>
       </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<main class="app-main">
-  <router-outlet />
-</main>
+  <main id="contenido" class="flex-1" tabindex="-1">
+    <router-outlet />
+  </main>
 
-<div class="toast-stack" aria-live="polite" aria-atomic="true">
-  @for (toast of ui.toasts(); track toast.id) {
-    <div class="app-toast" [class]="'app-toast app-toast-' + toast.tipo" role="status">
-      <i
-        class="bi"
-        [class.bi-check-circle-fill]="toast.tipo === 'success'"
-        [class.bi-exclamation-octagon-fill]="toast.tipo === 'error'"
-        [class.bi-info-circle-fill]="toast.tipo === 'info'"
-      ></i>
-      <span>{{ toast.mensaje }}</span>
-      <button type="button" aria-label="Cerrar notificación" (click)="ui.cerrar(toast.id)">
-        <i class="bi bi-x-lg"></i>
-      </button>
-    </div>
+  @if (!auth.autenticado()) {
+    <footer
+      class="relative mt-12 bg-[var(--llamma-carbon)] pb-[1.4rem] pt-12 text-white/[0.72] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,var(--llamma-cyan)_0%,var(--llamma-magenta)_55%,var(--llamma-yellow)_100%)] before:content-[''] max-[575.98px]:mt-8 max-[575.98px]:pt-[2.2rem]"
+    >
+      <div
+        class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+      >
+        <h2 class="sr-only">Información de Llamma</h2>
+
+        <div
+          class="grid grid-cols-[1.5fr_1fr_1fr_1.1fr] gap-8 max-[991.98px]:grid-cols-2 max-[575.98px]:grid-cols-1 max-[575.98px]:gap-[1.4rem]"
+        >
+          <div
+            class="max-[991.98px]:col-span-full [&_p]:mb-[1.2rem] [&_p]:max-w-[23rem] [&_p]:text-[0.85rem] [&_p]:leading-[1.65] [&_p]:text-white/[0.64]"
+          >
+            <span class="inline-flex items-center gap-[0.8rem]">
+              <img
+                class="block h-11 w-auto flex-none drop-shadow-[0_5px_12px_rgba(0,0,0,0.3)]"
+                src="assets/images/logo-llamma-128.webp"
+                srcset="
+                  assets/images/logo-llamma-128.webp 2x,
+                  assets/images/logo-llamma-256.webp 4x
+                "
+                alt="Imprenta Llamma"
+                width="31"
+                height="44"
+              />
+              <span
+                class="flex flex-col [&_small]:mt-[0.32rem] [&_small]:text-[0.57rem] [&_small]:font-semibold [&_small]:uppercase [&_small]:leading-none [&_small]:tracking-[0.16em] [&_small]:text-white/[0.50] [&_strong]:font-[family-name:var(--llamma-font-display)] [&_strong]:text-[1.15rem] [&_strong]:leading-none [&_strong]:tracking-[0.22em] [&_strong]:text-white"
+              >
+                <strong>LLAMMA</strong>
+                <small>{{ site.lema }}</small>
+              </span>
+            </span>
+
+            <p>{{ site.descripcion }}</p>
+
+            <a
+              class="inline-block cursor-pointer select-none rounded px-2! py-1! text-center align-middle text-sm! font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+              routerLink="/cotizar"
+            >
+              Cotizar mi proyecto <i class="bi bi-arrow-up-right"></i>
+            </a>
+          </div>
+
+          <nav
+            class="[&_a]:flex [&_a]:items-center [&_a]:gap-[0.45rem] [&_a]:py-[0.22rem] [&_a]:text-[0.83rem] [&_a]:leading-[1.5] [&_a]:text-white/[0.72] [&_a:hover]:text-[var(--llamma-cyan)] [&_a_i]:text-[0.9rem] [&_a_i]:text-[var(--llamma-cyan)] [&_span]:flex [&_span]:items-center [&_span]:gap-[0.45rem] [&_span]:py-[0.22rem] [&_span]:text-[0.83rem] [&_span]:leading-[1.5] [&_span]:text-white/[0.72] [&_span_i]:text-[0.9rem] [&_span_i]:text-[var(--llamma-cyan)]"
+            aria-label="Explorar el sitio"
+          >
+            <p
+              class="mb-[0.7rem] font-[family-name:var(--llamma-font-display)] text-[0.72rem] font-bold uppercase tracking-[0.12em] text-white"
+            >
+              Explorar
+            </p>
+            <a routerLink="/">Inicio</a>
+            <a routerLink="/" fragment="nuestros-productos">Nuestros productos</a>
+            <a routerLink="/productos">Catálogo</a>
+            <a routerLink="/cotizar">Solicitar cotización</a>
+            <a routerLink="/seguimiento">Seguimiento de solicitud</a>
+          </nav>
+
+          <nav
+            class="[&_a]:flex [&_a]:items-center [&_a]:gap-[0.45rem] [&_a]:py-[0.22rem] [&_a]:text-[0.83rem] [&_a]:leading-[1.5] [&_a]:text-white/[0.72] [&_a:hover]:text-[var(--llamma-cyan)] [&_a_i]:text-[0.9rem] [&_a_i]:text-[var(--llamma-cyan)] [&_span]:flex [&_span]:items-center [&_span]:gap-[0.45rem] [&_span]:py-[0.22rem] [&_span]:text-[0.83rem] [&_span]:leading-[1.5] [&_span]:text-white/[0.72] [&_span_i]:text-[0.9rem] [&_span_i]:text-[var(--llamma-cyan)]"
+            aria-label="Acceso del equipo"
+          >
+            <p
+              class="mb-[0.7rem] font-[family-name:var(--llamma-font-display)] text-[0.72rem] font-bold uppercase tracking-[0.12em] text-white"
+            >
+              Equipo
+            </p>
+            <a routerLink="/login">Acceso al panel</a>
+            <a routerLink="/aviso-privacidad">Aviso de privacidad</a>
+          </nav>
+
+          <div
+            class="[&_a]:flex [&_a]:items-center [&_a]:gap-[0.45rem] [&_a]:py-[0.22rem] [&_a]:text-[0.83rem] [&_a]:leading-[1.5] [&_a]:text-white/[0.72] [&_a:hover]:text-[var(--llamma-cyan)] [&_a_i]:text-[0.9rem] [&_a_i]:text-[var(--llamma-cyan)] [&_span]:flex [&_span]:items-center [&_span]:gap-[0.45rem] [&_span]:py-[0.22rem] [&_span]:text-[0.83rem] [&_span]:leading-[1.5] [&_span]:text-white/[0.72] [&_span_i]:text-[0.9rem] [&_span_i]:text-[var(--llamma-cyan)]"
+          >
+            <p
+              class="mb-[0.7rem] font-[family-name:var(--llamma-font-display)] text-[0.72rem] font-bold uppercase tracking-[0.12em] text-white"
+            >
+              Contacto
+            </p>
+            <a [href]="'mailto:' + site.correo">
+              <i class="bi bi-envelope"></i> {{ site.correo }}
+            </a>
+            @if (site.telefono) {
+              <a [href]="'tel:' + site.telefono">
+                <i class="bi bi-telephone"></i> {{ site.telefono }}
+              </a>
+            }
+            @if (site.whatsapp) {
+              <a [href]="'https://wa.me/' + site.whatsapp" target="_blank" rel="noopener">
+                <i class="bi bi-whatsapp"></i> WhatsApp
+              </a>
+            }
+            @if (site.direccion) {
+              <span> <i class="bi bi-geo-alt"></i> {{ site.direccion }} </span>
+            }
+            @if (site.horario) {
+              <span> <i class="bi bi-clock"></i> {{ site.horario }} </span>
+            }
+          </div>
+        </div>
+
+        <div
+          class="mt-[2.4rem] flex flex-wrap justify-between gap-2 border-t border-white/[0.12] pt-4 text-[0.72rem] text-white/[0.50]"
+        >
+          <span>© {{ anio }} {{ site.nombre }}. Todos los derechos reservados.</span>
+          <span>Hecho en México · CMYK</span>
+        </div>
+      </div>
+    </footer>
   }
+
+  <div
+    class="pointer-events-none fixed bottom-[1.1rem] right-[1.1rem] z-[1090] flex max-w-[min(26rem,calc(100vw-2.2rem))] flex-col gap-[0.6rem]"
+    aria-live="polite"
+    aria-atomic="true"
+  >
+    @for (toast of ui.toasts(); track toast.id) {
+      <div
+        class="pointer-events-auto flex animate-[toast-in_0.22s_ease-out] items-start gap-[0.65rem] rounded-[var(--llamma-radius-sm)] border border-[var(--llamma-line)] border-l-4 bg-white px-[0.9rem] py-3 text-[0.82rem] leading-[1.35] text-[var(--llamma-carbon)] shadow-[var(--llamma-shadow)] [&>button]:border-0 [&>button]:bg-transparent [&>button]:p-0 [&>button]:leading-none [&>button]:text-[var(--llamma-muted)] [&>i]:mt-[0.1rem] [&>i]:text-base [&>span]:min-w-0 [&>span]:flex-1"
+        [class]="
+          toast.tipo === 'success'
+            ? 'border-l-[#1f9d63] [&>i]:text-[#1f9d63]'
+            : toast.tipo === 'error'
+              ? 'border-l-[#d4294f] [&>i]:text-[#d4294f]'
+              : 'border-l-[var(--llamma-cyan)] [&>i]:text-[var(--llamma-cyan)]'
+        "
+        role="status"
+      >
+        <i
+          class="bi"
+          [class.bi-check-circle-fill]="toast.tipo === 'success'"
+          [class.bi-exclamation-octagon-fill]="toast.tipo === 'error'"
+          [class.bi-info-circle-fill]="toast.tipo === 'info'"
+        ></i>
+        <span>{{ toast.mensaje }}</span>
+        <button type="button" aria-label="Cerrar notificación" (click)="ui.cerrar(toast.id)">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    }
+  </div>
+
+  <app-confirmacion-dialog />
 </div>

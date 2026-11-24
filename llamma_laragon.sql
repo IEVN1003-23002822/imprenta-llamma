@@ -46,6 +46,8 @@ CREATE TABLE `actividades_marketing` (
   `actualizado_en` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `creado_por` (`creado_por`),
+  KEY `ix_actividades_marketing_estado` (`estado`),
+  KEY `ix_actividades_marketing_fecha_inicio` (`fecha_inicio`),
   CONSTRAINT `actividades_marketing_ibfk_1` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -81,7 +83,9 @@ CREATE TABLE `clientes` (
   `creado_en` datetime NOT NULL,
   `actualizado_en` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `ix_clientes_correo` (`correo`)
+  UNIQUE KEY `ix_clientes_correo` (`correo`),
+  KEY `ix_clientes_nombre` (`nombre`),
+  KEY `ix_clientes_segmento` (`segmento`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -191,6 +195,9 @@ CREATE TABLE `cotizaciones` (
   KEY `solicitud_id` (`solicitud_id`),
   KEY `cliente_id` (`cliente_id`),
   KEY `usuario_id` (`usuario_id`),
+  KEY `ix_cotizaciones_estado` (`estado`),
+  KEY `ix_cotizaciones_fecha_emision` (`fecha_emision`),
+  KEY `ix_cotizaciones_creado_en` (`creado_en`),
   CONSTRAINT `cotizaciones_ibfk_1` FOREIGN KEY (`solicitud_id`) REFERENCES `solicitudes_cotizacion` (`id`),
   CONSTRAINT `cotizaciones_ibfk_2` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`),
   CONSTRAINT `cotizaciones_ibfk_3` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
@@ -229,6 +236,9 @@ CREATE TABLE `materias_primas` (
   `actualizado_en` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `proveedor_id` (`proveedor_id`),
+  KEY `ix_materias_primas_nombre` (`nombre`),
+  KEY `ix_materias_primas_categoria` (`categoria`),
+  KEY `ix_materias_primas_activo_categoria` (`activo`,`categoria`),
   CONSTRAINT `materias_primas_ibfk_1` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -301,6 +311,8 @@ CREATE TABLE `movimientos_inventario` (
   PRIMARY KEY (`id`),
   KEY `usuario_id` (`usuario_id`),
   KEY `ix_movimientos_inventario_materia_prima_id` (`materia_prima_id`),
+  KEY `ix_movimientos_inventario_tipo` (`tipo`),
+  KEY `ix_movimientos_inventario_creado_en` (`creado_en`),
   CONSTRAINT `movimientos_inventario_ibfk_1` FOREIGN KEY (`materia_prima_id`) REFERENCES `materias_primas` (`id`),
   CONSTRAINT `movimientos_inventario_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -374,6 +386,9 @@ CREATE TABLE `ordenes_compra` (
   UNIQUE KEY `ix_ordenes_compra_folio` (`folio`),
   KEY `proveedor_id` (`proveedor_id`),
   KEY `creado_por` (`creado_por`),
+  KEY `ix_ordenes_compra_estado` (`estado`),
+  KEY `ix_ordenes_compra_fecha_emision` (`fecha_emision`),
+  KEY `ix_ordenes_compra_creado_en` (`creado_en`),
   CONSTRAINT `ordenes_compra_ibfk_1` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`),
   CONSTRAINT `ordenes_compra_ibfk_2` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -411,6 +426,8 @@ CREATE TABLE `ordenes_produccion` (
   UNIQUE KEY `pedido_id` (`pedido_id`),
   KEY `responsable_id` (`responsable_id`),
   KEY `ix_ordenes_produccion_estado` (`estado`),
+  KEY `ix_ordenes_produccion_etapa` (`etapa`),
+  KEY `ix_ordenes_produccion_creado_en` (`creado_en`),
   CONSTRAINT `ordenes_produccion_ibfk_1` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id`) ON DELETE CASCADE,
   CONSTRAINT `ordenes_produccion_ibfk_2` FOREIGN KEY (`responsable_id`) REFERENCES `usuarios` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -446,6 +463,7 @@ CREATE TABLE `pagos` (
   PRIMARY KEY (`id`),
   KEY `registrado_por` (`registrado_por`),
   KEY `ix_pagos_pedido_id` (`pedido_id`),
+  KEY `ix_pagos_fecha_pago` (`fecha_pago`),
   CONSTRAINT `pagos_ibfk_1` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id`) ON DELETE CASCADE,
   CONSTRAINT `pagos_ibfk_2` FOREIGN KEY (`registrado_por`) REFERENCES `usuarios` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -527,6 +545,9 @@ CREATE TABLE `pedidos` (
   KEY `cliente_id` (`cliente_id`),
   KEY `creado_por` (`creado_por`),
   KEY `ix_pedidos_estado` (`estado`),
+  KEY `ix_pedidos_fecha_pedido` (`fecha_pedido`),
+  KEY `ix_pedidos_creado_en` (`creado_en`),
+  KEY `ix_pedidos_estado_fecha` (`estado`,`fecha_pedido`),
   CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`cotizacion_id`) REFERENCES `cotizaciones` (`id`),
   CONSTRAINT `pedidos_ibfk_2` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`),
   CONSTRAINT `pedidos_ibfk_3` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`)
@@ -621,12 +642,16 @@ CREATE TABLE `productos` (
   `precio_base` decimal(12,2) NOT NULL,
   `unidad_venta` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
   `icono` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `imagen_url` varchar(300) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `publicado` tinyint(1) NOT NULL,
   `activo` tinyint(1) NOT NULL,
   `creado_en` datetime NOT NULL,
   `actualizado_en` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `nombre` (`nombre`)
+  UNIQUE KEY `nombre` (`nombre`),
+  KEY `ix_productos_categoria` (`categoria`),
+  KEY `ix_productos_linea_produccion` (`linea_produccion`),
+  KEY `ix_productos_catalogo` (`activo`,`publicado`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -636,7 +661,7 @@ CREATE TABLE `productos` (
 
 LOCK TABLES `productos` WRITE;
 /*!40000 ALTER TABLE `productos` DISABLE KEYS */;
-INSERT INTO `productos` VALUES (1,'Roll-up premium 85 × 200 cm','Display enrollable con lona Frontlit, estructura de aluminio y estuche.','display','gran-formato',3850.00,'pieza','bi-easel2',1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(2,'Lona Frontlit impresa','Impresión gran formato CMYK con acabado mate o brillante por m².','display','gran-formato',320.00,'m2','bi-bounding-box',1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(3,'Playera DTF unisex','Camiseta de algodón con estampado DTF a todo color, frente y espalda.','textil','textil',210.00,'pieza','bi-person-standing-dress',1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(4,'Tote bag de manta','Bolsa de manta 35 × 40 cm con asa reforzada y estampado DTF.','promocional','promocionales',110.00,'pieza','bi-bag-heart',1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(5,'Taza cerámica sublimada','Taza de 11 oz con sublimación full color y caja individual.','promocional','promocionales',95.00,'pieza','bi-cup-hot',1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(6,'Sticker troquelado','Vinil adhesivo brillante con corte de precisión, 8 × 8 cm.','promocional','promocionales',35.00,'pieza','bi-stickies',1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(7,'Tarjetas Couché 300g','Paquete de 100 tarjetas de presentación en Couché 300g con laminado mate.','papeleria','papeleria',850.00,'pieza','bi-postcard',1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23');
+INSERT INTO `productos` VALUES (1,'Roll-up premium 85 × 200 cm','Display enrollable con lona Frontlit, estructura de aluminio y estuche.','display','gran-formato',3850.00,'pieza','bi-easel2',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(2,'Lona Frontlit impresa','Impresión gran formato CMYK con acabado mate o brillante por m².','display','gran-formato',320.00,'m2','bi-bounding-box',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(3,'Playera DTF unisex','Camiseta de algodón con estampado DTF a todo color, frente y espalda.','textil','textil',210.00,'pieza','bi-person-standing-dress',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(4,'Tote bag de manta','Bolsa de manta 35 × 40 cm con asa reforzada y estampado DTF.','promocional','promocionales',110.00,'pieza','bi-bag-heart',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(5,'Taza cerámica sublimada','Taza de 11 oz con sublimación full color y caja individual.','promocional','promocionales',95.00,'pieza','bi-cup-hot',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(6,'Sticker troquelado','Vinil adhesivo brillante con corte de precisión, 8 × 8 cm.','promocional','promocionales',35.00,'pieza','bi-stickies',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(7,'Tarjetas Couché 300g','Paquete de 100 tarjetas de presentación en Couché 300g con laminado mate.','papeleria','papeleria',850.00,'pieza','bi-postcard',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23');
 /*!40000 ALTER TABLE `productos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -918,6 +943,7 @@ CREATE TABLE `solicitudes_cotizacion` (
   KEY `atendido_por` (`atendido_por`),
   KEY `ix_solicitudes_cotizacion_correo` (`correo`),
   KEY `ix_solicitudes_cotizacion_estado` (`estado`),
+  KEY `ix_solicitudes_cotizacion_creado_en` (`creado_en`),
   CONSTRAINT `solicitudes_cotizacion_ibfk_1` FOREIGN KEY (`atendido_por`) REFERENCES `usuarios` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

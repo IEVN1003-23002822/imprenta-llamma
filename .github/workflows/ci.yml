@@ -1,0 +1,40 @@
+name: Calidad
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: calidad-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Formato, lint, pruebas y build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Revisar formato
+        run: npm run format:check
+
+      - name: Revisar lint
+        run: npm run lint
+
+      - name: Ejecutar pruebas unitarias
+        run: npm test -- --watch=false
+
+      - name: Compilar para producción
+        run: npm run build

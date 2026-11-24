@@ -1,0 +1,82 @@
+<section class="panel-card request-success">
+  <span class="success-mark"><i class="bi bi-check2-circle"></i></span>
+  <span class="eyebrow">Solicitud recibida</span>
+  <h2>¡Gracias, {{ solicitud()?.nombreCliente }}!</h2>
+  <p class="request-success-lead">
+    Tu solicitud ya está en la bandeja del equipo de Llamma. Te contactaremos al
+    {{ solicitud()?.correo }} con una cotización formal.
+  </p>
+
+  <div class="folio-box">
+    <div>
+      <span>Tu folio de seguimiento</span>
+      <strong>{{ folio() }}</strong>
+    </div>
+    <button class="btn btn-outline-ink btn-sm" type="button" (click)="copiar.emit()">
+      <i class="bi" [class.bi-clipboard]="!copiado()" [class.bi-clipboard-check]="copiado()"></i>
+      {{ copiado() ? 'Copiado' : 'Copiar folio' }}
+    </button>
+  </div>
+
+  <div class="request-success-grid">
+    <div>
+      <span class="panel-kicker">Partidas</span>
+      <strong>{{ totalPiezas() }} piezas / unidades</strong>
+    </div>
+    <div>
+      <span class="panel-kicker">Estimado referencial</span>
+      <strong>{{ moneda(totalConIva()) }} <small>IVA incluido</small></strong>
+    </div>
+    <div>
+      <span class="panel-kicker">Fecha deseada</span>
+      <strong>{{ fecha(solicitud()?.fechaDeseada) }}</strong>
+    </div>
+    <div>
+      <span class="panel-kicker">Estatus</span>
+      <span class="badge badge-soft-cyan">Recibida</span>
+    </div>
+  </div>
+
+  <div class="success-lines">
+    <span class="panel-kicker">Detalle de tu solicitud</span>
+    @if (partidas().length) {
+      <div class="cart-list">
+        @for (item of partidas(); track $index) {
+          <div class="cart-row">
+            <span class="cart-index">{{ $index + 1 }}</span>
+            <div class="grow min-w-0">
+              <strong>{{ item.nombreProducto }}</strong>
+              <small>
+                {{ item.cantidad }} ×
+                {{ item.especificaciones || 'Especificaciones por confirmar' }}
+              </small>
+            </div>
+            @if (item.precioEstimado !== null && item.precioEstimado !== undefined) {
+              <strong class="cart-amount">{{ moneda(item.precioEstimado) }}</strong>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="success-message">
+        Tu solicitud se registró con la descripción del proyecto. El equipo revisará los detalles y
+        te contactará con la propuesta.
+      </p>
+    }
+    @if (solicitud()?.mensaje) {
+      <p class="success-message">{{ solicitud()?.mensaje }}</p>
+    }
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    <a class="btn btn-brand" routerLink="/seguimiento" [queryParams]="{ folio: folio(), correo }">
+      <i class="bi bi-search"></i> Consultar estatus
+    </a>
+    <button class="btn btn-yellow" type="button" (click)="descargar.emit()">
+      <i class="bi bi-download"></i> Descargar comprobante
+    </button>
+    <button class="btn btn-outline-ink" type="button" (click)="nueva.emit()">
+      <i class="bi bi-plus-lg"></i> Enviar otra solicitud
+    </button>
+  </div>
+</section>

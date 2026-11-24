@@ -1,0 +1,669 @@
+<div class="pt-[2.75rem] pb-[5.5rem]">
+  <div
+    class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+  >
+    <header
+      class="mb-[2.2rem] [&_h1]:mb-[0.65rem] [&_h1]:text-[clamp(2.15rem,4.1vw,3.45rem)] [&_h1]:leading-[1.02] flex flex-wrap items-end justify-between gap-4"
+    >
+      <div>
+        <span
+          class="mb-[0.9rem] inline-flex items-center gap-[0.6rem] text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[var(--llamma-magenta)] before:h-1 before:w-[1.6rem] before:rounded-full before:bg-[linear-gradient(90deg,var(--llamma-cyan),var(--llamma-magenta)_60%,var(--llamma-yellow))] before:content-['']"
+          >Relación y seguimiento</span
+        >
+        <h1>Directorio de clientes.</h1>
+        <p class="mb-0 max-w-[44rem] text-base text-[var(--llamma-muted)]">
+          Segmentación, datos fiscales, historial de compras y notas de seguimiento para cada
+          cuenta. Todo el contexto comercial en un solo lugar.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button
+          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+          type="button"
+          (click)="exportar()"
+        >
+          <i class="bi bi-download"></i> Exportar
+        </button>
+        @if (puedeGestionar()) {
+          <button
+            class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+            type="button"
+            (click)="abrirNuevo()"
+          >
+            <i class="bi bi-person-plus"></i> Nuevo cliente
+          </button>
+        }
+      </div>
+    </header>
+
+    <div class="grid grid-cols-12 gap-4 mb-6">
+      @for (stat of estadisticas(); track stat.etiqueta) {
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+          <div
+            class="flex h-full items-center gap-[0.9rem] rounded-[var(--llamma-radius-sm)] border border-[var(--llamma-line)] bg-white p-[1rem_1.1rem] shadow-[var(--llamma-shadow-sm)] [&>div>span]:mt-1 [&>div>span]:block [&>div>span]:text-[0.7rem] [&>div>span]:font-medium [&>div>span]:text-[var(--llamma-muted)] [&_strong]:block [&_strong]:font-[family-name:var(--llamma-font-display)] [&_strong]:text-[1.3rem] [&_strong]:leading-none max-[575.98px]:p-[0.9rem]"
+          >
+            <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
+              <i class="bi" [class]="'bi ' + stat.icono"></i>
+            </span>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 xl:col-span-8">
+        <section
+          class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 h-full"
+        >
+          <div
+            class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em] flex-wrap"
+          >
+            <div>
+              <span
+                class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                >Base comercial</span
+              >
+              <h2>Clientes registrados</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[#e7f6ee] text-[#18794e]"
+                >{{ total() }} cuentas</span
+              >
+              @if (cargando()) {
+                <span
+                  class="inline-block h-4 w-4 animate-spin rounded-full border-[0.2em] border-current border-r-transparent align-[-0.125em] text-[var(--llamma-cyan-deep)]"
+                  aria-hidden="true"
+                ></span>
+              }
+            </div>
+          </div>
+
+          <form class="grid grid-cols-12 gap-2 mb-4" [formGroup]="filtros" (ngSubmit)="buscar()">
+            <div class="col-span-12 lg:col-span-6">
+              <div class="flex w-full flex-wrap items-stretch">
+                <span
+                  class="flex items-center whitespace-nowrap rounded-l-[0.72rem] border border-r-0 border-[var(--llamma-line)] bg-[#f2f1ec] px-3 py-1.5 text-[0.85rem] font-normal leading-normal text-[var(--llamma-muted)]"
+                  ><i class="bi bi-search"></i
+                ></span>
+                <input
+                  type="search"
+                  class="block min-h-[2.8rem] w-full min-w-0 flex-1 w-auto! -ml-px rounded-none! border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                  placeholder="Buscar cliente, empresa o RFC…"
+                  aria-label="Buscar cliente"
+                  formControlName="q"
+                />
+                <button
+                  class="inline-block cursor-pointer select-none whitespace-nowrap rounded-[0.72rem] rounded-l-none! rounded-r-[0.72rem]! -ml-px px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white"
+                  type="submit"
+                >
+                  Buscar
+                </button>
+              </div>
+            </div>
+            <div class="col-span-6 lg:col-span-3">
+              <select
+                class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                aria-label="Filtrar por segmento"
+                formControlName="segmento"
+              >
+                <option value="">Todos los segmentos</option>
+                @for (segmento of segmentos; track segmento.valor) {
+                  <option [value]="segmento.valor">{{ segmento.etiqueta }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-span-6 lg:col-span-3">
+              <div class="flex gap-2">
+                <select
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                  aria-label="Filtrar por estado"
+                  formControlName="estado"
+                >
+                  <option value="">Todo estado</option>
+                  <option value="activo">Activo</option>
+                  <option value="inactivo">Inactivo</option>
+                </select>
+                <button
+                  class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-transparent bg-[rgba(26,26,26,0.055)] text-[var(--llamma-carbon)] hover:border-[rgba(26,26,26,0.1)] hover:bg-[rgba(26,26,26,0.1)]"
+                  type="button"
+                  aria-label="Limpiar filtros"
+                  (click)="limpiar()"
+                >
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          @if (error()) {
+            <div
+              class="relative mb-4 rounded-md border p-4 border-[#f1aeb5] bg-[#f8d7da] text-[#58151c] flex items-center gap-2"
+              role="alert"
+            >
+              <i class="bi bi-exclamation-octagon-fill"></i>
+              <span class="grow">{{ error() }}</span>
+              <button
+                class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[#212529] text-[#212529] hover:bg-[#212529] hover:text-white"
+                type="button"
+                (click)="cargar(pagina())"
+              >
+                Reintentar
+              </button>
+            </div>
+          }
+
+          <div class="overflow-x-auto">
+            <table
+              class="w-full align-top mb-0 text-[var(--llamma-carbon)] [&>tbody>tr:hover]:bg-[#fbfaf7] [&>tbody>tr:last-child>td]:border-b-0 [&>tbody>tr>td]:border-b [&>tbody>tr>td]:border-[var(--llamma-line)] [&>tbody>tr>td]:bg-transparent [&>tbody>tr>td]:px-[1.1rem] [&>tbody>tr>td]:!px-[0.7rem] [&>tbody>tr>td]:py-[0.95rem] [&>tbody>tr>td]:shadow-none [&>thead>tr>th]:whitespace-nowrap [&>thead>tr>th]:border-b [&>thead>tr>th]:border-[var(--llamma-line)] [&>thead>tr>th]:bg-[#f8f7f3] [&>thead>tr>th]:px-[1.1rem] [&>thead>tr>th]:!px-[0.7rem] [&>thead>tr>th]:py-[0.8rem] [&>thead>tr>th]:text-[0.64rem] [&>thead>tr>th]:font-bold [&>thead>tr>th]:uppercase [&>thead>tr>th]:tracking-[0.1em] [&>thead>tr>th]:text-[#7b7c80] align-middle"
+            >
+              <caption class="sr-only">
+                Directorio de clientes
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Segmento</th>
+                  <th scope="col">Contacto</th>
+                  <th scope="col" class="text-center">Pedidos</th>
+                  <th scope="col">Alta</th>
+                  <th scope="col" class="text-right">Total</th>
+                  <th scope="col">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (cliente of clientes(); track cliente.id) {
+                  <tr
+                    role="button"
+                    [class.bg-cyan-50]="cliente.id === seleccionado()?.id"
+                    (click)="seleccionar(cliente)"
+                  >
+                    <td>
+                      <div class="client-cell">
+                        <span class="avatar" [class]="'avatar ' + avatar(cliente.id)">
+                          {{ iniciales(cliente.nombre) }}
+                        </span>
+                        <div>
+                          <strong>{{ cliente.nombre }}</strong>
+                          <small>{{ cliente.rfc ? 'RFC · ' + cliente.rfc : cliente.correo }}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                        [class]="claseSegmento(cliente.segmento)"
+                      >
+                        {{ etiquetaSegmento(cliente.segmento) }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="text-[0.85rem] font-semibold">{{ cliente.correo }}</div>
+                      <div class="mt-[0.15rem] text-[0.72rem] text-[var(--llamma-muted)]">
+                        {{ cliente.telefono || 'Sin teléfono' }}
+                      </div>
+                    </td>
+                    <td class="text-center">{{ cliente.totalPedidos ?? 0 }}</td>
+                    <td>{{ fechaCorta(cliente.fechaRegistro) }}</td>
+                    <td class="text-right text-[0.85rem] font-semibold">
+                      {{ moneda(cliente.totalFacturado) }}
+                    </td>
+                    <td>
+                      <span
+                        class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                        [class]="cliente.activo ? 'badge-soft-success' : 'badge-soft-muted'"
+                      >
+                        {{ cliente.activo ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="text-center text-[var(--llamma-muted)] py-12">
+                      <i class="bi bi-people block text-2xl mb-2"></i>
+                      No hay clientes con esos filtros.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <span>{{ rangoTexto() }}</span>
+            <nav aria-label="Paginación de clientes">
+              <ul class="mb-4 flex list-none p-0 text-[0.76rem]">
+                <li>
+                  <button
+                    class="relative block border border-[var(--llamma-line)] px-2 py-1 text-[var(--llamma-carbon)] no-underline transition hover:bg-[rgba(var(--llamma-magenta-rgb),0.06)] hover:text-[var(--llamma-magenta)] disabled:pointer-events-none disabled:opacity-40"
+                    type="button"
+                    aria-label="Anterior"
+                    [disabled]="pagina() <= 1"
+                    (click)="cargar(pagina() - 1)"
+                  >
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                </li>
+                @for (numero of listaPaginas(); track numero) {
+                  <li>
+                    <button [class]="clasePagina(numero)" type="button" (click)="cargar(numero)">
+                      {{ numero }}
+                    </button>
+                  </li>
+                }
+                <li>
+                  <button
+                    class="relative block border border-[var(--llamma-line)] px-2 py-1 text-[var(--llamma-carbon)] no-underline transition hover:bg-[rgba(var(--llamma-magenta-rgb),0.06)] hover:text-[var(--llamma-magenta)] disabled:pointer-events-none disabled:opacity-40"
+                    type="button"
+                    aria-label="Siguiente"
+                    [disabled]="pagina() >= paginas()"
+                    (click)="cargar(pagina() + 1)"
+                  >
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-span-12 xl:col-span-4">
+        @if (seleccionado(); as cliente) {
+          <section
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-carbon)] p-6 text-[rgba(255,255,255,0.68)] shadow-[var(--llamma-shadow)] max-[575.98px]:p-[1.2rem] mb-6"
+          >
+            <div
+              class="flex items-center gap-[0.9rem] border-b border-white/12 pb-[1.1rem] [&_h2]:mb-[0.35rem] [&_h2]:mt-[0.15rem] [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:text-white"
+            >
+              <span
+                class="grid h-[3.4rem] w-[3.4rem] flex-none place-items-center rounded-2xl bg-[rgba(var(--llamma-yellow-rgb),0.16)] font-[family-name:var(--llamma-font-display)] text-base font-bold text-[var(--llamma-yellow)]"
+                >{{ iniciales(cliente.nombre) }}</span
+              >
+              <div>
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)] !text-white/45"
+                  >Cliente seleccionado</span
+                >
+                <h2>{{ cliente.nombre }}</h2>
+                <span
+                  class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                  [class]="claseSegmento(cliente.segmento)"
+                >
+                  {{ etiquetaSegmento(cliente.segmento) }}
+                </span>
+              </div>
+            </div>
+
+            <ul
+              class="my-[1.05rem] grid list-none gap-[0.55rem] p-0 [&_i]:mt-[0.12rem] [&_i]:text-[var(--llamma-cyan)] [&_li]:flex [&_li]:items-start [&_li]:gap-2 [&_li]:text-[0.72rem]"
+            >
+              <li>
+                <i class="bi bi-building"></i> {{ cliente.empresa || 'Sin empresa registrada' }}
+              </li>
+              <li><i class="bi bi-envelope"></i> {{ cliente.correo }}</li>
+              <li><i class="bi bi-telephone"></i> {{ cliente.telefono || 'Sin teléfono' }}</li>
+              <li><i class="bi bi-geo-alt"></i> {{ cliente.direccion || 'Sin dirección' }}</li>
+            </ul>
+
+            <div
+              class="mb-4 grid grid-cols-3 gap-[0.4rem] border-y border-white/12 py-[0.8rem] text-center [&_span]:mt-[0.2rem] [&_span]:block [&_span]:text-[0.58rem] [&_span]:font-semibold [&_span]:uppercase [&_span]:tracking-[0.06em] [&_span]:text-white/45 [&_strong]:block [&_strong]:font-[family-name:var(--llamma-font-display)] [&_strong]:text-base [&_strong]:leading-none [&_strong]:text-white"
+            >
+              <div>
+                <strong>{{ cliente.totalPedidos ?? 0 }}</strong><span>Pedidos</span>
+              </div>
+              <div>
+                <strong>{{ moneda(cliente.totalFacturado) }}</strong><span>Facturado</span>
+              </div>
+              <div>
+                <strong>{{ ticket(cliente) }}</strong><span>Ticket</span>
+              </div>
+            </div>
+
+            <div
+              class="mb-[1.1rem] flex flex-wrap gap-[0.35rem] [&_span]:rounded-full [&_span]:border [&_span]:border-white/16 [&_span]:px-[0.55rem] [&_span]:py-[0.3rem] [&_span]:text-[0.62rem] [&_span]:font-semibold [&_span]:text-white/70"
+            >
+              <span>{{ etiquetaSegmento(cliente.segmento) }}</span>
+              <span>{{ cliente.activo ? 'Activo' : 'Inactivo' }}</span>
+              @if ((cliente.totalPedidos ?? 0) > 1) {
+                <span>Recurrente</span>
+              }
+            </div>
+
+            @if (puedeGestionar()) {
+              <button
+                class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] w-full"
+                type="button"
+                (click)="abrirEditar(cliente)"
+              >
+                <i class="bi bi-pencil-square"></i> Editar ficha
+              </button>
+            }
+            @if (puedeDesactivar() && cliente.activo) {
+              <button
+                class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white w-full mt-2"
+                type="button"
+                (click)="desactivar(cliente)"
+              >
+                <i class="bi bi-person-dash"></i> Desactivar cliente
+              </button>
+            }
+          </section>
+
+          <section
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 mb-6"
+          >
+            <div
+              class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em]"
+            >
+              <div>
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  >Seguimiento</span
+                >
+                <h2>Notas del expediente</h2>
+              </div>
+              <span
+                class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[rgba(26,26,26,0.06)] text-[var(--llamma-muted)]"
+                >{{ notas().length }}</span
+              >
+            </div>
+
+            <div class="grid gap-[0.9rem]">
+              @for (nota of notas(); track nota) {
+                <div
+                  class="flex items-start gap-[0.6rem] border-b border-dashed border-[var(--llamma-line)] pb-[0.9rem] last:border-0 last:pb-0 [&_p]:mb-0 [&_p]:mt-[0.18rem] [&_p]:text-[0.7rem] [&_p]:leading-[1.5] [&_p]:text-[var(--llamma-muted)] [&_small]:mt-1 [&_small]:block [&_small]:text-[0.62rem] [&_small]:text-[#9a9992] [&_strong]:block [&_strong]:text-[0.77rem] [&_strong]:font-semibold"
+                >
+                  <span class="mt-[0.35rem] h-2 w-2 flex-none rounded-full dot-cyan"></span>
+                  <div>
+                    <p>{{ nota }}</p>
+                  </div>
+                </div>
+              } @empty {
+                <p class="text-[var(--llamma-muted)] mb-0 text-[0.875em]">
+                  Este cliente todavía no tiene notas de seguimiento.
+                </p>
+              }
+            </div>
+
+            @if (puedeGestionar()) {
+              @if (!notaAbierta()) {
+                <button
+                  class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white w-full mt-4"
+                  type="button"
+                  (click)="notaAbierta.set(true)"
+                >
+                  <i class="bi bi-journal-plus"></i> Agregar nota
+                </button>
+              } @else {
+                <form class="mt-4" [formGroup]="notaForm" (ngSubmit)="agregarNota()">
+                  <textarea
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                    rows="2"
+                    placeholder="Escribe una nota de seguimiento…"
+                    aria-label="Nota de seguimiento del cliente"
+                    formControlName="nota"
+                  ></textarea>
+                  <div class="flex gap-2 mt-2">
+                    <button
+                      class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] grow"
+                      type="submit"
+                      [disabled]="notaForm.invalid"
+                    >
+                      Guardar nota
+                    </button>
+                    <button
+                      class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                      type="button"
+                      (click)="notaAbierta.set(false)"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              }
+            }
+          </section>
+        } @else {
+          <section
+            class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 mb-6"
+          >
+            <p class="text-[var(--llamma-muted)] mb-0">
+              Selecciona un cliente para ver su ficha completa.
+            </p>
+          </section>
+        }
+
+        <section
+          class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7"
+        >
+          <div
+            class="mb-[1.35rem] flex items-start justify-between gap-4 [&_h2]:m-0 [&_h2]:text-[1.15rem] [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em]"
+          >
+            <div>
+              <span
+                class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                >Composición</span
+              >
+              <h2>Segmentos de clientes</h2>
+            </div>
+            @if (cargandoTodos()) {
+              <span
+                class="inline-block h-4 w-4 animate-spin rounded-full border-[0.2em] border-current border-r-transparent align-[-0.125em] text-[var(--llamma-cyan-deep)]"
+                aria-hidden="true"
+              ></span>
+            }
+          </div>
+
+          <div class="grid gap-[0.8rem]">
+            @for (segmento of distribucion(); track segmento.valor) {
+              <div class="segment-row">
+                <div
+                  class="mb-[0.32rem] flex items-baseline justify-between gap-2 text-[0.7rem] text-[var(--llamma-muted)] [&_strong]:font-[family-name:var(--llamma-font-display)] [&_strong]:text-[0.74rem] [&_strong]:text-[var(--llamma-carbon)]"
+                >
+                  <span>{{ segmento.etiqueta }}</span><strong>{{ segmento.cantidad }}</strong>
+                </div>
+                <div
+                  class="h-1.5 overflow-hidden rounded-full bg-[#efeee9] [&_span]:block [&_span]:h-full [&_span]:rounded-[inherit] [&_span]:bg-[linear-gradient(90deg,var(--llamma-cyan),var(--llamma-magenta))]"
+                >
+                  <span [style.width]="segmento.porcentaje + '%'"></span>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (formularioAbierto()) {
+  <div
+    class="fixed inset-0 z-[1055] h-full w-full overflow-x-hidden overflow-y-auto outline-none block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarFormulario()"
+  >
+    <div class="relative mx-auto flex min-h-full w-full items-center p-2 sm:p-7 max-w-[800px]">
+      <div
+        class="pointer-events-auto relative flex max-h-[calc(100vh-1rem)] w-full flex-col rounded-lg border border-black/20 bg-white outline-none sm:max-h-[calc(100vh-3.5rem)]"
+      >
+        <form class="flex min-h-0 flex-1 flex-col" [formGroup]="formulario" (ngSubmit)="guardar()">
+          <div
+            class="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--llamma-line)] p-4"
+          >
+            <div>
+              <span
+                class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                >{{ editando() ? 'Editar cliente' : 'Alta de cliente' }}</span
+              >
+              <h2 class="text-xl mb-0" data-modal-title>
+                {{ editando() ? editando()!.nombre : 'Nuevo cliente' }}
+              </h2>
+            </div>
+            <button
+              class="inline-grid h-9 w-9 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65"
+              type="button"
+              aria-label="Cerrar"
+              (click)="cerrarFormulario()"
+            >
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="relative flex-auto overflow-y-auto p-4" data-modal-body>
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12 md:col-span-6">
+                <label
+                  class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                  for="clienteNombre"
+                  >Nombre o razón social *</label
+                >
+                <input
+                  id="clienteNombre"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                  formControlName="nombre"
+                />
+                @if (formulario.controls.nombre.invalid && formulario.controls.nombre.touched) {
+                  <small class="text-red-600">Indica al menos dos caracteres.</small>
+                }
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label
+                  class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                  for="clienteEmpresa"
+                  >Empresa</label
+                >
+                <input
+                  id="clienteEmpresa"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                  formControlName="empresa"
+                />
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label
+                  class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                  for="clienteCorreo"
+                  >Correo *</label
+                >
+                <input
+                  id="clienteCorreo"
+                  type="email"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                  formControlName="correo"
+                />
+                @if (formulario.controls.correo.invalid && formulario.controls.correo.touched) {
+                  <small class="text-red-600">Captura un correo válido.</small>
+                }
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label
+                  class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                  for="clienteTelefono"
+                  >Teléfono</label
+                >
+                <input
+                  id="clienteTelefono"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                  formControlName="telefono"
+                />
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label
+                  class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                  for="clienteRfc"
+                  >RFC</label
+                >
+                <input
+                  id="clienteRfc"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                  formControlName="rfc"
+                  maxlength="20"
+                />
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label
+                  class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                  for="clienteSegmento"
+                  >Segmento</label
+                >
+                <select
+                  id="clienteSegmento"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                  formControlName="segmento"
+                >
+                  @for (segmento of segmentos; track segmento.valor) {
+                    <option [value]="segmento.valor">{{ segmento.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-span-12">
+                <label
+                  class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                  for="clienteDireccion"
+                  >Dirección</label
+                >
+                <input
+                  id="clienteDireccion"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                  formControlName="direccion"
+                />
+              </div>
+              <div class="col-span-12">
+                <label
+                  class="mb-[0.42rem] block text-[0.76rem] font-semibold text-[#47484d]"
+                  for="clienteNotas"
+                  >Notas</label
+                >
+                <textarea
+                  id="clienteNotas"
+                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                  rows="3"
+                  formControlName="notas"
+                ></textarea>
+              </div>
+              <div class="col-span-12">
+                <label class="relative inline-flex cursor-pointer items-center gap-2">
+                  <input
+                    id="clienteActivo"
+                    class="peer sr-only"
+                    type="checkbox"
+                    formControlName="activo"
+                  />
+                  <span
+                    class="relative inline-block h-5 w-9 rounded-full bg-[rgba(26,26,26,0.2)] transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-[var(--llamma-line)] after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--llamma-magenta)] peer-checked:after:translate-x-4"
+                  ></span>
+                  <span class="text-[0.82rem] text-[var(--llamma-muted)]">Cliente activo</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--llamma-line)] p-3"
+          >
+            <button
+              class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+              type="button"
+              (click)="cerrarFormulario()"
+            >
+              Cancelar
+            </button>
+            <button
+              class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+              type="submit"
+              [disabled]="guardando()"
+            >
+              <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+              {{ guardando() ? 'Guardando…' : 'Guardar cliente' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="fixed inset-0 z-[1050] bg-black/50"></div>
+}

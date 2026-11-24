@@ -1,0 +1,800 @@
+<div class="module-page cotizar-page">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
+      <div class="page-brand">
+        <img
+          class="page-brand-logo"
+          src="assets/images/logo-llamma-128.webp"
+          srcset="assets/images/logo-llamma-128.webp 2x, assets/images/logo-llamma-256.webp 4x"
+          alt="Imprenta Llamma Logo"
+          width="38"
+          height="54"
+        />
+        <div>
+          <span class="eyebrow">Portal de clientes</span>
+          <h1>Solicita tu cotización.</h1>
+          <p class="page-lead">
+            Cuéntanos qué necesitas imprimir. Puedes elegir productos del catálogo, describir tu
+            proyecto y adjuntar tu logotipo o referencias. Te respondemos con una propuesta a tu
+            medida.
+          </p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a class="btn btn-outline-ink" routerLink="/productos">
+          <i class="bi bi-grid-3x3-gap"></i> Ver catálogo
+        </a>
+        <a class="btn btn-soft" routerLink="/login">
+          <i class="bi bi-shield-lock"></i> Acceso equipo
+        </a>
+      </div>
+    </header>
+
+    @if (folio(); as folioActual) {
+      <app-cotizar-comprobante
+        [folio]="folioActual"
+        [solicitud]="solicitudCreada()"
+        [partidas]="partidasComprobante()"
+        [totalPiezas]="totalPiezas()"
+        [totalConIva]="totalConIva()"
+        [correo]="form.controls.correo.value"
+        [copiado]="copiado()"
+        (copiar)="copiarFolio()"
+        (descargar)="descargarComprobante()"
+        (nueva)="nuevaSolicitud()"
+      />
+    } @else {
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 xl:col-span-8">
+          <app-cotizar-pasos
+            [paso]="paso()"
+            [pasos]="pasos"
+            [borradorRecuperado]="borradorRecuperado()"
+            [archivosPendientes]="archivosPendientes()"
+            (ir)="irAPaso($event)"
+            (ocultarAviso)="ocultarAvisoBorrador()"
+            (descartar)="descartarBorrador()"
+          />
+
+          <form id="solicitudForm" [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+            @if (paso() === 1) {
+              <section id="paso1" tabindex="-1" class="panel-card mb-6">
+                <div class="panel-head">
+                  <div class="flex items-center gap-4">
+                    <span class="step-number">01</span>
+                    <div>
+                      <span class="panel-kicker">Datos de contacto</span>
+                      <h2>¿Con quién hablamos?</h2>
+                    </div>
+                  </div>
+                  <span class="badge badge-soft-muted">Paso 1</span>
+                </div>
+
+                <div class="grid grid-cols-12 gap-4">
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="form-label" for="cotNombre">Nombre completo</label>
+                    <input
+                      id="cotNombre"
+                      type="text"
+                      class="form-control"
+                      formControlName="nombreCliente"
+                      placeholder="Ej. Ana Torres"
+                      autocomplete="name"
+                      [attr.aria-invalid]="
+                        form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                      "
+                      [attr.aria-describedby]="
+                        form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                          ? 'cotNombreError'
+                          : null
+                      "
+                      [class.is-invalid]="
+                        form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                      "
+                    />
+                    @if (
+                      form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                    ) {
+                      <span class="field-error" id="cotNombreError"
+                        >Escribe tu nombre completo.</span
+                      >
+                    }
+                  </div>
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="form-label" for="cotEmpresa"
+                      >Empresa o marca <span class="field-optional">(opcional)</span></label
+                    >
+                    <input
+                      id="cotEmpresa"
+                      type="text"
+                      class="form-control"
+                      formControlName="empresa"
+                      placeholder="Ej. Estudio Nómada"
+                      autocomplete="organization"
+                    />
+                  </div>
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="form-label" for="cotCorreo">Correo electrónico</label>
+                    <input
+                      id="cotCorreo"
+                      type="email"
+                      class="form-control"
+                      formControlName="correo"
+                      placeholder="nombre&#64;empresa.mx"
+                      autocomplete="email"
+                      [attr.aria-invalid]="
+                        form.controls.correo.touched && form.controls.correo.invalid
+                      "
+                      [attr.aria-describedby]="
+                        form.controls.correo.touched && form.controls.correo.invalid
+                          ? 'cotCorreoError'
+                          : null
+                      "
+                      [class.is-invalid]="
+                        form.controls.correo.touched && form.controls.correo.invalid
+                      "
+                    />
+                    @if (form.controls.correo.touched && form.controls.correo.invalid) {
+                      <span class="field-error" id="cotCorreoError">Ingresa un correo válido.</span>
+                    }
+                  </div>
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="form-label" for="cotTelefono">Teléfono / WhatsApp</label>
+                    <input
+                      id="cotTelefono"
+                      type="tel"
+                      class="form-control"
+                      formControlName="telefono"
+                      placeholder="55 0000 0000"
+                      autocomplete="tel"
+                      [attr.aria-invalid]="
+                        form.controls.telefono.touched && form.controls.telefono.invalid
+                      "
+                      [attr.aria-describedby]="
+                        form.controls.telefono.touched && form.controls.telefono.invalid
+                          ? 'cotTelefonoError'
+                          : null
+                      "
+                      [class.is-invalid]="
+                        form.controls.telefono.touched && form.controls.telefono.invalid
+                      "
+                    />
+                    @if (form.controls.telefono.touched && form.controls.telefono.invalid) {
+                      <span class="field-error" id="cotTelefonoError"
+                        >Escribe un teléfono de contacto.</span
+                      >
+                    }
+                  </div>
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="form-label" for="cotSegmento">Tipo de cliente</label>
+                    <select id="cotSegmento" class="form-select" formControlName="segmento">
+                      <option value="particular">Particular</option>
+                      <option value="pyme">Pyme</option>
+                      <option value="corporativo">Corporativo</option>
+                      <option value="eventos">Eventos</option>
+                      <option value="escolar">Escolar</option>
+                      <option value="gobierno">Gobierno</option>
+                    </select>
+                  </div>
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="form-label" for="cotFecha">Fecha deseada de entrega</label>
+                    <input
+                      id="cotFecha"
+                      type="date"
+                      class="form-control"
+                      formControlName="fechaDeseada"
+                      [min]="hoy"
+                    />
+                  </div>
+                </div>
+              </section>
+            }
+
+            @if (paso() === 2) {
+              <section id="paso2" tabindex="-1" class="panel-card mb-6">
+                <div class="panel-head">
+                  <div class="flex items-center gap-4">
+                    <span class="step-number">02</span>
+                    <div>
+                      <span class="panel-kicker">Constructor de solicitud</span>
+                      <h2>¿Qué quieres imprimir?</h2>
+                    </div>
+                  </div>
+                  <span class="badge badge-soft-muted">Paso 2</span>
+                </div>
+
+                <div class="grid grid-cols-12 gap-4 items-end">
+                  <div class="col-span-12 md:col-span-5">
+                    <label class="form-label" for="cotProducto">Producto del catálogo</label>
+                    <select
+                      id="cotProducto"
+                      class="form-select"
+                      [value]="productoId() ?? ''"
+                      (change)="cambiarProducto($event)"
+                    >
+                      @for (producto of productos(); track producto.id) {
+                        <option [value]="producto.id">{{ producto.nombre }}</option>
+                      }
+                    </select>
+                  </div>
+                  @if (esPorM2()) {
+                    <div class="col-span-4 md:col-span-2">
+                      <label class="form-label" for="cotAncho">Ancho (m)</label>
+                      <input
+                        id="cotAncho"
+                        type="number"
+                        class="form-control"
+                        min="0.1"
+                        step="0.1"
+                        [value]="anchoMetros()"
+                        (input)="cambiarAncho($event)"
+                      />
+                    </div>
+                    <div class="col-span-4 md:col-span-2">
+                      <label class="form-label" for="cotAlto">Alto (m)</label>
+                      <input
+                        id="cotAlto"
+                        type="number"
+                        class="form-control"
+                        min="0.1"
+                        step="0.1"
+                        [value]="altoMetros()"
+                        (input)="cambiarAlto($event)"
+                      />
+                    </div>
+                    <div class="col-span-4 md:col-span-3">
+                      <label class="form-label" for="cotCantidad">Lonas</label>
+                      <input
+                        id="cotCantidad"
+                        type="number"
+                        class="form-control"
+                        min="1"
+                        step="1"
+                        [value]="cantidad()"
+                        (input)="cambiarCantidad($event)"
+                      />
+                    </div>
+                    <div class="col-span-12">
+                      <label class="form-label" for="cotEspecificaciones">Especificaciones</label>
+                      <input
+                        id="cotEspecificaciones"
+                        type="text"
+                        class="form-control"
+                        placeholder="Acabado mate o brillante, ojillos, bastilla..."
+                        [value]="especificaciones()"
+                        (input)="cambiarEspecificaciones($event)"
+                      />
+                    </div>
+                  } @else {
+                    <div class="col-span-4 md:col-span-2">
+                      <label class="form-label" for="cotCantidad">Cantidad</label>
+                      <input
+                        id="cotCantidad"
+                        type="number"
+                        class="form-control"
+                        min="1"
+                        step="1"
+                        [value]="cantidad()"
+                        (input)="cambiarCantidad($event)"
+                      />
+                    </div>
+                    <div class="col-span-8 md:col-span-5">
+                      <label class="form-label" for="cotEspecificaciones">Especificaciones</label>
+                      <input
+                        id="cotEspecificaciones"
+                        type="text"
+                        class="form-control"
+                        placeholder="Medida, talla, acabado, número de tintas..."
+                        [value]="especificaciones()"
+                        (input)="cambiarEspecificaciones($event)"
+                      />
+                    </div>
+                  }
+                  <div class="col-span-12 flex flex-wrap gap-2">
+                    <button class="btn btn-ink" type="button" (click)="agregarProducto()">
+                      <i class="bi bi-plus-lg"></i> Agregar a mi solicitud
+                    </button>
+                    <button class="btn btn-outline-ink" type="button" (click)="openPreview()">
+                      <i class="bi bi-eye"></i> Previsualizar diseño
+                    </button>
+                    <button class="btn btn-outline-ink" type="button" (click)="openPreview3d()">
+  <i class="bi bi-box"></i> Vista 3D
+</button>
+                  </div>
+                </div>
+
+                @if (productoActual(); as producto) {
+                  <div class="picked-product">
+                    <span class="icon-tile icon-tile-cyan">
+                      <i class="bi {{ producto.icono || 'bi-box-seam' }}"></i>
+                    </span>
+                    <div class="grow min-w-0">
+                      <strong>{{ producto.nombre }}</strong>
+                      <small>{{ producto.descripcion }}</small>
+                    </div>
+                    <div class="picked-price">
+                      <strong>{{ moneda(producto.precioBase) }}</strong>
+                      <span>por {{ producto.unidadVenta }}</span>
+                    </div>
+                  </div>
+                  <p class="line-estimate">
+                  <i class="bi bi-calculator"></i>
+                  @if (esPorM2()) {
+                    Área total: <strong>{{ areaTotalM2() }} m²</strong> ·
+                  }
+                  Estimado de esta línea: <strong>{{ moneda(estimadoLinea()) }}</strong> + IVA ·
+                  sujeto a revisión de diseño.
+                </p>
+                }
+
+                @if (carrito().length) {
+                  <div class="cart-list">
+                    @for (item of carrito(); track $index) {
+                      <div class="cart-row">
+                        <span class="cart-index">{{ $index + 1 }}</span>
+                        <div class="grow min-w-0">
+                          <strong>{{ item.nombreProducto }}</strong>
+                          <small>{{ item.cantidad }} × {{ item.especificaciones }}</small>
+                        </div>
+                        <strong class="cart-amount">{{ moneda(item.precioEstimado ?? 0) }}</strong>
+                        <button
+                          class="btn btn-icon"
+                          type="button"
+                          (click)="quitarProducto($index)"
+                          [attr.aria-label]="'Quitar ' + item.nombreProducto"
+                        >
+                          <i class="bi bi-x-lg"></i>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="cart-empty">
+                    <i class="bi bi-bag-plus"></i>
+                    <p>
+                      Aún no agregas productos. También puedes saltarte este paso y describir tu
+                      proyecto en el siguiente campo.
+                    </p>
+                  </div>
+                }
+              </section>
+            }
+
+            @if (paso() === 3) {
+              <section id="paso3" tabindex="-1" class="panel-card mb-6">
+                <div class="panel-head">
+                  <div class="flex items-center gap-4">
+                    <span class="step-number">03</span>
+                    <div>
+                      <span class="panel-kicker">Tu proyecto</span>
+                      <h2>Mensaje y logística</h2>
+                    </div>
+                  </div>
+                  <span class="badge badge-soft-muted">Paso 3</span>
+                </div>
+
+                <div class="mb-4">
+                  <label class="form-label" for="cotMensaje">Describe tu proyecto</label>
+                  <textarea
+                    id="cotMensaje"
+                    class="form-control"
+                    rows="5"
+                    formControlName="mensaje"
+                    placeholder="Ej. Hola, me recomendaron su imprenta. Quiero cotizar 50 playeras negras estampadas al frente y espalda para el 25 de este mes..."
+                    aria-describedby="cotMensajeAyuda"
+                    [attr.aria-invalid]="
+                      form.controls.mensaje.touched && form.controls.mensaje.invalid
+                    "
+                    [class.is-invalid]="
+                      form.controls.mensaje.touched && form.controls.mensaje.invalid
+                    "
+                  ></textarea>
+                  <div class="field-hint" id="cotMensajeAyuda">
+                    Incluye cantidades, medidas, materiales, colores y fechas importantes.
+                  </div>
+                  @if (form.controls.mensaje.touched && form.controls.mensaje.invalid) {
+                    <span class="field-error" id="cotMensajeError"
+                      >Cuéntanos un poco más (mínimo 20 caracteres).</span
+                    >
+                  }
+                </div>
+
+                <div class="grid grid-cols-12 gap-4">
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="form-label" for="cotMetodo">Método de entrega</label>
+                    <select id="cotMetodo" class="form-select" formControlName="metodoEntrega">
+                      <option value="taller">Recoger en taller</option>
+                      <option value="domicilio">Envío a domicilio</option>
+                      <option value="paqueteria">Paquetería nacional</option>
+                      <option value="instalacion">Instalación en sitio</option>
+                    </select>
+                  </div>
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="form-label" for="cotArchivos">Archivos de referencia</label>
+                    <label class="upload-box upload-box-compact" for="cotArchivos">
+                      <i class="bi bi-cloud-arrow-up"></i>
+                      <div>
+                        <strong>Adjuntar logotipo o brief</strong>
+                        <span>PDF, AI, PSD, PNG, JPG, SVG o ZIP · máx. 25 MB</span>
+                      </div>
+                      <span class="btn btn-sm btn-soft ms-auto">Examinar</span>
+                      <input
+                        id="cotArchivos"
+                        class="sr-only"
+                        type="file"
+                        multiple
+                        accept=".pdf,.ai,.psd,.png,.jpg,.jpeg,.svg,.zip"
+                        (change)="agregarArchivos($event)"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                @if (archivos().length) {
+                  <div class="file-chips">
+                    @for (archivo of archivos(); track $index) {
+                      <span class="file-chip">
+                        <i class="bi bi-paperclip"></i>
+                        <span class="file-chip-name">{{ archivo.name }}</span>
+                        <small>{{ tamano(archivo.size) }}</small>
+                        <button
+                          type="button"
+                          (click)="quitarArchivo($index)"
+                          [attr.aria-label]="'Quitar ' + archivo.name"
+                        >
+                          <i class="bi bi-x"></i>
+                        </button>
+                      </span>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            <div class="quote-step-nav">
+              @if (paso() > 1) {
+                <button class="btn btn-outline-ink" type="button" (click)="pasoAnterior()">
+                  <i class="bi bi-arrow-left"></i> Atrás
+                </button>
+              }
+              @if (paso() < 3) {
+                <button class="btn btn-ink ms-auto" type="button" (click)="pasoSiguiente()">
+                  Continuar <i class="bi bi-arrow-right"></i>
+                </button>
+              } @else {
+                <span class="quote-step-hint">
+                  <i class="bi bi-check2-circle"></i>
+                  Revisa el resumen y envía tu solicitud.
+                </span>
+              }
+            </div>
+          </form>
+        </div>
+
+        <div class="col-span-12 xl:col-span-4">
+          <app-cotizar-resumen
+            [carrito]="carrito()"
+            [totalPiezas]="totalPiezas()"
+            [totalEstimado]="totalEstimado()"
+            [ivaEstimado]="ivaEstimado()"
+            [totalConIva]="totalConIva()"
+            [error]="error()"
+            [enviando]="enviando()"
+          />
+
+          <div class="help-card mt-6">
+            <i class="bi bi-headset"></i>
+            <div>
+              <strong>¿Prefieres hablar con alguien?</strong>
+              <p>Escríbenos por WhatsApp y te ayudamos a armar tu solicitud.</p>
+              <a href="https://wa.me/525512345678" target="_blank" rel="noopener"> 55 1234 5678 </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+@if (showPreviewModal()) {
+  <div class="mockup-backdrop">
+    <div class="mockup-modal" appModalAccesible (cerrar)="closePreview()">
+      <div class="mockup-header">
+        <div>
+          <span class="panel-kicker">{{ productoActual()?.nombre || 'Vista previa' }}</span>
+          <h3 class="modal-title">Previsualización en mockup</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          @if (mostrarCalibrador) {
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-ink]="modoCalibracion()"
+              [class.btn-outline-ink]="!modoCalibracion()"
+              (click)="toggleCalibracion()"
+            >
+              <i class="bi bi-sliders"></i>
+              {{ modoCalibracion() ? 'Cerrar calibrador' : 'Calibrar área' }}
+            </button>
+          }
+          <button type="button" class="btn btn-icon" (click)="closePreview()" aria-label="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="mockup-upload">
+        <label class="form-label" for="mockupFile">1. Sube tu logotipo o diseño (PNG, JPG)</label>
+        <input
+          id="mockupFile"
+          type="file"
+          class="form-control form-control-sm"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+        />
+      </div>
+
+      <div class="mockup-views">
+        <span class="form-label block">2. Elige una vista</span>
+        <div class="mockup-thumbs">
+          @for (vista of currentMockups(); track vista.id; let i = $index) {
+            <button
+              type="button"
+              class="mockup-thumb"
+              [class.is-active]="selectedMockupIndex() === i"
+              [attr.aria-pressed]="selectedMockupIndex() === i"
+              (click)="selectMockup(i)"
+            >
+              <img [src]="vista.imagenBase" [alt]="vista.nombre" loading="lazy" />
+              <span>{{ vista.nombre }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="mockup-stage">
+        <div class="mockup-canvas">
+          <img
+            class="mockup-base"
+            [src]="activeMockup().imagenBase"
+            [alt]="activeMockup().nombre"
+          />
+          <div
+            class="mockup-print-area"
+            [class.is-calibrating]="modoCalibracion()"
+            [style.top]="areaStyle().top"
+            [style.left]="areaStyle().left"
+            [style.width]="areaStyle().width"
+            [style.height]="areaStyle().height"
+            [style.transform]="areaStyle().transform"
+          >
+            @if (previewImage(); as imagen) {
+              <img
+                class="mockup-user-design"
+                [class.fit-cover]="designFit() === 'cover'"
+                [src]="imagen"
+                alt="Tu diseño"
+                [style.transform]="designTransform()"
+              />
+            }
+          </div>
+        </div>
+
+        @if (!previewImage()) {
+          <p class="mockup-empty-hint">
+            <i class="bi bi-image"></i> Sube una imagen arriba para verla aplicada aquí
+          </p>
+        }
+      </div>
+
+      @if (previewImage()) {
+        <div class="mockup-controls">
+          <div class="mockup-controls-top">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Ajuste del diseño">
+              <button
+                type="button"
+                class="btn"
+                [class.btn-ink]="designFit() === 'contain'"
+                [class.btn-outline-ink]="designFit() !== 'contain'"
+                (click)="setDesignFit('contain')"
+              >
+                Ajustar completo
+              </button>
+              <button
+                type="button"
+                class="btn"
+                [class.btn-ink]="designFit() === 'cover'"
+                [class.btn-outline-ink]="designFit() !== 'cover'"
+                (click)="setDesignFit('cover')"
+              >
+                Rellenar área
+              </button>
+            </div>
+            <button type="button" class="btn btn-sm btn-soft" (click)="resetDesignControls()">
+              <i class="bi bi-arrow-counterclockwise"></i> Restablecer
+            </button>
+          </div>
+
+          <div class="mockup-sliders">
+            <label>
+              <span
+                >Tamaño: <strong>{{ designScale() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="30"
+                max="200"
+                step="2"
+                [value]="designScale()"
+                (input)="actualizarNumero('scale', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Horizontal: <strong>{{ designOffsetX() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                step="1"
+                [value]="designOffsetX()"
+                (input)="actualizarNumero('x', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Vertical: <strong>{{ designOffsetY() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                step="1"
+                [value]="designOffsetY()"
+                (input)="actualizarNumero('y', $event)"
+              />
+            </label>
+          </div>
+        </div>
+      }
+
+      @if (mostrarCalibrador && modoCalibracion()) {
+        <div class="mockup-calibrator">
+          <div class="mockup-calibrator-head">
+            <strong>Calibrador de área ({{ activeMockup().id }})</strong>
+            <button type="button" class="btn btn-sm btn-ink" (click)="copiarCalibracion()">
+              <i
+                class="bi"
+                [class.bi-clipboard]="!calCopiado()"
+                [class.bi-clipboard-check]="calCopiado()"
+              ></i>
+              {{ calCopiado() ? 'Copiado' : 'Copiar valores' }}
+            </button>
+          </div>
+
+          <div class="mockup-sliders mockup-sliders-4">
+            <label>
+              <span
+                >Top: <strong>{{ calTop() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="0"
+                max="90"
+                step="0.5"
+                [value]="calTop()"
+                (input)="actualizarNumero('top', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Left: <strong>{{ calLeft() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="0"
+                max="90"
+                step="0.5"
+                [value]="calLeft()"
+                (input)="actualizarNumero('left', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Ancho: <strong>{{ calWidth() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="5"
+                max="100"
+                step="0.5"
+                [value]="calWidth()"
+                (input)="actualizarNumero('width', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Alto: <strong>{{ calHeight() }}%</strong></span
+              >
+              <input
+                type="range"
+                min="5"
+                max="100"
+                step="0.5"
+                [value]="calHeight()"
+                (input)="actualizarNumero('height', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Rotar Y: <strong>{{ calRotateY() }}°</strong></span
+              >
+              <input
+                type="range"
+                min="-45"
+                max="45"
+                step="0.5"
+                [value]="calRotateY()"
+                (input)="actualizarNumero('ry', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Rotar X: <strong>{{ calRotateX() }}°</strong></span
+              >
+              <input
+                type="range"
+                min="-45"
+                max="45"
+                step="0.5"
+                [value]="calRotateX()"
+                (input)="actualizarNumero('rx', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Giro Z: <strong>{{ calRotateZ() }}°</strong></span
+              >
+              <input
+                type="range"
+                min="-30"
+                max="30"
+                step="0.5"
+                [value]="calRotateZ()"
+                (input)="actualizarNumero('rz', $event)"
+              />
+            </label>
+            <label>
+              <span
+                >Skew Y: <strong>{{ calSkewY() }}°</strong></span
+              >
+              <input
+                type="range"
+                min="-25"
+                max="25"
+                step="0.5"
+                [value]="calSkewY()"
+                (input)="actualizarNumero('sy', $event)"
+              />
+            </label>
+          </div>
+
+          <pre class="mockup-code">{{ snippetCalibrador() }}</pre>
+        </div>
+      }
+
+      <div class="mockup-footer">
+        <button type="button" class="btn btn-ink" (click)="closePreview()">Listo</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showPreview3dModal()) {
+  <app-cotizar-mockup-3d
+    [productoNombre]="productoActual()?.nombre || 'Taza cerámica sublimada'"
+    (cerrar)="closePreview3d()"
+    (adjuntarCaptura)="adjuntarCaptura3d($event)"
+  />
+}

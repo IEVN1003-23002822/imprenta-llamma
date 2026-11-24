@@ -53,3 +53,6 @@ env/
 .env
 Flask_Llamma_API/instance/
 Flask_Llamma_API/uploads/
+
+# Mockups originales usados para generar src/assets/images/portafolio
+Lamma  Mockup realista/

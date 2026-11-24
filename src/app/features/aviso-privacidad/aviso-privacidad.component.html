@@ -1,0 +1,113 @@
+<!--
+  Documento base alineado a la LFPDPPP. Antes de publicar, validar el texto y
+  los datos del responsable con asesoría legal.
+-->
+<div
+  class="pt-[2.75rem] pb-[5.5rem] py-[2.2rem] pb-16 [&_a]:text-[var(--llamma-carbon)] [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:text-[var(--llamma-magenta)] [&_h1]:mb-[0.4rem] [&_h1]:mt-[0.2rem] [&_h1]:text-[clamp(1.7rem,4vw,2.4rem)] [&_h2]:mb-[0.6rem] [&_h2]:mt-8 [&_h2]:text-[1.1rem] [&_hr]:my-[2.2rem] [&_hr]:mb-[1.2rem] [&_hr]:border-[var(--llamma-line)] [&_li]:mb-[0.35rem] [&_li]:text-[0.9rem] [&_li]:leading-[1.75] [&_li]:text-[var(--llamma-muted)] [&_p]:text-[0.9rem] [&_p]:leading-[1.75] [&_p]:text-[var(--llamma-muted)] [&_ul]:pl-[1.1rem]"
+>
+  <div
+    class="mx-auto w-full px-3 min-[576px]:max-w-[540px] min-[768px]:max-w-[720px] min-[992px]:max-w-[960px] min-[1200px]:max-w-[1140px] min-[1400px]:max-w-[1320px]"
+  >
+    <a
+      class="mx-auto mb-4 flex max-w-[52rem] items-center gap-[0.4rem] text-[0.8rem] font-semibold text-[var(--llamma-muted)] hover:text-[var(--llamma-magenta)] max-[575.98px]:px-[0.2rem]"
+      routerLink="/"
+    >
+      <i class="bi bi-arrow-left"></i> Volver al inicio
+    </a>
+
+    <article
+      class="mx-auto max-w-[52rem] rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-[clamp(1.4rem,4vw,3rem)] shadow-[var(--llamma-shadow-sm)]"
+    >
+      <span
+        class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+        >Información legal</span
+      >
+      <h1>Aviso de privacidad</h1>
+      <p class="mb-[1.6rem] text-[0.74rem] uppercase tracking-[0.06em] text-[var(--llamma-muted)]">
+        Última actualización: {{ actualizado }}
+      </p>
+
+      <p>
+        En {{ site.nombre }} nos importa que sepas qué hacemos con tus datos. Este aviso explica qué
+        información recabamos cuando solicitas una cotización, consultas el estatus de tu solicitud
+        o te comunicas con nuestro equipo.
+      </p>
+
+      <h2>1. Responsable de los datos</h2>
+      <p>
+        {{ site.nombre }}, imprenta y estudio de producción, es responsable del tratamiento de los
+        datos personales que nos proporcionas a través de este sitio. Para cualquier asunto
+        relacionado con tu información puedes escribir a
+        <a [href]="'mailto:' + site.correo">{{ site.correo }}</a>.
+      </p>
+
+      <h2>2. Datos que recabamos</h2>
+      <ul>
+        <li>Datos de contacto: nombre, empresa, correo electrónico y teléfono.</li>
+        <li>Datos de tu proyecto: productos, cantidades, especificaciones y fecha deseada.</li>
+        <li>Archivos que adjuntas como referencia (PDF, AI, PSD, imágenes o ZIP).</li>
+        <li>Mensajes que intercambias con nuestro equipo en el seguimiento de la solicitud.</li>
+      </ul>
+      <p>
+        No solicitamos datos personales sensibles. Los campos marcados como obligatorios son
+        necesarios para atender tu solicitud; sin ellos no podríamos cotizar tu proyecto.
+      </p>
+
+      <h2>3. Para qué usamos tus datos</h2>
+      <ul>
+        <li>Elaborar y enviarte tu cotización.</li>
+        <li>Contactarte para aclarar detalles del proyecto y dar seguimiento a tu solicitud.</li>
+        <li>Producir y entregar los materiales solicitados.</li>
+        <li>Llevar el control interno de pedidos, pagos y atención al cliente.</li>
+      </ul>
+      <p>
+        No usamos tus datos para publicidad de terceros ni los vendemos. Solo los compartimos con
+        proveedores tecnológicos que nos ayudan a operar el sitio y el correo, bajo obligaciones de
+        confidencialidad, o cuando una autoridad competente lo requiera.
+      </p>
+
+      <h2>4. Almacenamiento en tu navegador</h2>
+      <p>
+        Este sitio usa almacenamiento local del navegador para mantener la sesión del equipo
+        interno, recordar tus consultas guardadas y conservar la sesión si marcas «Recordarme». No
+        utilizamos cookies publicitarias ni de seguimiento entre sitios.
+      </p>
+
+      <h2>5. Conservación y seguridad</h2>
+      <p>
+        Conservamos tu información mientras exista una relación comercial o mientras sea necesaria
+        para atender tu solicitud, salvo que la ley exija otro plazo. El acceso al sistema interno
+        está restringido por roles y las sesiones del equipo expiran automáticamente.
+      </p>
+
+      <h2>6. Tus derechos</h2>
+      <p>
+        Puedes solicitar el acceso, rectificación, cancelación u oposición al tratamiento de tus
+        datos escribiendo a
+        <a [href]="'mailto:' + site.correo">{{ site.correo }}</a>, indicando tu nombre, el correo
+        con el que registraste la solicitud y el folio correspondiente. Responderemos en los plazos
+        que marca la legislación aplicable.
+      </p>
+
+      <h2>7. Cambios a este aviso</h2>
+      <p>
+        Si modificamos este aviso, publicaremos la versión actualizada en esta misma página con su
+        fecha de actualización.
+      </p>
+
+      <hr />
+
+      <p class="mb-[0.4rem] flex flex-wrap items-center gap-[0.35rem] text-[0.82rem]">
+        <i class="bi bi-envelope"></i>
+        ¿Dudas sobre tu información?
+        <a [href]="'mailto:' + site.correo">Escríbenos a {{ site.correo }}</a
+        >.
+      </p>
+      <p
+        class="mb-[0.4rem] flex flex-wrap items-center gap-[0.35rem] text-[0.82rem] text-[0.72rem] text-[var(--llamma-muted)]"
+      >
+        © {{ anio }} {{ site.nombre }}. Todos los derechos reservados.
+      </p>
+    </article>
+  </div>
+</div>

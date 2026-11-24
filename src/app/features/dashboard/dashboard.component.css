@@ -1,0 +1,4 @@
+/* Ajustes específicos del panel ejecutivo. */
+.dashboard-page .kpi-card {
+  min-height: 178px;
+}

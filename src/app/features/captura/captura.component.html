@@ -1,0 +1,743 @@
+<div class="module-page captura-page">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <span class="eyebrow">Cotizador interno</span>
+        <h1>{{ modoExistente() ? 'Revisa y convierte.' : 'Captura tu cotización.' }}</h1>
+        <p class="page-lead">
+          @if (modoExistente()) {
+            Revisa las partidas y los totales de la cotización, registra el anticipo y conviértela
+            en pedido para enviarla a producción.
+          } @else {
+            Completa los datos del cliente, define las partidas con precios y guarda la cotización.
+            Si vienes de una solicitud del portal, los datos ya están precargados.
+          }
+        </p>
+      </div>
+      <div class="quote-chip">
+        <span>Cotización</span>
+        <strong>{{ cotizacion()?.folio || 'Nueva' }}</strong>
+      </div>
+    </header>
+
+    <div class="checkout-stepper">
+      <div class="step-item" [class.is-active]="!modoExistente()">
+        <span>1</span>
+        <div><strong>Cliente</strong><small>Datos de contacto</small></div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item" [class.is-active]="!modoExistente()">
+        <span>2</span>
+        <div><strong>Productos</strong><small>Partidas y precios</small></div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item">
+        <span>3</span>
+        <div><strong>Condiciones</strong><small>Vigencia y notas</small></div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item" [class.is-active]="modoExistente()">
+        <span>4</span>
+        <div><strong>Confirmación</strong><small>Anticipo y pedido</small></div>
+      </div>
+    </div>
+
+    @if (pedidoCreado()) {
+      <section class="panel-card capture-success">
+        <span class="success-mark"><i class="bi bi-check2-circle"></i></span>
+        <div class="grow">
+          <span class="panel-kicker">Pedido en producción</span>
+          <h2>{{ pedidoCreado() }}</h2>
+          <p>
+            El pedido se creó a partir de {{ cotizacion()?.folio }}. El inventario se descontó según
+            las recetas y la orden ya aparece en el tablero de producción.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a class="btn btn-brand btn-sm" routerLink="/detalle">
+            <i class="bi bi-receipt"></i> Ver órdenes
+          </a>
+          <button class="btn btn-outline-ink btn-sm" type="button" (click)="nuevaCotizacion()">
+            <i class="bi bi-plus-lg"></i> Nueva cotización
+          </button>
+        </div>
+      </section>
+    }
+
+    @if (error()) {
+      <div class="capture-alert" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    @if (cargando()) {
+      <div class="panel-card capture-loading">
+        <i class="bi bi-arrow-repeat"></i>
+        <span>Cargando información...</span>
+      </div>
+    } @else if (modoExistente()) {
+      @if (creada() && !pedidoCreado() && cotizacion(); as cot) {
+        <section class="panel-card capture-created">
+          <span class="success-mark"><i class="bi bi-file-earmark-check"></i></span>
+          <div class="grow">
+            <span class="panel-kicker">Cotización guardada</span>
+            <h2>{{ cot.folio }}</h2>
+            <p>
+              Total {{ moneda(cot.total) }} para
+              {{ cot.cliente || form.controls.nombreCliente.value }}. Ya puedes convertirla en
+              pedido con el anticipo del 50%.
+            </p>
+          </div>
+          @if (!pedidoCreado()) {
+            <button class="btn btn-outline-ink btn-sm" type="button" (click)="nuevaCotizacion()">
+              <i class="bi bi-plus-lg"></i> Nueva cotización
+            </button>
+          }
+        </section>
+      }
+
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 xl:col-span-8">
+          <section class="panel-card mb-6">
+            <div class="panel-head">
+              <div class="flex items-center gap-4">
+                <span class="step-number">01</span>
+                <div>
+                  <span class="panel-kicker">Cotización {{ cotizacion()?.folio }}</span>
+                  <h2>{{ cotizacion()?.cliente || form.controls.nombreCliente.value }}</h2>
+                </div>
+              </div>
+              <span class="badge" [class]="claseEstado()">{{ etiquetaEstado() }}</span>
+            </div>
+
+            <div class="capture-meta">
+              <div>
+                <span>Cliente</span>
+                <strong>{{ cotizacion()?.cliente || '—' }}</strong>
+              </div>
+              <div>
+                <span>Emisión</span>
+                <strong>{{ fecha(cotizacion()?.fechaEmision) }}</strong>
+              </div>
+              <div>
+                <span>Vigencia</span>
+                <strong>{{ cotizacion()?.vigenciaDias }} días</strong>
+              </div>
+              <div>
+                <span>Partidas</span>
+                <strong>{{ partidas().length }}</strong>
+              </div>
+            </div>
+
+            @if (cotizacion()?.notas) {
+              <div class="quote-note">
+                <i class="bi bi-chat-left-text"></i>
+                <span>{{ cotizacion()?.notas }}</span>
+              </div>
+            }
+          </section>
+
+          <section class="panel-card">
+            <div class="panel-head">
+              <div>
+                <span class="panel-kicker">Detalle</span>
+                <h2>Partidas de la cotización</h2>
+              </div>
+              <span class="badge badge-soft-cyan">{{ piezas() }} piezas / unidades</span>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-llamma align-middle">
+                <caption class="sr-only">
+                  Partidas de la cotización
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Producto</th>
+                    <th scope="col" class="text-center">Cant.</th>
+                    <th scope="col" class="text-right">P. unitario</th>
+                    <th scope="col" class="text-right">Importe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of partidas(); track $index) {
+                    <tr>
+                      <td>
+                        <div class="cell-main">{{ item.descripcion }}</div>
+                        <div class="cell-muted">
+                          {{ item.especificaciones || 'Sin especificaciones' }}
+                        </div>
+                      </td>
+                      <td class="text-center">{{ item.cantidad }}</td>
+                      <td class="text-right">{{ moneda(item.precioUnitario) }}</td>
+                      <td class="text-right cell-main">{{ moneda(item.importe) }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4" class="text-center cell-muted">
+                        Esta cotización no tiene partidas registradas.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-span-12 xl:col-span-4 summary-sidebar">
+          <aside class="quote-summary">
+            <div class="quote-summary-head">
+              <span>Resumen de cotización</span>
+              <span class="badge" [class]="claseEstado()">{{ etiquetaEstado() }}</span>
+            </div>
+
+            <div class="summary-lines">
+              @for (item of partidas(); track $index) {
+                <div>
+                  <span>{{ item.descripcion }} · {{ item.cantidad }}</span>
+                  <strong>{{ moneda(item.importe) }}</strong>
+                </div>
+              }
+            </div>
+
+            <div class="summary-totals">
+              <div>
+                <span>Subtotal</span><strong>{{ moneda(subtotal()) }}</strong>
+              </div>
+              <div>
+                <span>IVA (16%)</span><strong>{{ moneda(impuestos()) }}</strong>
+              </div>
+              <div class="summary-total">
+                <span>Total</span><strong>{{ moneda(total()) }}</strong>
+              </div>
+              <div>
+                <span>Anticipo (50%)</span><strong>{{ moneda(anticipo()) }}</strong>
+              </div>
+              <div>
+                <span>Saldo</span><strong>{{ moneda(saldo()) }}</strong>
+              </div>
+            </div>
+
+            @if (!yaConvertida()) {
+              <div class="form-check capture-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="anticipoPagado"
+                  [checked]="anticipoPagado()"
+                  (change)="toggleAnticipo($event)"
+                />
+                <label class="form-check-label" for="anticipoPagado">
+                  Registrar anticipo de {{ moneda(anticipo()) }} como pagado
+                </label>
+              </div>
+
+              <button
+                class="btn btn-brand w-full"
+                type="button"
+                [disabled]="convirtiendo()"
+                (click)="convertirAPedido()"
+              >
+                @if (convirtiendo()) {
+                  <i class="bi bi-hourglass-split"></i> Generando pedido...
+                } @else {
+                  <i class="bi bi-box-seam"></i> Convertir en pedido
+                }
+              </button>
+            } @else {
+              <div class="capture-locked">
+                <i class="bi bi-check2-circle"></i>
+                <span>
+                  Esta cotización ya se convirtió en pedido.
+                  <a routerLink="/detalle">Ver órdenes</a>
+                </span>
+              </div>
+            }
+
+            <button
+              class="btn btn-outline-ink w-full mt-2"
+              type="button"
+              (click)="nuevaCotizacion()"
+            >
+              <i class="bi bi-plus-lg"></i> Nueva cotización
+            </button>
+
+            <p class="summary-note">
+              <i class="bi bi-shield-check"></i>
+              Al convertir se descuenta el inventario según la receta y se crea la orden de
+              producción en la etapa de diseño.
+            </p>
+          </aside>
+
+          <div class="help-card mt-6">
+            <i class="bi bi-headset"></i>
+            <div>
+              <strong>¿Necesitas ayuda?</strong>
+              <p>Nuestro equipo de producción te acompaña con materiales y acabados.</p>
+              <a href="tel:+525512345678">55 1234 5678</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 xl:col-span-8">
+          @if (solicitud(); as origen) {
+            <div class="quote-note mb-6">
+              <i class="bi bi-inbox"></i>
+              <span>
+                Cotizando la solicitud <strong>{{ origen.folio }}</strong> de
+                {{ origen.nombreCliente }}. Los datos y las partidas se precargaron desde el portal.
+              </span>
+            </div>
+          }
+
+          <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+            <section class="panel-card mb-6">
+              <div class="panel-head">
+                <div class="flex items-center gap-4">
+                  <span class="step-number">01</span>
+                  <div>
+                    <span class="panel-kicker">Información general</span>
+                    <h2>Datos del cliente</h2>
+                  </div>
+                </div>
+                <span class="badge badge-soft-muted">Borrador</span>
+              </div>
+
+              <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12 md:col-span-6">
+                  <label class="form-label" for="clienteNombre">Nombre del contacto</label>
+                  <input
+                    id="clienteNombre"
+                    type="text"
+                    class="form-control"
+                    formControlName="nombreCliente"
+                    placeholder="Ej. Ana Torres"
+                    [attr.aria-invalid]="
+                      form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                    "
+                    [attr.aria-describedby]="
+                      form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                        ? 'clienteNombreError'
+                        : null
+                    "
+                    [class.is-invalid]="
+                      form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid
+                    "
+                  />
+                  @if (form.controls.nombreCliente.touched && form.controls.nombreCliente.invalid) {
+                    <span class="field-error" id="clienteNombreError"
+                      >Escribe el nombre del contacto.</span
+                    >
+                  }
+                </div>
+                <div class="col-span-12 md:col-span-6">
+                  <label class="form-label" for="clienteEmpresa">Empresa o marca</label>
+                  <input
+                    id="clienteEmpresa"
+                    type="text"
+                    class="form-control"
+                    formControlName="empresa"
+                    placeholder="Ej. Estudio Nómada"
+                  />
+                </div>
+                <div class="col-span-12 md:col-span-6">
+                  <label class="form-label" for="clienteCorreo">Correo electrónico</label>
+                  <input
+                    id="clienteCorreo"
+                    type="email"
+                    class="form-control"
+                    formControlName="correo"
+                    placeholder="nombre&#64;empresa.mx"
+                    [attr.aria-invalid]="
+                      form.controls.correo.touched && form.controls.correo.invalid
+                    "
+                    [attr.aria-describedby]="
+                      form.controls.correo.touched && form.controls.correo.invalid
+                        ? 'clienteCorreoError'
+                        : null
+                    "
+                    [class.is-invalid]="
+                      form.controls.correo.touched && form.controls.correo.invalid
+                    "
+                  />
+                  @if (form.controls.correo.touched && form.controls.correo.invalid) {
+                    <span class="field-error" id="clienteCorreoError"
+                      >Ingresa un correo válido.</span
+                    >
+                  }
+                </div>
+                <div class="col-span-12 md:col-span-6">
+                  <label class="form-label" for="clienteTelefono">Teléfono</label>
+                  <input
+                    id="clienteTelefono"
+                    type="tel"
+                    class="form-control"
+                    formControlName="telefono"
+                    placeholder="55 0000 0000"
+                    [attr.aria-invalid]="
+                      form.controls.telefono.touched && form.controls.telefono.invalid
+                    "
+                    [attr.aria-describedby]="
+                      form.controls.telefono.touched && form.controls.telefono.invalid
+                        ? 'clienteTelefonoError'
+                        : null
+                    "
+                    [class.is-invalid]="
+                      form.controls.telefono.touched && form.controls.telefono.invalid
+                    "
+                  />
+                  @if (form.controls.telefono.touched && form.controls.telefono.invalid) {
+                    <span class="field-error" id="clienteTelefonoError"
+                      >Escribe un teléfono de contacto.</span
+                    >
+                  }
+                </div>
+                <div class="col-span-12 md:col-span-6">
+                  <label class="form-label" for="clienteRfc">RFC / Razón social</label>
+                  <input
+                    id="clienteRfc"
+                    type="text"
+                    class="form-control"
+                    formControlName="rfc"
+                    placeholder="RFC con homoclave"
+                  />
+                </div>
+                <div class="col-span-12 md:col-span-6">
+                  <label class="form-label" for="clienteSegmento">Segmento</label>
+                  <select id="clienteSegmento" class="form-select" formControlName="segmento">
+                    <option value="particular">Particular</option>
+                    <option value="pyme">Pyme</option>
+                    <option value="corporativo">Corporativo</option>
+                    <option value="eventos">Eventos</option>
+                    <option value="escolar">Escolar</option>
+                    <option value="gobierno">Gobierno</option>
+                  </select>
+                </div>
+                <div class="col-span-12">
+                  <label class="form-label" for="clienteDireccion">Dirección de entrega</label>
+                  <input
+                    id="clienteDireccion"
+                    type="text"
+                    class="form-control"
+                    formControlName="direccion"
+                    placeholder="Calle, número, colonia y ciudad"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section class="panel-card mb-6">
+              <div class="panel-head">
+                <div class="flex items-center gap-4">
+                  <span class="step-number">02</span>
+                  <div>
+                    <span class="panel-kicker">Configuración de partida</span>
+                    <h2>Producto a cotizar</h2>
+                  </div>
+                </div>
+                <span class="badge badge-soft-cyan">{{ partidas().length }} partidas</span>
+              </div>
+
+              <div class="grid grid-cols-12 gap-4 items-end">
+                <div class="col-span-12 md:col-span-4">
+                  <label class="form-label" for="productoSelect">Producto terminado</label>
+                  <select
+                    id="productoSelect"
+                    class="form-select"
+                    [value]="productoId() ?? ''"
+                    (change)="cambiarProducto($event)"
+                  >
+                    <option value="">Concepto manual</option>
+                    @for (producto of productos(); track producto.id) {
+                      <option [value]="producto.id">{{ producto.nombre }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-span-12 md:col-span-4">
+                  <label class="form-label" for="productoDescripcion">Concepto</label>
+                  <input
+                    id="productoDescripcion"
+                    type="text"
+                    class="form-control"
+                    placeholder="Ej. Lona impresa 2 × 1 m"
+                    [value]="descripcion()"
+                    (input)="cambiarDescripcion($event)"
+                  />
+                </div>
+                <div class="col-span-12 md:col-span-4">
+                  <label class="form-label" for="productoEspecificaciones">Especificaciones</label>
+                  <input
+                    id="productoEspecificaciones"
+                    type="text"
+                    class="form-control"
+                    placeholder="Acabado, medida, tintas..."
+                    [value]="especificaciones()"
+                    (input)="cambiarEspecificaciones($event)"
+                  />
+                </div>
+                <div class="col-span-4 md:col-span-2">
+                  <label class="form-label" for="productoCantidad">Cantidad</label>
+                  <input
+                    id="productoCantidad"
+                    type="number"
+                    class="form-control"
+                    min="1"
+                    step="1"
+                    [value]="cantidad()"
+                    (input)="cambiarCantidad($event)"
+                  />
+                </div>
+                <div class="col-span-4 md:col-span-3">
+                  <label class="form-label" for="productoPrecio">Precio unitario</label>
+                  <input
+                    id="productoPrecio"
+                    type="number"
+                    class="form-control"
+                    min="0"
+                    step="0.01"
+                    [value]="precio()"
+                    (input)="cambiarPrecio($event)"
+                  />
+                </div>
+                <div class="col-span-4 md:col-span-3">
+                  <button class="btn btn-ink w-full" type="button" (click)="agregarPartida()">
+                    <i class="bi bi-plus-lg"></i> Agregar
+                  </button>
+                </div>
+                <div class="col-span-12 md:col-span-4">
+                  <div class="capture-line-total">
+                    <span>Importe de la línea</span>
+                    <strong>{{ moneda(cantidad() * precio()) }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="quote-note">
+                <i class="bi bi-info-circle"></i>
+                <span>
+                  El precio unitario se toma del catálogo y puedes ajustarlo antes de agregar la
+                  partida.
+                </span>
+              </div>
+            </section>
+
+            <section class="panel-card mb-6">
+              <div class="panel-head">
+                <div>
+                  <span class="panel-kicker">Partidas de la cotización</span>
+                  <h2>Detalle del pedido</h2>
+                </div>
+                <span class="badge badge-soft-cyan">
+                  {{ partidas().length }} partidas · {{ piezas() }} piezas
+                </span>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-llamma align-middle">
+                  <caption class="sr-only">
+                    Partidas de la cotización existente
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Producto</th>
+                      <th scope="col" class="text-center capture-col-qty">Cant.</th>
+                      <th scope="col" class="text-right capture-col-price">P. unitario</th>
+                      <th scope="col" class="text-right">Importe</th>
+                      <th scope="col"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of partidas(); track $index) {
+                      <tr>
+                        <td>
+                          <div class="cell-main">{{ item.descripcion }}</div>
+                          <div class="cell-muted">
+                            {{ item.especificaciones || 'Sin especificaciones' }}
+                          </div>
+                        </td>
+                        <td>
+                          <input
+                            class="form-control form-control-sm text-center"
+                            type="number"
+                            min="1"
+                            step="1"
+                            [value]="item.cantidad"
+                            (input)="actualizarCantidad($index, $event)"
+                            [attr.aria-label]="'Cantidad de ' + item.descripcion"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            class="form-control form-control-sm text-right"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            [value]="item.precioUnitario"
+                            (input)="actualizarPrecio($index, $event)"
+                            [attr.aria-label]="'Precio unitario de ' + item.descripcion"
+                          />
+                        </td>
+                        <td class="text-right cell-main">{{ moneda(item.importe) }}</td>
+                        <td class="text-right">
+                          <button
+                            class="btn btn-icon"
+                            type="button"
+                            [attr.aria-label]="'Eliminar ' + item.descripcion"
+                            (click)="quitarPartida($index)"
+                          >
+                            <i class="bi bi-trash3"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="5">
+                          <div class="capture-empty">
+                            <i class="bi bi-bag-plus"></i>
+                            <span>Aún no hay partidas. Agrega productos o conceptos manuales.</span>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <p class="table-note">
+                <i class="bi bi-palette"></i>
+                Los acabados especiales y el desperdicio de material se agregan al costo final.
+              </p>
+            </section>
+
+            <section class="panel-card">
+              <div class="panel-head">
+                <div class="flex items-center gap-4">
+                  <span class="step-number">03</span>
+                  <div>
+                    <span class="panel-kicker">Condiciones comerciales</span>
+                    <h2>Vigencia y notas</h2>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12 md:col-span-4">
+                  <label class="form-label" for="vigenciaDias">Vigencia (días)</label>
+                  <input
+                    id="vigenciaDias"
+                    type="number"
+                    class="form-control"
+                    min="1"
+                    max="90"
+                    formControlName="vigenciaDias"
+                    [attr.aria-invalid]="
+                      form.controls.vigenciaDias.touched && form.controls.vigenciaDias.invalid
+                    "
+                    [class.is-invalid]="
+                      form.controls.vigenciaDias.touched && form.controls.vigenciaDias.invalid
+                    "
+                  />
+                </div>
+                <div class="col-span-12 md:col-span-8">
+                  <label class="form-label" for="cotizacionNotas">Notas para el cliente</label>
+                  <textarea
+                    id="cotizacionNotas"
+                    class="form-control"
+                    rows="2"
+                    formControlName="notas"
+                    placeholder="Condiciones, tiempos de entrega o aclaraciones..."
+                  ></textarea>
+                </div>
+              </div>
+            </section>
+          </form>
+        </div>
+
+        <div class="col-span-12 xl:col-span-4 summary-sidebar">
+          <aside class="quote-summary">
+            <div class="quote-summary-head">
+              <span>Resumen de cotización</span>
+              <span class="badge badge-soft-cyan">Borrador</span>
+            </div>
+
+            <div class="summary-client">
+              <span class="avatar avatar-magenta">
+                {{ iniciales(form.controls.nombreCliente.value || 'Nuevo cliente') }}
+              </span>
+              <div>
+                <strong>{{ form.controls.nombreCliente.value || 'Cliente sin nombre' }}</strong>
+                <small>
+                  {{ form.controls.empresa.value || 'Sin empresa' }} ·
+                  {{ form.controls.segmento.value }}
+                </small>
+              </div>
+            </div>
+
+            @if (partidas().length) {
+              <div class="summary-lines">
+                @for (item of partidas(); track $index) {
+                  <div>
+                    <span>{{ item.descripcion }} · {{ item.cantidad }}</span>
+                    <strong>{{ moneda(item.importe) }}</strong>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="capture-summary-empty">Agrega partidas para ver el desglose.</p>
+            }
+
+            <div class="summary-totals">
+              <div>
+                <span>Subtotal</span><strong>{{ moneda(subtotal()) }}</strong>
+              </div>
+              <div>
+                <span>IVA (16%)</span><strong>{{ moneda(impuestos()) }}</strong>
+              </div>
+              <div class="summary-total">
+                <span>Total</span><strong>{{ moneda(total()) }}</strong>
+              </div>
+              <div>
+                <span>Anticipo (50%)</span><strong>{{ moneda(anticipo()) }}</strong>
+              </div>
+              <div>
+                <span>Saldo</span><strong>{{ moneda(saldo()) }}</strong>
+              </div>
+            </div>
+
+            <button
+              class="btn btn-brand w-full"
+              type="button"
+              [disabled]="guardando()"
+              (click)="guardar()"
+            >
+              @if (guardando()) {
+                <i class="bi bi-hourglass-split"></i> Guardando cotización...
+              } @else {
+                <i class="bi bi-file-earmark-check"></i> Guardar cotización
+              }
+            </button>
+
+            <p class="summary-note">
+              <i class="bi bi-shield-check"></i>
+              Cotización válida por {{ form.controls.vigenciaDias.value }} días naturales. Precios
+              sujetos a revisión de archivo.
+            </p>
+          </aside>
+
+          <div class="help-card mt-6">
+            <i class="bi bi-headset"></i>
+            <div>
+              <strong>¿Necesitas ayuda?</strong>
+              <p>Nuestro equipo de producción te acompaña con materiales y acabados.</p>
+              <a href="tel:+525512345678">55 1234 5678</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

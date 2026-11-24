@@ -1,0 +1,634 @@
+<div class="module-page inventario-page">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <span class="eyebrow">Materias primas e insumos</span>
+        <h1>Control de inventario.</h1>
+        <p class="page-lead">
+          Existencias, umbrales y costos en una sola vista. Detecta a tiempo los materiales que
+          frenan una línea de producción.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn btn-outline-ink" type="button" (click)="exportar()">
+          <i class="bi bi-download"></i> Exportar
+        </button>
+        @if (puedeGestionar()) {
+          <button class="btn btn-outline-ink" type="button" (click)="abrirNuevo()">
+            <i class="bi bi-plus-lg"></i> Nuevo insumo
+          </button>
+          <button class="btn btn-brand" type="button" (click)="abrirAjuste()">
+            <i class="bi bi-arrow-left-right"></i> Registrar movimiento
+          </button>
+        }
+      </div>
+    </header>
+
+    @if (error()) {
+      <div class="alert alert-danger flex items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <span class="grow">{{ error() }}</span>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar()">
+          Reintentar
+        </button>
+      </div>
+    }
+
+    @if (resumenAlerta().total > 0) {
+      <div class="inventory-alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>
+          <strong>{{ dosDigitos(resumenAlerta().criticos) }} insumos críticos</strong>
+          y {{ dosDigitos(resumenAlerta().bajos) }} con stock bajo.
+          @if (resumenAlerta().nombres) {
+            {{ resumenAlerta().nombres }} pueden detener la producción de esta semana.
+          }
+        </span>
+        <a routerLink="/abastecimiento"
+          >Generar orden de compra <i class="bi bi-arrow-right"></i
+        ></a>
+      </div>
+    } @else if (!cargando()) {
+      <div class="inventory-alert is-ok">
+        <i class="bi bi-shield-check"></i>
+        <span>
+          <strong>Inventario saludable.</strong> Todos los insumos están por encima de su umbral
+          mínimo de operación.
+        </span>
+        <a routerLink="/abastecimiento">Ver abastecimiento <i class="bi bi-arrow-right"></i></a>
+      </div>
+    }
+
+    <div class="grid grid-cols-12 gap-4 mb-6">
+      @for (stat of estadisticas(); track stat.etiqueta) {
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+          <div class="inventory-stat">
+            <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
+              <i class="bi" [class]="'bi ' + stat.icono"></i>
+            </span>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <section class="panel-card mb-6">
+      <div class="panel-head flex-wrap">
+        <div>
+          <span class="panel-kicker">Existencias en tiempo real</span>
+          <h2>Materias primas</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="badge badge-soft-muted">{{ filtradas().length }} insumos</span>
+          @if (cargando()) {
+            <span
+              class="spinner-border spinner-border-sm text-llamma-cyan-deep"
+              aria-hidden="true"
+            ></span>
+          }
+        </div>
+      </div>
+
+      <form class="grid grid-cols-12 gap-2 mb-4" [formGroup]="filtros" (ngSubmit)="filtrar()">
+        <div class="col-span-12 lg:col-span-5">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input
+              type="search"
+              class="form-control"
+              placeholder="Buscar insumo, categoría o proveedor…"
+              aria-label="Buscar insumo"
+              formControlName="q"
+            />
+            <button class="btn btn-ink" type="submit">Buscar</button>
+          </div>
+        </div>
+        <div class="col-span-6 lg:col-span-3">
+          <select
+            class="form-select"
+            aria-label="Filtrar por categoría"
+            formControlName="categoria"
+          >
+            <option value="">Todas las categorías</option>
+            @for (categoria of categorias; track categoria.valor) {
+              <option [value]="categoria.valor">{{ categoria.etiqueta }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-span-6 lg:col-span-2">
+          <select class="form-select" aria-label="Filtrar por estado" formControlName="estado">
+            <option value="">Todo estado</option>
+            <option value="critico">Crítico</option>
+            <option value="bajo">Bajo</option>
+            <option value="optimo">Óptimo</option>
+          </select>
+        </div>
+        <div class="col-span-12 lg:col-span-2">
+          <button class="btn btn-soft w-full" type="button" (click)="limpiar()">
+            <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+          </button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-llamma align-middle">
+          <caption class="sr-only">
+            Insumos en inventario
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Insumo</th>
+              <th scope="col">Categoría</th>
+              <th scope="col" class="text-right">Stock actual</th>
+              <th scope="col" class="text-center">Mín / Máx</th>
+              <th scope="col">Nivel de stock</th>
+              <th scope="col" class="text-right">Costo unitario</th>
+              <th scope="col">Estado</th>
+              @if (puedeGestionar()) {
+                <th scope="col" class="text-right">Acciones</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (materia of visibles(); track materia.id) {
+              @let estado = estadoStock(materia);
+              <tr>
+                <td>
+                  <div class="product-cell">
+                    <span
+                      class="icon-tile icon-tile-sm"
+                      [class]="'icon-tile icon-tile-sm ' + tonoCategoria(materia.categoria)"
+                    >
+                      <i class="bi" [class]="'bi ' + iconoCategoria(materia.categoria)"></i>
+                    </span>
+                    <div>
+                      <strong>{{ materia.nombre }}</strong>
+                      <small>{{
+                        materia.proveedor
+                          ? 'Proveedor · ' + materia.proveedor
+                          : 'Sin proveedor asignado'
+                      }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ etiquetaCategoria(materia.categoria) }}</td>
+                <td class="text-right cell-main">
+                  {{ cantidad(materia.stockActual, materia.unidadMedida) }}
+                </td>
+                <td class="text-center">
+                  {{ cantidad(materia.stockMinimo) }} / {{ cantidad(materia.stockMaximo) }}
+                </td>
+                <td>
+                  <div class="stock-cell">
+                    <div class="stock-cell-top">
+                      <strong [class]="estado.texto">{{ estado.porcentaje }}%</strong>
+                      <span>{{ estado.etiqueta }}</span>
+                    </div>
+                    <div class="stock-track stock-track-lg">
+                      <span
+                        class="stock-fill"
+                        [class]="'stock-fill ' + estado.barra"
+                        [style.width]="estado.porcentaje + '%'"
+                      ></span>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-right">{{ costoUnitario(materia) }}</td>
+                <td>
+                  <span class="badge" [class]="estado.badge">{{ estado.etiqueta }}</span>
+                </td>
+                @if (puedeGestionar()) {
+                  <td class="text-right">
+                    <div class="inline-flex gap-1">
+                      <button
+                        class="btn btn-icon"
+                        type="button"
+                        aria-label="Registrar movimiento"
+                        title="Registrar movimiento"
+                        (click)="abrirAjuste(materia)"
+                      >
+                        <i class="bi bi-arrow-left-right"></i>
+                      </button>
+                      <button
+                        class="btn btn-icon"
+                        type="button"
+                        aria-label="Editar insumo"
+                        title="Editar insumo"
+                        (click)="abrirEditar(materia)"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button
+                        class="btn btn-icon"
+                        type="button"
+                        aria-label="Dar de baja"
+                        title="Dar de baja"
+                        (click)="desactivar(materia)"
+                      >
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </div>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td
+                  [attr.colspan]="puedeGestionar() ? 8 : 7"
+                  class="text-center text-llamma-muted py-12"
+                >
+                  <i class="bi bi-boxes block text-2xl mb-2"></i>
+                  No hay insumos con esos filtros.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <span>{{ rangoTexto() }}</span>
+        <nav aria-label="Paginación del inventario">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="pagina() <= 1">
+              <button
+                class="page-link"
+                type="button"
+                aria-label="Anterior"
+                (click)="irA(pagina() - 1)"
+              >
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+            @for (numero of listaPaginas(); track numero) {
+              <li class="page-item" [class.active]="numero === pagina()">
+                <button class="page-link" type="button" (click)="irA(numero)">{{ numero }}</button>
+              </li>
+            }
+            <li class="page-item" [class.disabled]="pagina() >= paginas()">
+              <button
+                class="page-link"
+                type="button"
+                aria-label="Siguiente"
+                (click)="irA(pagina() + 1)"
+              >
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 lg:col-span-6">
+        <article class="panel-card h-full">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Trazabilidad</span>
+              <h2>Movimientos recientes</h2>
+            </div>
+            @if (cargandoMovimientos()) {
+              <span
+                class="spinner-border spinner-border-sm text-llamma-cyan-deep"
+                aria-hidden="true"
+              ></span>
+            } @else {
+              <span class="badge badge-soft-muted"
+                >{{ movimientosRecientes().length }} registros</span
+              >
+            }
+          </div>
+
+          <div class="movement-list">
+            @for (movimiento of movimientosRecientes(); track movimiento.id) {
+              @let estilo = claseMovimiento(movimiento.tipo);
+              <div class="movement-row">
+                <span
+                  class="icon-tile icon-tile-sm"
+                  [class]="'icon-tile icon-tile-sm ' + estilo.tono"
+                >
+                  <i class="bi" [class]="'bi ' + estilo.icono"></i>
+                </span>
+                <div class="grow">
+                  <strong
+                    >{{ etiquetaTipo(movimiento.tipo) }} · {{ movimiento.materiaPrima }}</strong
+                  >
+                  <small>
+                    {{
+                      movimiento.motivo || movimiento.referencia || movimiento.usuario || 'Sistema'
+                    }}
+                    · {{ fechaHora(movimiento.fecha) }}
+                  </small>
+                </div>
+                <span class="movement-amount" [class]="'movement-amount ' + estilo.monto">
+                  {{ signoTipo(movimiento.tipo)
+                  }}{{ cantidad(movimiento.cantidad, movimiento.unidadMedida) }}
+                </span>
+              </div>
+            } @empty {
+              <p class="text-llamma-muted mb-0 small">
+                Aún no hay movimientos registrados. Captura una entrada para comenzar el historial.
+              </p>
+            }
+          </div>
+        </article>
+      </div>
+
+      <div class="col-span-12 lg:col-span-6">
+        <article class="panel-card h-full flex flex-col">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Reposición sugerida</span>
+              <h2>Sugerencias de compra</h2>
+            </div>
+            <span class="badge badge-soft-magenta">{{ sugerencias().length }} insumos</span>
+          </div>
+
+          <div>
+            @for (sugerencia of sugerencias().slice(0, 5); track sugerencia.materia.id) {
+              <div class="purchase-item">
+                <span
+                  class="icon-tile icon-tile-sm"
+                  [class]="'icon-tile icon-tile-sm ' + tonoCategoria(sugerencia.materia.categoria)"
+                >
+                  <i class="bi" [class]="'bi ' + sugerencia.icono"></i>
+                </span>
+                <div>
+                  <strong>{{ sugerencia.materia.nombre }}</strong>
+                  <small>
+                    Reponer {{ cantidad(sugerencia.reposicion, sugerencia.materia.unidadMedida) }} ·
+                    {{ sugerencia.materia.proveedor || 'Sin proveedor' }}
+                  </small>
+                </div>
+                <span
+                  class="badge"
+                  [class]="
+                    sugerencia.estado.clave === 'critico'
+                      ? 'badge-soft-danger'
+                      : 'badge-soft-warning'
+                  "
+                >
+                  {{ sugerencia.estado.clave === 'critico' ? 'Urgente' : 'Esta semana' }}
+                </span>
+              </div>
+            } @empty {
+              <p class="text-llamma-muted mb-0 small">
+                No hay reposiciones urgentes: el inventario cubre los umbrales definidos.
+              </p>
+            }
+          </div>
+
+          <a class="btn btn-outline-ink w-full mt-auto" routerLink="/abastecimiento">
+            <i class="bi bi-cart-plus"></i> Generar orden de compra
+          </a>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (formularioAbierto()) {
+  <div
+    class="modal fade show block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarFormulario()"
+    style="z-index: 1055"
+  >
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <form [formGroup]="formulario" (ngSubmit)="guardar()">
+          <div class="modal-header">
+            <div>
+              <span class="panel-kicker">{{
+                editando() ? 'Editar insumo' : 'Alta de insumo'
+              }}</span>
+              <h2 class="modal-title h5 mb-0">
+                {{ editando() ? editando()!.nombre : 'Nuevo insumo' }}
+              </h2>
+            </div>
+            <button
+              class="btn btn-icon"
+              type="button"
+              aria-label="Cerrar"
+              (click)="cerrarFormulario()"
+            >
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12 md:col-span-7">
+                <label class="form-label" for="insumoNombre">Nombre del insumo *</label>
+                <input id="insumoNombre" class="form-control" formControlName="nombre" />
+                @if (formulario.controls.nombre.invalid && formulario.controls.nombre.touched) {
+                  <small class="text-red-600">Indica al menos dos caracteres.</small>
+                }
+              </div>
+              <div class="col-span-12 md:col-span-5">
+                <label class="form-label" for="insumoCategoria">Categoría</label>
+                <select id="insumoCategoria" class="form-select" formControlName="categoria">
+                  @for (categoria of categorias; track categoria.valor) {
+                    <option [value]="categoria.valor">{{ categoria.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-span-12 md:col-span-5">
+                <label class="form-label" for="insumoUnidad">Unidad de medida</label>
+                <select id="insumoUnidad" class="form-select" formControlName="unidadMedida">
+                  @for (unidad of unidades; track unidad.valor) {
+                    <option [value]="unidad.valor">{{ unidad.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-span-12 md:col-span-7">
+                <label class="form-label" for="insumoProveedor">Proveedor</label>
+                <select id="insumoProveedor" class="form-select" formControlName="proveedorId">
+                  <option value="">Sin proveedor asignado</option>
+                  @for (proveedor of proveedores(); track proveedor.id) {
+                    <option [value]="proveedor.id">{{ proveedor.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-span-6 md:col-span-3">
+                <label class="form-label" for="insumoActual">Stock actual</label>
+                <input
+                  id="insumoActual"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="stockActual"
+                />
+              </div>
+              <div class="col-span-6 md:col-span-3">
+                <label class="form-label" for="insumoMinimo">Stock mínimo</label>
+                <input
+                  id="insumoMinimo"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="stockMinimo"
+                />
+              </div>
+              <div class="col-span-6 md:col-span-3">
+                <label class="form-label" for="insumoMaximo">Stock máximo</label>
+                <input
+                  id="insumoMaximo"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="stockMaximo"
+                />
+              </div>
+              <div class="col-span-6 md:col-span-3">
+                <label class="form-label" for="insumoCosto">Costo unitario</label>
+                <input
+                  id="insumoCosto"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="costoUnitario"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarFormulario()">
+              Cancelar
+            </button>
+            <button class="btn btn-brand" type="submit" [disabled]="guardando()">
+              <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+              {{ guardando() ? 'Guardando…' : 'Guardar insumo' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+@if (ajusteAbierto()) {
+  <div
+    class="modal fade show block"
+    tabindex="-1"
+    appModalAccesible
+    (cerrar)="cerrarAjuste()"
+    style="z-index: 1055"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form [formGroup]="ajusteForm" (ngSubmit)="registrarMovimiento()">
+          <div class="modal-header">
+            <div>
+              <span class="panel-kicker">Trazabilidad de inventario</span>
+              <h2 class="modal-title h5 mb-0">Registrar movimiento</h2>
+            </div>
+            <button class="btn btn-icon" type="button" aria-label="Cerrar" (click)="cerrarAjuste()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12">
+                <label class="form-label" for="movInsumo">Insumo *</label>
+                <select id="movInsumo" class="form-select" formControlName="materiaId">
+                  <option value="">Selecciona un insumo…</option>
+                  @for (materia of materias(); track materia.id) {
+                    <option [value]="materia.id">{{ materia.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label class="form-label" for="movTipo">Tipo de movimiento *</label>
+                <select id="movTipo" class="form-select" formControlName="tipo">
+                  @for (tipo of tiposMovimiento; track tipo.valor) {
+                    <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label class="form-label" for="movCantidad">Cantidad *</label>
+                <input
+                  id="movCantidad"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="cantidad"
+                />
+                @if (ajusteForm.controls.cantidad.invalid && ajusteForm.controls.cantidad.touched) {
+                  <small class="text-red-600">Captura una cantidad mayor a cero.</small>
+                }
+              </div>
+              <div class="col-span-12">
+                <label class="form-label" for="movReferencia">Referencia</label>
+                <input
+                  id="movReferencia"
+                  class="form-control"
+                  formControlName="referencia"
+                  placeholder="Orden de compra, folio, proveedor…"
+                />
+              </div>
+              <div class="col-span-12">
+                <label class="form-label" for="movMotivo">Motivo</label>
+                <input
+                  id="movMotivo"
+                  class="form-control"
+                  formControlName="motivo"
+                  placeholder="Compra, consumo de producción, conteo físico…"
+                />
+              </div>
+            </div>
+
+            @if (vistaPreviaAjuste(); as previa) {
+              <div class="movement-preview mt-4">
+                <div>
+                  <span>Stock actual</span>
+                  <strong>{{
+                    cantidad(previa.materia.stockActual, previa.materia.unidadMedida)
+                  }}</strong>
+                </div>
+                <i class="bi bi-arrow-right"></i>
+                <div>
+                  <span>Stock resultante</span>
+                  <strong>{{ cantidad(previa.resultado, previa.materia.unidadMedida) }}</strong>
+                </div>
+              </div>
+              <p class="text-llamma-muted small mb-0 mt-2">
+                <i class="bi bi-info-circle"></i>
+                Usa <strong>Ajuste de conteo</strong> para fijar el stock final; entrada, salida,
+                merma y devolución operan como suma o resta.
+              </p>
+            }
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-outline-ink" type="button" (click)="cerrarAjuste()">
+              Cancelar
+            </button>
+            <button
+              class="btn btn-brand"
+              type="submit"
+              [disabled]="ajustando() || !vistaPreviaAjuste()"
+            >
+              <i class="bi" [class]="ajustando() ? 'bi-arrow-repeat spin' : 'bi-check2'"></i>
+              {{ ajustando() ? 'Registrando…' : 'Registrar movimiento' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

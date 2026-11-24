@@ -1,0 +1,396 @@
+<div class="module-page consultas-page">
+  <div class="llamma-container">
+    <header class="page-header flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <span class="eyebrow">Analítica operativa</span>
+        <h1>Consultas inteligentes.</h1>
+        <p class="page-lead">
+          Cruza fechas, clientes, líneas y estados para encontrar cualquier pedido o movimiento en
+          segundos. Guarda tus búsquedas más frecuentes.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn btn-outline-ink" type="button" (click)="guardarConsulta()">
+          <i class="bi bi-bookmark-plus"></i> Guardar consulta
+        </button>
+        <div class="dropdown">
+          <button
+            class="btn btn-outline-ink dropdown-toggle"
+            type="button"
+            (click)="alternarGuardadas($event)"
+            [attr.aria-expanded]="menuGuardadas()"
+            [disabled]="!consultasGuardadas().length"
+          >
+            <i class="bi bi-bookmarks"></i> Guardadas
+            @if (consultasGuardadas().length) {
+              <span class="badge badge-soft-muted ms-1">{{ consultasGuardadas().length }}</span>
+            }
+          </button>
+          <ul
+            class="dropdown-menu dropdown-menu-end dropdown-menu-llamma"
+            [class.show]="menuGuardadas()"
+          >
+            @for (consulta of consultasGuardadas(); track consulta.id) {
+              <li class="flex items-center gap-1 pe-1">
+                <button
+                  class="dropdown-item truncate"
+                  type="button"
+                  [title]="consulta.nombre"
+                  (click)="aplicarConsulta(consulta)"
+                >
+                  {{ consulta.nombre }}
+                </button>
+                <button
+                  class="btn btn-icon btn-icon-xs"
+                  type="button"
+                  aria-label="Eliminar consulta"
+                  title="Eliminar consulta"
+                  (click)="eliminarConsulta(consulta, $event)"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+        <button class="btn btn-brand" type="button" (click)="exportar()">
+          <i class="bi bi-download"></i> Exportar resultados
+        </button>
+      </div>
+    </header>
+
+    <section class="panel-card mb-6">
+      <div class="panel-head">
+        <div>
+          <span class="panel-kicker">Constructor de consultas</span>
+          <h2>Filtros combinables</h2>
+        </div>
+        <span class="badge badge-soft-muted">
+          <i class="bi bi-funnel"></i> {{ resultado()?.total ?? 0 }} resultados
+        </span>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="cargar(1)">
+        <div class="grid grid-cols-12 gap-4">
+          <div class="col-span-12 md:col-span-6 xl:col-span-3">
+            <label class="form-label" for="consultaDesde">Desde</label>
+            <input id="consultaDesde" type="date" class="form-control" formControlName="desde" />
+          </div>
+          <div class="col-span-12 md:col-span-6 xl:col-span-3">
+            <label class="form-label" for="consultaHasta">Hasta</label>
+            <input id="consultaHasta" type="date" class="form-control" formControlName="hasta" />
+          </div>
+          <div class="col-span-12 md:col-span-6 xl:col-span-3">
+            <label class="form-label" for="consultaCliente">Cliente</label>
+            <select id="consultaCliente" class="form-select" formControlName="clienteId">
+              <option value="">Todos los clientes</option>
+              @for (cliente of clientes(); track cliente.id) {
+                <option [value]="cliente.id">{{ cliente.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-span-12 md:col-span-6 xl:col-span-3">
+            <label class="form-label" for="consultaLinea">Línea de negocio</label>
+            <select id="consultaLinea" class="form-select" formControlName="linea">
+              @for (linea of lineas; track linea.valor) {
+                <option [value]="linea.valor">{{ linea.etiqueta }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-span-12 md:col-span-6 xl:col-span-3">
+            <label class="form-label" for="consultaEstado">Estado del pedido</label>
+            <select id="consultaEstado" class="form-select" formControlName="estado">
+              @for (estado of estados; track estado.valor) {
+                <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-span-12 md:col-span-12 xl:col-span-4">
+            <label class="form-label" for="consultaTexto">Búsqueda libre</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input
+                id="consultaTexto"
+                type="search"
+                class="form-control"
+                placeholder="Orden, cliente, empresa o producto…"
+                formControlName="q"
+              />
+            </div>
+          </div>
+          <div class="col-span-12 md:col-span-12 xl:col-span-2 flex items-end gap-2">
+            <button class="btn btn-ink grow" type="submit" [disabled]="cargando()">
+              <i class="bi" [class]="cargando() ? 'bi-arrow-repeat spin' : 'bi-funnel-fill'"></i>
+              {{ cargando() ? 'Buscando…' : 'Filtrar' }}
+            </button>
+            <button
+              class="btn btn-soft"
+              type="button"
+              aria-label="Limpiar filtros"
+              (click)="limpiar()"
+            >
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <div class="quick-filters">
+        <span>Rangos rápidos</span>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === 'mes'"
+          type="button"
+          (click)="rango('mes')"
+        >
+          Este mes
+        </button>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === '7d'"
+          type="button"
+          (click)="rango('7d')"
+        >
+          Últimos 7 días
+        </button>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === '30d'"
+          type="button"
+          (click)="rango('30d')"
+        >
+          Últimos 30 días
+        </button>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === 'trimestre'"
+          type="button"
+          (click)="rango('trimestre')"
+        >
+          Este trimestre
+        </button>
+        <button
+          class="filter-chip"
+          [class.is-active]="rangoActivo() === 'anio'"
+          type="button"
+          (click)="rango('anio')"
+        >
+          Año en curso
+        </button>
+      </div>
+    </section>
+
+    @if (error()) {
+      <div class="alert alert-danger flex items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <span class="grow">{{ error() }}</span>
+        <button class="btn btn-sm btn-outline-dark" type="button" (click)="cargar(pagina())">
+          Reintentar
+        </button>
+      </div>
+    }
+
+    <div class="grid grid-cols-12 gap-4 mb-6">
+      @for (stat of estadisticas(); track stat.etiqueta) {
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+          <div class="query-stat">
+            <span class="icon-tile" [class]="'icon-tile ' + stat.tono">
+              <i class="bi" [class]="'bi ' + stat.icono"></i>
+            </span>
+            <div>
+              <strong>{{ stat.valor }}</strong><span>{{ stat.etiqueta }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 xl:col-span-8">
+        <section class="panel-card h-full">
+          <div class="panel-head flex-wrap">
+            <div>
+              <span class="panel-kicker">Resultados</span>
+              <h2>Pedidos del periodo</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-soft-success">{{ resultado()?.total ?? 0 }} registros</span>
+              @if (cargando()) {
+                <span
+                  class="spinner-border spinner-border-sm text-llamma-cyan-deep"
+                  aria-hidden="true"
+                ></span>
+              }
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-llamma align-middle">
+              <caption class="sr-only">
+                Resultados de la consulta
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Orden</th>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Línea</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" class="text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (pedido of resultado()?.items ?? []; track pedido.id) {
+                  <tr>
+                    <td>
+                      <a
+                        class="order-id"
+                        [routerLink]="['/detalle']"
+                        [queryParams]="{ pedido: pedido.id }"
+                      >
+                        #{{ pedido.folio }}
+                      </a>
+                      <div class="cell-muted">{{ fechaCorta(pedido.fechaPedido) }}</div>
+                    </td>
+                    <td>
+                      <div class="cell-main">{{ pedido.cliente || 'Mostrador' }}</div>
+                      <div class="cell-muted">{{ pedido.partidas }} partidas</div>
+                    </td>
+                    <td>
+                      <div class="flex flex-wrap gap-1">
+                        @for (linea of pedido.lineas; track linea) {
+                          <span class="badge" [class]="claseLinea(linea)">{{
+                            etiquetaLinea(linea)
+                          }}</span>
+                        } @empty {
+                          <span class="cell-muted">Sin línea</span>
+                        }
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge" [class]="claseEstado(pedido.estado)">
+                        {{ etiquetaEstado(pedido.estado) }}
+                      </span>
+                    </td>
+                    <td class="text-right cell-main">{{ moneda(pedido.total) }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-center text-llamma-muted py-12">
+                      <i class="bi bi-search block text-2xl mb-2"></i>
+                      No encontramos pedidos con esos filtros.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            @if (resultado(); as data) {
+              <span>{{ rangoTexto(data) }}</span>
+              <nav aria-label="Paginación de consultas">
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" [class.disabled]="data.pagina <= 1">
+                    <button
+                      class="page-link"
+                      type="button"
+                      aria-label="Anterior"
+                      (click)="cargar(data.pagina - 1)"
+                    >
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                  </li>
+                  @for (numero of paginas(); track numero) {
+                    <li class="page-item" [class.active]="numero === data.pagina">
+                      <button class="page-link" type="button" (click)="cargar(numero)">
+                        {{ numero }}
+                      </button>
+                    </li>
+                  }
+                  <li class="page-item" [class.disabled]="data.pagina >= data.paginas">
+                    <button
+                      class="page-link"
+                      type="button"
+                      aria-label="Siguiente"
+                      (click)="cargar(data.pagina + 1)"
+                    >
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            } @else {
+              <span>Sin resultados</span>
+            }
+          </div>
+        </section>
+      </div>
+
+      <div class="col-span-12 xl:col-span-4">
+        <section class="panel-card mb-6">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Composición</span>
+              <h2>Ventas por línea</h2>
+            </div>
+            <span class="badge badge-soft-muted">Periodo</span>
+          </div>
+
+          <div class="distribution">
+            @for (fila of distribucion(); track fila.linea) {
+              <div class="distribution-row">
+                <div class="distribution-top">
+                  <span>{{ fila.etiqueta }}</span><strong>{{ moneda(fila.total) }}</strong>
+                </div>
+                <div class="distribution-track">
+                  <span [class]="fila.clase" [style.width]="fila.porcentaje + '%'"></span>
+                </div>
+              </div>
+            } @empty {
+              <p class="text-llamma-muted mb-0 small">
+                Sin partidas de producto en el periodo seleccionado.
+              </p>
+            }
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Ranking</span>
+              <h2>Top clientes del periodo</h2>
+            </div>
+            <a class="panel-link mt-0" routerLink="/clientes"
+              >Ver todos <i class="bi bi-arrow-right"></i
+            ></a>
+          </div>
+
+          <div class="rank-list">
+            @for (cliente of resultado()?.topClientes ?? []; track cliente.id; let i = $index) {
+              <div class="rank-item">
+                <span class="rank-number">{{ (i + 1).toString().padStart(2, '0') }}</span>
+                <span class="avatar" [class]="'avatar ' + avatar(i)">{{
+                  iniciales(cliente.nombre)
+                }}</span>
+                <div class="grow min-w-0">
+                  <strong>{{ cliente.nombre }}</strong>
+                  <small>{{ cliente.pedidos }} pedidos</small>
+                </div>
+                <strong class="rank-amount">{{ moneda(cliente.total) }}</strong>
+              </div>
+            } @empty {
+              <p class="text-llamma-muted mb-0 small">
+                Aún no hay clientes con pedidos en el periodo.
+              </p>
+            }
+          </div>
+
+          <div class="quote-note">
+            <i class="bi bi-lightbulb"></i>
+            <span>Filtra por rango de fechas y línea para analizar el desempeño comercial.</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

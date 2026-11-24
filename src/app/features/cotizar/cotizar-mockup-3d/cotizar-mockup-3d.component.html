@@ -1,0 +1,210 @@
+<div class="m3d-backdrop">
+  <div class="m3d-modal" appModalAccesible (cerrar)="cerrar.emit()">
+    <div class="m3d-header">
+      <div>
+        <span class="panel-kicker">Previsualizador 3D · {{ productoNombre() }}</span>
+        <h3 class="modal-title">Diseña y gira tu producto en 360°</h3>
+      </div>
+      <button type="button" class="btn btn-icon" (click)="cerrar.emit()" aria-label="Cerrar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="m3d-layout">
+      <!-- Escena 3D -->
+      <div class="m3d-stage-col">
+        <div class="m3d-viewport" #viewport3d></div>
+
+        <div class="m3d-stage-bar">
+          <div class="m3d-colors">
+            <span>Color:</span>
+            @for (c of colores(); track c.hex) {
+              <button
+                type="button"
+                class="m3d-swatch"
+                [style.background]="c.hex"
+                [class.is-active]="colorBase() === c.hex"
+                [title]="c.nombre"
+                [attr.aria-label]="'Color ' + c.nombre"
+                (click)="cambiarColorBase(c.hex)"
+              ></button>
+            }
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            @if (modoDecal()) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-ink]="modoArrastrarImagen()"
+                [class.btn-outline-ink]="!modoArrastrarImagen()"
+                (click)="toggleModoArrastrar()"
+              >
+                <i class="bi bi-arrows-move"></i>
+                {{ modoArrastrarImagen() ? 'Volviendo a girar 360°' : 'Mover imagen arrastrando' }}
+              </button>
+            }
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-ink]="autoRotar()"
+              [class.btn-outline-ink]="!autoRotar()"
+              (click)="toggleAutoRotar()"
+            >
+              <i class="bi bi-arrow-repeat"></i> {{ autoRotar() ? 'Pausar giro' : 'Girar solo' }}
+            </button>
+          </div>
+        </div>
+
+        <p class="m3d-hint">
+          <i class="bi bi-hand-index-thumb"></i>
+          @if (modoDecal()) {
+            Haz clic en cualquier parte del producto para colocar tu
+            imagen, o activa <strong>Mover imagen arrastrando</strong>.
+          } @else {
+            Arrastra sobre el producto para girarlo 360° y usa la rueda para acercar.
+          }
+        </p>
+      </div>
+
+      <!-- Panel de capas y controles -->
+      <div class="m3d-controls-col">
+        <div class="m3d-block">
+          <label class="form-label" for="m3dFile">1. Sube una o varias imágenes</label>
+          <input
+            id="m3dFile"
+            type="file"
+            class="form-control form-control-sm"
+            accept="image/png,image/jpeg,image/webp"
+            multiple
+            [disabled]="procesando()"
+            (change)="subirImagenes($event)"
+          />
+          <label class="m3d-check">
+            <input
+              type="checkbox"
+              [checked]="quitarFondo()"
+              (change)="toggleQuitarFondo($event)"
+            />
+            <span>Quitar fondo blanco automáticamente</span>
+          </label>
+          @if (procesando()) {
+            <p class="m3d-status"><i class="bi bi-hourglass-split"></i> Optimizando imagen...</p>
+          }
+          @if (error(); as msg) {
+            <p class="m3d-error">{{ msg }}</p>
+          }
+        </div>
+
+        <div class="m3d-block">
+          <span class="form-label block">2. Tus imágenes ({{ capas().length }})</span>
+          @if (capas().length) {
+            <div class="m3d-layers">
+              @for (capa of capas(); track capa.id) {
+                <div
+                  class="m3d-layer"
+                  [class.is-active]="capaActivaId() === capa.id"
+                  (click)="seleccionarCapa(capa.id)"
+                >
+                  <img [src]="capa.dataUrl" [alt]="capa.nombre" />
+                  <div class="m3d-layer-info">
+                    <strong>{{ capa.nombre }}</strong>
+                    <span class="m3d-quality" [class]="'q-' + capa.calidad">
+                      Calidad {{ capa.calidad }}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-icon"
+                    aria-label="Eliminar imagen"
+                    (click)="$event.stopPropagation(); eliminarCapa(capa.id)"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="m3d-empty">Aún no subes imágenes. Puedes agregar varios logos o fotos.</p>
+          }
+        </div>
+
+        @if (capaActiva(); as activa) {
+          <div class="m3d-block">
+            <div class="m3d-block-head">
+              <span class="form-label mb-0">3. Acomodar imagen seleccionada</span>
+              <button type="button" class="btn btn-sm btn-soft" (click)="centrarCapaActiva()">
+                Centrar
+              </button>
+            </div>
+
+            <div class="m3d-sliders">
+              @if (!modoDecal()) {
+                <label>
+                  <span>Posición horizontal (alrededor): <strong>{{ activa.x }}%</strong></span>
+                  <input
+                    type="range"
+                    min="5"
+                    max="95"
+                    step="1"
+                    [value]="activa.x"
+                    (input)="actualizarCapa('x', $event)"
+                  />
+                </label>
+
+                <label>
+                  <span>Posición vertical: <strong>{{ activa.y }}%</strong></span>
+                  <input
+                    type="range"
+                    min="10"
+                    max="90"
+                    step="1"
+                    [value]="activa.y"
+                    (input)="actualizarCapa('y', $event)"
+                  />
+                </label>
+              }
+
+              <label>
+                <span>Tamaño: <strong>{{ activa.escala }}%</strong></span>
+                <input
+                  type="range"
+                  min="12"
+                  max="120"
+                  step="2"
+                  [value]="activa.escala"
+                  (input)="actualizarCapa('escala', $event)"
+                />
+              </label>
+
+              <label>
+                <span>Rotación: <strong>{{ activa.rotacion }}°</strong></span>
+                <input
+                  type="range"
+                  min="-180"
+                  max="180"
+                  step="2"
+                  [value]="activa.rotacion"
+                  (input)="actualizarCapa('rotacion', $event)"
+                />
+              </label>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="m3d-footer">
+      <button
+        type="button"
+        class="btn btn-outline-ink"
+        [disabled]="!capas().length"
+        (click)="guardarCapturaEnSolicitud()"
+      >
+        <i class="bi" [class.bi-camera]="!capturaGuardada()" [class.bi-check-lg]="capturaGuardada()"></i>
+        {{ capturaGuardada() ? 'Captura adjuntada' : 'Adjuntar vista 3D a mi solicitud' }}
+      </button>
+      <button type="button" class="btn btn-ink" (click)="cerrar.emit()">Listo</button>
+    </div>
+  </div>
+</div>

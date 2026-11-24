@@ -1,0 +1,50 @@
+<ol class="quote-steps" aria-label="Pasos para solicitar tu cotización">
+  @for (item of pasos(); track item.numero) {
+    <li>
+      <button
+        class="quote-step"
+        type="button"
+        [class.is-active]="paso() === item.numero"
+        [class.is-done]="paso() > item.numero"
+        [attr.aria-current]="paso() === item.numero ? 'step' : null"
+        (click)="ir.emit(item.numero)"
+      >
+        <span class="quote-step-number">
+          @if (paso() > item.numero) {
+            <i class="bi bi-check-lg"></i>
+          } @else {
+            {{ item.numero }}
+          }
+        </span>
+        <span class="quote-step-text">
+          <strong>{{ item.titulo }}</strong>
+          <small>{{ item.detalle }}</small>
+        </span>
+      </button>
+    </li>
+  }
+</ol>
+
+@if (borradorRecuperado()) {
+  <div class="draft-banner" role="status">
+    <i class="bi bi-clock-history"></i>
+    <div class="draft-banner-text">
+      <strong>Recuperamos tu solicitud guardada.</strong>
+      <p>Puedes continuar donde la dejaste; guardamos tu avance en este dispositivo.</p>
+      @if (archivosPendientes().length) {
+        <p class="draft-files">
+          Por seguridad, vuelve a adjuntar:
+          {{ archivosPendientes().join(', ') }}.
+        </p>
+      }
+    </div>
+    <div class="draft-actions">
+      <button class="btn btn-sm btn-outline-ink" type="button" (click)="ocultarAviso.emit()">
+        Seguir editando
+      </button>
+      <button class="btn btn-sm btn-soft" type="button" (click)="descartar.emit()">
+        Descartar
+      </button>
+    </div>
+  </div>
+}
