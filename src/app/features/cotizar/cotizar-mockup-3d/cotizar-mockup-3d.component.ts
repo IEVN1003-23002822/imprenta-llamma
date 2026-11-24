@@ -177,6 +177,8 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
   readonly capaActivaId = signal<number | null>(null);
   readonly procesando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly cargandoModelo = signal(true);
+  readonly modeloAproximado = signal(false);
   readonly capturaGuardada = signal(false);
 
   readonly capaActiva = computed(
@@ -261,17 +263,31 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
     camera.position.set(0, 0.45, cfg.cameraZ);
     this.camera = camera;
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      preserveDrawingBuffer: true,
-    });
+    const renderer = (() => {
+      try {
+        return new THREE.WebGLRenderer({
+          antialias: true,
+          preserveDrawingBuffer: true,
+        });
+      } catch {
+        return null;
+      }
+    })();
+
+    if (!renderer) {
+      this.cargandoModelo.set(false);
+      this.error.set(
+        'Tu navegador no pudo iniciar WebGL. Actualiza el navegador o activa la aceleración por hardware.',
+      );
+      return;
+    }
+    this.renderer = renderer;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
     container.appendChild(renderer.domElement);
-    this.renderer = renderer;
 
     renderer.domElement.addEventListener('pointerdown', this.onPointerDownBound);
     renderer.domElement.addEventListener('pointermove', this.onPointerMoveBound);
@@ -345,11 +361,15 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
         modelo.updateMatrixWorld(true);
 
         this.modoDecal.set(true);
+        this.modeloAproximado.set(false);
+        this.cargandoModelo.set(false);
         this.reconstruirDecals();
       },
       undefined,
       () => {
         this.modoDecal.set(false);
+        this.modeloAproximado.set(true);
+        this.cargandoModelo.set(false);
         scene.add(this.construirModeloBase(cfg.tipo, baseMaterial, wrapMaterial));
       },
     );

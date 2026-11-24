@@ -13,7 +13,18 @@
     <div class="m3d-layout">
       <!-- Escena 3D -->
       <div class="m3d-stage-col">
-        <div class="m3d-viewport" #viewport3d></div>
+        <div class="m3d-stage">
+          <div class="m3d-viewport" #viewport3d></div>
+          @if (cargandoModelo()) {
+            <div class="m3d-loading" data-testid="modelo-cargando" role="status">
+              <span class="m3d-spinner" aria-hidden="true"></span>
+              <span>Cargando modelo 3D…</span>
+            </div>
+          }
+          @if (modeloAproximado()) {
+            <span class="m3d-fallback">Vista aproximada: modelo 3D no disponible.</span>
+          }
+        </div>
 
         <div class="m3d-stage-bar">
           <div class="m3d-colors">
