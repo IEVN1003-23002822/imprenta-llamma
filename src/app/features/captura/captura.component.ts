@@ -18,6 +18,7 @@ import {
 } from '../../core/utils/fechas';
 import { ESTADOS_COTIZACION, badgeDe, etiquetaDe } from '../../core/models/estados';
 import { LlammaService } from '../../core/services/llamma.service';
+import { UiService } from '../../core/services/ui.service';
 import {
   Cotizacion,
   DescuentoResultado,
@@ -39,6 +40,7 @@ const redondear = (valor: number) => Math.round(valor * 100) / 100;
 export class CapturaComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(LlammaService);
+  private readonly ui = inject(UiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -83,6 +85,11 @@ export class CapturaComponent implements OnInit {
   );
 
   readonly yaConvertida = computed(() => this.cotizacion()?.estado === 'convertida');
+  readonly puedeAprobar = computed(() => {
+    const estado = this.cotizacion()?.estado;
+    return estado === 'borrador' || estado === 'enviada';
+  });
+  readonly aprobando = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     nombreCliente: ['', [Validators.required, Validators.minLength(3)]],
@@ -355,6 +362,40 @@ export class CapturaComponent implements OnInit {
             respuesta.status === 0
               ? 'No pudimos conectar con el servidor. Intenta de nuevo.'
               : respuesta.error?.error || 'No pudimos guardar la cotización.',
+          );
+        },
+      });
+  }
+
+  aprobarCotizacion(): void {
+    const cotizacion = this.cotizacion();
+    if (!cotizacion || this.aprobando() || !this.puedeAprobar()) return;
+
+    this.aprobando.set(true);
+    this.error.set(null);
+    this.service
+      .cambiarEstadoCotizacion(cotizacion.id, 'aprobada')
+      .pipe(finalize(() => this.aprobando.set(false)))
+      .subscribe({
+        next: (respuesta) => {
+          this.cotizacion.update((actual) =>
+            actual
+              ? {
+                  ...actual,
+                  estado: respuesta.estado,
+                  inventarioDescontado:
+                    respuesta.inventarioDescontado ?? actual.inventarioDescontado,
+                }
+              : actual,
+          );
+          this.descuento.set(respuesta.descuento ?? null);
+          this.ui.exito('Cotización aprobada. El inventario quedó descontado.');
+        },
+        error: (respuesta: HttpErrorResponse) => {
+          this.error.set(
+            respuesta.error?.mensaje ||
+              respuesta.error?.error ||
+              'No pudimos aprobar la cotización.',
           );
         },
       });

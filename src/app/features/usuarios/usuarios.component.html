@@ -310,6 +310,24 @@
                   >La contraseña debe tener al menos 8 caracteres.</small
                 >
               }
+              @if (formulario.controls.password.value) {
+                @let fuerza = fuerzaPassword();
+                <div class="mt-2" aria-live="polite">
+                  <div class="flex gap-1">
+                    @for (segmento of [1, 2, 3, 4]; track segmento) {
+                      <span
+                        class="h-1 flex-1 rounded-full"
+                        [class]="
+                          segmento <= fuerza.nivel ? fuerza.clase : 'bg-[rgba(26,26,26,0.12)]'
+                        "
+                      ></span>
+                    }
+                  </div>
+                  <small class="mt-1 block text-[0.68rem] text-[var(--llamma-muted)]"
+                    >Seguridad: {{ fuerza.etiqueta }}</small
+                  >
+                </div>
+              }
             </div>
 
             <div>

@@ -148,6 +148,20 @@ export class UsuariosComponent implements OnInit {
     }).format(fecha);
   }
 
+  fuerzaPassword(): { nivel: number; etiqueta: string; clase: string } {
+    const valor = this.formulario.controls.password.value ?? '';
+    let puntos = 0;
+    if (valor.length >= 8) puntos += 1;
+    if (/[a-z]/.test(valor) && /[A-Z]/.test(valor)) puntos += 1;
+    if (/\d/.test(valor)) puntos += 1;
+    if (/[^A-Za-z0-9]/.test(valor)) puntos += 1;
+
+    const nivel = Math.min(puntos, 4);
+    const etiquetas = ['Muy débil', 'Débil', 'Media', 'Fuerte', 'Muy fuerte'];
+    const clases = ['bg-[#b42318]', 'bg-[#d97706]', 'bg-[#eab308]', 'bg-[#15803d]', 'bg-[#166534]'];
+    return { nivel, etiqueta: etiquetas[nivel], clase: clases[nivel] };
+  }
+
   private enfocarPrimerError(): void {
     const primero = (this.host.nativeElement as HTMLElement).querySelector<HTMLElement>(
       'input.ng-invalid, select.ng-invalid',

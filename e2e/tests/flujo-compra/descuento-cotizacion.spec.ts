@@ -84,6 +84,57 @@ test.describe('Descuento de inventario en cotizaciones', () => {
     expect(detalle.inventarioDescontado).toBe(true);
   });
 
+  test('aprueba desde el cotizador y muestra el resumen de descuento', async ({ page }) => {
+    const sufijo = unico('ui-aprobacion');
+    const materia = await crearMateriaPrima(api, {
+      nombre: `Vinil ${sufijo}`,
+      categoria: 'vinil',
+      unidadMedida: 'm2',
+      stockActual: 10,
+      stockMinimo: 1,
+      costoUnitario: 90,
+    });
+    const producto = await crearProducto(
+      api,
+      productoFactory.valido({
+        nombre: `Vinil ${sufijo}`,
+        precioBase: 500,
+        unidadVenta: 'm2',
+        receta: {
+          rendimiento: 1,
+          unidadRendimiento: 'm2',
+          componentes: [
+            {
+              materiaPrimaId: materia.id,
+              cantidad: 1,
+              unidadMedida: 'm2',
+              desperdicioPorcentaje: 0,
+            },
+          ],
+        },
+      }),
+    );
+    const cliente = await crearCliente(api, {
+      nombre: `Cliente ${sufijo}`,
+      correo: correoUnico('ui-aprobacion'),
+    });
+    const cotizacion = await crearCotizacion(api, {
+      clienteId: cliente.id,
+      items: [{ productoId: producto.id, cantidad: 1 }],
+    });
+
+    await page.goto(`/captura?cotizacion=${cotizacion.id}`);
+    await page.getByRole('button', { name: /Aprobar cotización/i }).click();
+    await expect(page.getByText(/Inventario descontado/i)).toBeVisible();
+    await expect(page.locator('main#contenido')).toContainText(materia.nombre);
+    expect(await stockDe(api, materia.nombre)).toBeCloseTo(9, 4);
+
+    await expect(page.getByRole('button', { name: /Aprobar cotización/i })).toHaveCount(0);
+    await page.getByRole('button', { name: /Convertir en pedido/i }).click();
+    await expect(page.getByText(/ya se había descontado/i)).toBeVisible();
+    expect(await stockDe(api, materia.nombre)).toBeCloseTo(9, 4);
+  });
+
   test('vincula la partida por nombre cuando falta productoId', async () => {
     const sufijo = unico('nombre');
     const materia = await crearMateriaPrima(api, {

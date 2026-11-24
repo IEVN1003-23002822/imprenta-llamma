@@ -704,6 +704,27 @@ class FlujosApiTest(unittest.TestCase):
         self.assertEqual(self._json(detalle)["estado"], "borrador")
         self.assertFalse(self._json(detalle)["inventarioDescontado"])
 
+    def test_20_password_de_usuario_se_hashea(self) -> None:
+        correo = "hash-check@example.com"
+        password = "PasswordSeguro123!"
+        creado = self.client.post(
+            "/api/usuarios",
+            headers=self._auth(self._token()),
+            json={
+                "nombre": "Usuario Hash",
+                "correo": correo,
+                "password": password,
+                "rol": "admin",
+            },
+        )
+        self.assertEqual(creado.status_code, 201, creado.get_data(as_text=True))
+        usuario = Usuario.query.filter_by(correo=correo).first()
+        self.assertIsNotNone(usuario)
+        self.assertNotEqual(usuario.password_hash, password)
+        self.assertNotIn(password, usuario.password_hash)
+        self.assertTrue(usuario.check_password(password))
+        self.assertFalse(usuario.check_password("otra-clave"))
+
 
 if __name__ == "__main__":
     unittest.main()

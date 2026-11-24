@@ -87,6 +87,20 @@ test.describe('Usuarios — alta desde la UI', () => {
     expect(peticiones).toEqual([]);
   });
 
+  test('muestra un indicador de fuerza de la contraseña', async ({ page }) => {
+    const usuarios = new UsuariosPage(page);
+    await usuarios.goto();
+    await usuarios.llenar({
+      nombre: `Usuario ${unico('e2e')}`,
+      correo: correoUnico('fuerza'),
+      password: 'abc',
+    });
+    await expect(page.getByText(/Seguridad: Muy débil|Seguridad: Débil/i)).toBeVisible();
+
+    await page.locator('#usuarioPassword').fill('PasswordSeguro123!');
+    await expect(page.getByText(/Seguridad: Fuerte|Seguridad: Muy fuerte/i)).toBeVisible();
+  });
+
   test('el menú de admin muestra Usuarios y el select tiene los roles', async ({ page }) => {
     const usuarios = new UsuariosPage(page);
     await usuarios.goto();

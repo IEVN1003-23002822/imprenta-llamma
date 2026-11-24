@@ -202,7 +202,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   Marketing está en `false` por decisión de producto: su ruta, componente y permisos siguen
   activos. Cambia la bandera a `true` para reactivarlo; no borres la entrada de `app.html`.
 - `/usuarios` es solo para `admin` (`authGuard` + `roleGuard`), con tabla y alta en la misma
-  página. El acceso del menú «Módulos» se muestra con `auth.esAdmin()`.
+  página. El acceso del menú «Módulos» se muestra con `auth.esAdmin()`. El formulario incluye
+  indicador de fuerza de contraseña; el mínimo de 8 se valida también en el backend.
+- En `captura`, el botón «Aprobar cotización» descuenta inventario y muestra el resumen; después
+  «Convertir en pedido» no vuelve a descontar gracias a `inventario_descontado`.
 - Las fechas de entrega usan `src/app/core/utils/fechas.ts` (misma regla que el backend) y
   `src/app/core/config/dias-festivos.ts`; el `min` del input y la cláusula visible se alimentan
   de esa utilidad. No dupliques listas de festivos en componentes.
