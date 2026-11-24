@@ -9,9 +9,9 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **20 archivos de spec, 48 pruebas, 4 proyectos → 192 ejecuciones por corrida**.
+- Suite creada: **20 archivos de spec, 50 pruebas, 4 proyectos → 200 ejecuciones por corrida**.
 - Corridas completas: **3 por proyecto (420 ejecuciones)**; todas verdes.
-- `48 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- `50 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, catálogo, edición de productos,
   solicitud pública con adjunto, seguimiento, cotización (desde solicitud y manual), totales,
   pedido, pago, producción, inventario, **alta de usuarios por UI** y smoke.
@@ -20,7 +20,7 @@ desarrollo del puerto 5000.**
   interna), **H-15** (seguimiento no muestra producción) y **H-14** (imagen LCP lazy).
 - Veredicto global: **⚠️ FUNCIONA_CON_RIESGOS** — los flujos críticos pasan; quedan dos defectos
   de dinero/precio fuera del alcance de esta iteración.
-- CI de la app: `format` ✅ · `lint` ✅ · Vitest **59/59** ✅ · `build` ✅ · backend **25/25** ✅.
+- CI de la app: `format` ✅ · `lint` ✅ · Vitest **59/59** ✅ · `build` ✅ · backend **26/26** ✅.
 
 > **Actualización 2026-11-23:** se corrigieron H-01 y H-12 (commit `54accf4`), se creó el módulo
 > `/usuarios` solo para admin (commit `dc711d1`), se implementaron las reglas de entrega de 2 días
@@ -111,12 +111,14 @@ por API.
 | Cotizador por medidas 10×10 | `solicitudes/cotizador-medidas.spec.ts` | PASS | ✅ FUNCIONA |
 | Visor 3D con GLB real | `cotizaciones/cotizador-3d.spec.ts` | PASS (píxeles + carga) | ✅ FUNCIONA |
 | Visor 3D sin GLB | `cotizaciones/cotizador-3d.spec.ts` | PASS (modelo aproximado) | ✅ FUNCIONA |
+| Playera 3D con GLB | `cotizaciones/cotizador-3d.spec.ts` | PASS (sin 404) | ✅ FUNCIONA |
+| Logo PNG sobre modelo | `cotizaciones/cotizador-3d.spec.ts` | PASS (alfa + píxeles) | ✅ FUNCIONA |
 | Descuento por receta | `inventario/descuento-por-pedido.spec.ts` | PASS | ✅ FUNCIONA |
 | Insumos por producto | `inventario/insumos-productos.spec.ts` | PASS (5 pruebas) | ✅ FUNCIONA |
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **48/48 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
+Matriz de proyectos: **50/50 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
 corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 
 ## 5. Bugs reales
@@ -201,7 +203,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 192 pruebas (48 × 4)
+npx playwright test --list               # 200 pruebas (50 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -306,10 +308,10 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: parcial
-tests_totales: 48
+tests_totales: 50
 proyectos: [chromium, firefox, webkit, mobile-chrome]
 corridas_por_proyecto: 3
-tests_pass: 48
+tests_pass: 50
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing, login_fallido, rate_limit, logout,

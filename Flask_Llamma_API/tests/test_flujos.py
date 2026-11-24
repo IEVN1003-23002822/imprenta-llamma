@@ -11,6 +11,7 @@ pedido con descuento de inventario, pagos, órdenes de compra y adjuntos.
 from __future__ import annotations
 
 import io
+import base64
 import json
 import os
 import shutil
@@ -18,7 +19,10 @@ import sys
 import tempfile
 import unittest
 from datetime import date, timedelta
+from io import BytesIO
 from pathlib import Path
+
+from PIL import Image
 
 RAIZ = Path(__file__).resolve().parent.parent
 TEMPORAL = Path(tempfile.mkdtemp(prefix="llamma-tests-"))
@@ -724,6 +728,32 @@ class FlujosApiTest(unittest.TestCase):
         self.assertNotIn(password, usuario.password_hash)
         self.assertTrue(usuario.check_password(password))
         self.assertFalse(usuario.check_password("otra-clave"))
+
+    def test_21_mockup_conserva_canal_alfa(self) -> None:
+        imagen = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
+        for x in range(4, 8):
+            for y in range(8):
+                imagen.putpixel((x, y), (220, 30, 30, 255))
+        buffer = BytesIO()
+        imagen.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        respuesta = self.client.post(
+            "/api/public/mockups/preparar-imagen",
+            data={
+                "imagen": (buffer, "logo.png"),
+                "quitarFondo": "false",
+                "recortar": "false",
+            },
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(respuesta.status_code, 200, respuesta.get_data(as_text=True))
+        data_url = self._json(respuesta)["dataUrl"]
+        self.assertTrue(data_url.startswith("data:image/png;base64,"))
+        salida = Image.open(BytesIO(base64.b64decode(data_url.split(",", 1)[1])))
+        self.assertEqual(salida.mode, "RGBA")
+        alfa = salida.getchannel("A")
+        self.assertEqual(alfa.getextrema(), (0, 255))
 
 
 if __name__ == "__main__":

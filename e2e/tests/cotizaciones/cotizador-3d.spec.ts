@@ -74,6 +74,75 @@ test.describe('Previsualizador 3D', () => {
     const canvas = await contenidoCanvas(page);
     expect(canvas.width).toBeGreaterThan(0);
     expect(canvas.height).toBeGreaterThan(0);
-    expect(canvas.distintos).toBeGreaterThan(500);
+    await expect
+      .poll(async () => (await contenidoCanvas(page)).distintos, { timeout: 10_000 })
+      .toBeGreaterThan(500);
+  });
+
+  test('renderiza la playera con su GLB y sin 404', async ({ page }) => {
+    const respuestas: Array<{ status: number; url: string }> = [];
+    page.on('response', (respuesta) => {
+      if (respuesta.url().includes('.glb')) {
+        respuestas.push({ status: respuesta.status(), url: respuesta.url() });
+      }
+    });
+
+    await abrir3d(page, 'Playera DTF 29 × 29 cm');
+    await expect(page.getByTestId('modelo-cargando')).toBeHidden({ timeout: 20_000 });
+
+    expect(respuestas.filter((item) => item.status >= 400)).toEqual([]);
+    await expect(page.getByText(/Vista aproximada/i)).toHaveCount(0);
+
+    const canvas = await contenidoCanvas(page);
+    expect(canvas.width).toBeGreaterThan(0);
+    await expect
+      .poll(async () => (await contenidoCanvas(page)).distintos, { timeout: 10_000 })
+      .toBeGreaterThan(500);
+  });
+
+  test('sube un logo PNG y lo pinta sobre el modelo', async ({ page }) => {
+    await abrir3d(page, 'Tote bag de manta');
+    await expect(page.getByTestId('modelo-cargando')).toBeHidden({ timeout: 20_000 });
+
+    const pngBase64 = await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 96;
+      canvas.height = 96;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return '';
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(0, 0, 96, 96);
+      return canvas.toDataURL('image/png').split(',')[1];
+    });
+
+    const [respuesta] = await Promise.all([
+      page.waitForResponse(
+        (res) => res.url().includes('/api/public/mockups/preparar-imagen') && res.status() === 200,
+      ),
+      page.locator('#m3dFile').setInputFiles({
+        name: 'logo-rojo.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from(pngBase64, 'base64'),
+      }),
+    ]);
+    expect(respuesta.status()).toBe(200);
+
+    await expect
+      .poll(
+        () =>
+          page.locator('.m3d-viewport canvas').evaluate((canvas: HTMLCanvasElement) => {
+            const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
+            if (!gl) return 0;
+            const data = new Uint8Array(canvas.width * canvas.height * 4);
+            gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, data);
+            let rojos = 0;
+            for (let i = 0; i < data.length; i += 4) {
+              if (data[i] > 150 && data[i + 1] < 90 && data[i + 2] < 90) rojos += 1;
+            }
+            return rojos;
+          }),
+        { timeout: 10_000 },
+      )
+      .toBeGreaterThan(20);
   });
 });

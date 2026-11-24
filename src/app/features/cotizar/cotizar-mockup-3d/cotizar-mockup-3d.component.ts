@@ -144,6 +144,10 @@ const CONFIG_PRODUCTOS: Record<string, ConfigProducto3D> = {
   },
 };
 
+// El catálogo público usa estos nombres; ambos comparten el modelo DTF.
+CONFIG_PRODUCTOS['Playera DTF 29 × 29 cm'] = CONFIG_PRODUCTOS['Playera DTF unisex'];
+CONFIG_PRODUCTOS['Playera DTF menor a 29 × 29 cm'] = CONFIG_PRODUCTOS['Playera DTF unisex'];
+
 @Component({
   selector: 'app-cotizar-mockup-3d',
   imports: [ModalAccesibleDirective],
@@ -468,22 +472,33 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
   }
 
   private obtenerPuntoInicialPecho(): { punto: THREE.Vector3; normal: THREE.Vector3 } | null {
-    if (!this.decalTargets.length) return null;
-    // Rayo desde el frente hacia el centro del pecho
-    const origen = new THREE.Vector3(0, 0.25, 5);
-    const direccion = new THREE.Vector3(0, 0, -1);
+    if (!this.decalTargets.length || !this.camera) return null;
+
+    const caja = new THREE.Box3();
+    this.decalTargets.forEach((mesh) => caja.expandByObject(mesh));
+    const centro = caja.getCenter(new THREE.Vector3());
+
+    // Rayo desde la cámara al centro del modelo: garantiza impactar la cara frontal.
+    const origen = this.camera.position.clone();
+    const direccion = centro.clone().sub(origen).normalize();
     this.raycaster.set(origen, direccion);
     const hits = this.raycaster.intersectObjects(this.decalTargets, false);
-    if (!hits.length || !hits[0].face) {
-      return { punto: new THREE.Vector3(0, 0.2, 0.4), normal: new THREE.Vector3(0, 0, 1) };
+    if (hits.length && hits[0].face) {
+      const hit = hits[0];
+      const normal = hit
+        .face!.normal.clone()
+        .transformDirection(hit.object.matrixWorld)
+        .normalize();
+      const haciaCamara = this.camera.position.clone().sub(hit.point).normalize();
+      if (normal.dot(haciaCamara) < 0) normal.negate();
+      return { punto: hit.point.clone(), normal };
     }
-    const hit = hits[0];
-    if (!hit || !hit.face) {
-      return { punto: new THREE.Vector3(0, 0.2, 0.4), normal: new THREE.Vector3(0, 0, 1) };
-    }
-    const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
-    if (normal.z < 0) normal.negate();
-    return { punto: hit.point.clone(), normal };
+
+    // Fallback: plano frontal de la caja envolvente.
+    return {
+      punto: new THREE.Vector3(centro.x, centro.y, caja.max.z),
+      normal: new THREE.Vector3(0, 0, 1),
+    };
   }
 
   private limpiarDecalsEscena(): void {
@@ -509,7 +524,10 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
     const helper = new THREE.Object3D();
 
     this.capas().forEach((capa, idx) => {
-      if (!capa.punto3d || !capa.normal3d) return;
+      const inicial = !capa.punto3d || !capa.normal3d ? this.obtenerPuntoInicialPecho() : null;
+      const punto = capa.punto3d ?? inicial?.punto;
+      const normal = capa.normal3d ?? inicial?.normal;
+      if (!punto || !normal) return;
 
       let tex = this.decalTextures.get(capa.id);
       if (!tex) {
@@ -525,9 +543,9 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
       // Profundidad acotada para que NUNCA atraviese hasta la espalda
       const profundidad = 0.28;
 
-      helper.position.copy(capa.punto3d);
+      helper.position.copy(punto);
       helper.up.set(0, 1, 0);
-      helper.lookAt(capa.punto3d.clone().add(capa.normal3d));
+      helper.lookAt(punto.clone().add(normal));
       helper.rotateZ((-capa.rotacion * Math.PI) / 180);
 
       const orientacion = helper.rotation.clone();
@@ -536,17 +554,20 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
       const decalMat = new THREE.MeshStandardMaterial({
         map: tex,
         transparent: true,
+        alphaTest: 0.1,
         roughness: 0.72,
         metalness: 0.02,
         depthTest: true,
         depthWrite: false,
         polygonOffset: true,
         polygonOffsetFactor: -4 - idx,
+        polygonOffsetUnits: -1,
+        toneMapped: false,
       });
 
       for (const mesh of this.decalTargets) {
         mesh.updateWorldMatrix(true, false);
-        const geo = new DecalGeometry(mesh, capa.punto3d, orientacion, tamano);
+        const geo = new DecalGeometry(mesh, punto, orientacion, tamano);
         const posAttr = geo.attributes['position'];
         if (posAttr && posAttr.count > 0) {
           this.decalGroup!.add(new THREE.Mesh(geo, decalMat));
