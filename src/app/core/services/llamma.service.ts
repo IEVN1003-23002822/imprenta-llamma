@@ -14,6 +14,7 @@ import {
   OrdenCompraApi,
   PedidoApi,
   ProductoApi,
+  ProductoConReceta,
   ProductoPublico,
   ProveedorApi,
   RecetaApi,
@@ -274,6 +275,12 @@ export class LlammaService {
 
   listarProductos(): Observable<{ items: ProductoApi[]; total: number }> {
     return this.http.get<{ items: ProductoApi[]; total: number }>(`${this.apiUrl}/productos`);
+  }
+
+  listarInsumosPorProducto(): Observable<{ items: ProductoConReceta[]; total: number }> {
+    return this.http.get<{ items: ProductoConReceta[]; total: number }>(
+      `${this.apiUrl}/productos/insumos`,
+    );
   }
 
   detalleProducto(id: number): Observable<ProductoApi & { receta?: RecetaApi | null }> {

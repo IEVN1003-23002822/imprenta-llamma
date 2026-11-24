@@ -171,6 +171,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   deben respetar **2 días hábiles**. La regla vive en `utils.calcular_fecha_minima_entrega()`,
   los festivos en `config.DIAS_FESTIVOS` y la API responde `400` con
   `MENSAJE_FECHA_MINIMA`. Ver `REGLAS-ENTREGA.md` para actualizar cierres cada año.
+- `GET /api/productos/insumos` devuelve los productos activos con `receta` y sus componentes
+  (`nombreMateriaPrima`, `stockActual`, `bajoStock`). Usa `joinedload`/`selectinload` para evitar
+  N+1; un producto sin receta viaja con `receta: null`.
 
 ## Convenciones frontend
 
@@ -196,6 +199,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - Las fechas de entrega usan `src/app/core/utils/fechas.ts` (misma regla que el backend) y
   `src/app/core/config/dias-festivos.ts`; el `min` del input y la cláusula visible se alimentan
   de esa utilidad. No dupliques listas de festivos en componentes.
+- `inventario` alterna entre tarjetas por producto (default) y tabla general con
+  `vistaActual`. El botón «Reponer» reutiliza `abrirAjuste(materia, 'entrada')`; no crees un
+  segundo modal de entradas.
 - La previsualización de mockups de `/cotizar` vive en `cotizar.component.*`: catálogo
   `MOCKUPS_CATALOGO` indexado por nombre de producto, imágenes en
   `src/assets/images/mockups/*.webp` y área de impresión en

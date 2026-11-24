@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from auth import role_required, token_required
 from extensions import db
@@ -26,6 +26,63 @@ def listar_productos():
         query = query.filter(Producto.nombre.ilike(f"%{busqueda}%"))
     productos = query.order_by(Producto.nombre.asc()).all()
     return jsonify({"items": [p.to_dict() for p in productos], "total": len(productos)})
+
+
+@productos_bp.get("/productos/insumos")
+@token_required
+def listar_insumos_por_producto():
+    """Productos activos con el desglose de insumos de su receta."""
+    productos = (
+        Producto.query.options(
+            joinedload(Producto.receta)
+            .selectinload(Receta.componentes)
+            .joinedload(RecetaComponente.materia_prima)
+        )
+        .filter(Producto.activo.is_(True))
+        .order_by(Producto.nombre.asc())
+        .all()
+    )
+    items = [_producto_con_insumos(producto) for producto in productos]
+    return jsonify({"items": items, "total": len(items)})
+
+
+def _producto_con_insumos(producto: Producto) -> dict:
+    data = producto.to_dict()
+    receta = producto.receta
+    data["receta"] = (
+        {
+            "id": receta.id,
+            "nombre": receta.nombre,
+            "rendimiento": float(receta.rendimiento or 0),
+            "unidadRendimiento": receta.unidad_rendimiento,
+            "componentes": [
+                {
+                    "id": componente.id,
+                    "materiaPrimaId": componente.materia_prima_id,
+                    "nombreMateriaPrima": (
+                        componente.materia_prima.nombre if componente.materia_prima else None
+                    ),
+                    "cantidad": float(componente.cantidad or 0),
+                    "unidadMedida": componente.unidad_medida,
+                    "desperdicioPorcentaje": float(componente.desperdicio_porcentaje or 0),
+                    "stockActual": (
+                        float(componente.materia_prima.stock_actual or 0)
+                        if componente.materia_prima
+                        else 0
+                    ),
+                    "bajoStock": bool(
+                        componente.materia_prima.bajo_stock
+                        if componente.materia_prima
+                        else False
+                    ),
+                }
+                for componente in receta.componentes
+            ],
+        }
+        if receta
+        else None
+    )
+    return data
 
 
 @productos_bp.get("/productos/<int:producto_id>")

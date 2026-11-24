@@ -50,7 +50,7 @@ e2e/
 │   ├── solicitudes/# solicitud pública, adjuntos y seguimiento
 │   ├── cotizaciones/# conversión, cotizador manual y totales exactos
 │   ├── flujo-compra/# compra completa, pagos e inventario insuficiente
-│   ├── inventario/  # descuento por receta y movimiento de salida
+│   ├── inventario/  # descuento por receta e insumos por producto
 │   ├── usuarios/    # alta y listado de usuarios por UI + restricción de rol
 │   └── smoke/       # portada, catálogo, LCP y consola
 ├── global-setup.ts

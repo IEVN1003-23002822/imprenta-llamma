@@ -565,6 +565,43 @@ class FlujosApiTest(unittest.TestCase):
         self.assertEqual(self._json(rechazada)["error"], mensaje)
         self.assertEqual(Pedido.query.count(), pedidos_antes)
 
+    def test_16_insumos_por_producto(self) -> None:
+        headers = self._auth(self._token())
+        respuesta = self.client.get("/api/productos/insumos", headers=headers)
+        self.assertEqual(respuesta.status_code, 200, respuesta.get_data(as_text=True))
+        productos = self._json(respuesta)["items"]
+        lona = next((p for p in productos if p["id"] == self.producto.id), None)
+        self.assertIsNotNone(lona)
+        self.assertIsNotNone(lona["receta"])
+        nombres = {
+            componente["nombreMateriaPrima"] for componente in lona["receta"]["componentes"]
+        }
+        self.assertIn("Lona QA", nombres)
+        for componente in lona["receta"]["componentes"]:
+            self.assertIn("bajoStock", componente)
+            self.assertIn("stockActual", componente)
+
+        nombre = f"Servicio sin receta {date.today().isoformat()}"
+        creado = self.client.post(
+            "/api/productos",
+            headers=headers,
+            json={
+                "nombre": nombre,
+                "precioBase": 100,
+                "categoria": "otro",
+                "lineaProduccion": "gran-formato",
+                "unidadVenta": "pieza",
+            },
+        )
+        self.assertEqual(creado.status_code, 201, creado.get_data(as_text=True))
+        self.assertIsNone(self._json(creado).get("receta"))
+        nuevo = self.client.get("/api/productos/insumos", headers=headers)
+        producto = next(
+            (p for p in self._json(nuevo)["items"] if p["nombre"] == nombre), None
+        )
+        self.assertIsNotNone(producto)
+        self.assertIsNone(producto["receta"])
+
 
 if __name__ == "__main__":
     unittest.main()

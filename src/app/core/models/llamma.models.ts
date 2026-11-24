@@ -471,6 +471,29 @@ export interface RecetaApi {
   componentes: RecetaComponenteApi[];
 }
 
+export interface ComponenteReceta {
+  id: number;
+  materiaPrimaId: number;
+  nombreMateriaPrima: string;
+  cantidad: number;
+  unidadMedida: UnidadMedida;
+  desperdicioPorcentaje: number;
+  stockActual: number;
+  bajoStock: boolean;
+}
+
+export interface RecetaInsumos {
+  id: number;
+  nombre: string;
+  rendimiento: number;
+  unidadRendimiento: UnidadMedida;
+  componentes: ComponenteReceta[];
+}
+
+export interface ProductoConReceta extends ProductoApi {
+  receta: RecetaInsumos | null;
+}
+
 export interface MateriaPrimaApi {
   id: number;
   nombre: string;
