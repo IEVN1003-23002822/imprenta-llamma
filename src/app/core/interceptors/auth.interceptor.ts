@@ -13,7 +13,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const ui = inject(UiService);
 
-  const esPublica = req.url.includes('/public/') || req.url.includes('/auth/login');
+  // Se compara solo la ruta: una URL interna puede llevar `/public/` en sus
+  // parámetros sin ser un endpoint público.
+  const [ruta] = req.url.split(/[?#]/);
+  const esPublica =
+    ruta === '/api/public' || ruta.startsWith('/api/public/') || ruta === '/api/auth/login';
   const token = auth.token;
   const conToken = !esPublica && !!token;
 

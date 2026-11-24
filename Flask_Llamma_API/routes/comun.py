@@ -201,12 +201,62 @@ def crear_cotizacion(
     return cotizacion
 
 
-def descontar_inventario(pedido: Pedido, usuario: Usuario) -> None:
-    """Descuenta insumos según la receta de cada producto del pedido."""
-    for item in pedido.items:
-        if not item.producto or not item.producto.receta:
+class DescuentoInventarioError(ValueError):
+    """Error de negocio al vincular productos o validar stock."""
+
+    def __init__(self, mensaje: str, detalles: list[dict] | None = None):
+        super().__init__(mensaje)
+        self.mensaje = mensaje
+        self.detalles = detalles or []
+
+
+class InventarioInsuficiente(DescuentoInventarioError):
+    """El documento requiere más stock del disponible en uno o más insumos."""
+
+    def __init__(self, mensaje: str, detalles: list[dict]):
+        super().__init__(mensaje, detalles)
+
+
+def _descontar_inventario(
+    cotizacion_o_pedido: Cotizacion | Pedido,
+    usuario: Usuario,
+) -> dict:
+    """Valida y descuenta insumos de una cotización o pedido.
+
+    Acumula el requerimiento de todas las partidas, valida el stock completo y
+    solo entonces modifica existencias y registra movimientos. Devuelve el
+    resumen para que la API y la UI muestren el resultado. La bandera
+    `inventario_descontado` evita descuentos duplicados.
+    """
+    documento = cotizacion_o_pedido
+    if getattr(documento, "inventario_descontado", False):
+        return {"descontados": [], "alertas": []}
+
+    requerimientos: dict[int, dict] = {}
+
+    for item in documento.items:
+        producto = item.producto
+        if not producto and item.producto_id:
+            producto = Producto.query.get(item.producto_id)
+        if not producto:
+            nombre = (item.descripcion or "").strip()
+            producto = (
+                Producto.query.filter(func.lower(Producto.nombre) == nombre.lower()).first()
+                if nombre
+                else None
+            )
+            if not producto:
+                raise DescuentoInventarioError(
+                    f"No se encontró el producto '{nombre or item.descripcion}' para "
+                    "descontar inventario."
+                )
+            item.producto_id = producto.id
+            item.producto = producto
+
+        receta = producto.receta
+        if not receta:
             continue
-        receta = item.producto.receta
+
         rendimiento = float(receta.rendimiento or 1) or 1
         for componente in receta.componentes:
             materia = componente.materia_prima
@@ -218,22 +268,72 @@ def descontar_inventario(pedido: Pedido, usuario: Usuario) -> None:
                 * (1 + float(componente.desperdicio_porcentaje or 0) / 100)
                 / rendimiento
             )
-            requerido = round(requerido, 4)
-            disponible = float(materia.stock_actual or 0)
-            descontado = min(max(requerido, 0), max(disponible, 0))
-            if descontado <= 0:
+            if requerido <= 0:
                 continue
-
-            materia.stock_actual = round(disponible - descontado, 4)
-            db.session.add(
-                MovimientoInventario(
-                    materia_prima_id=materia.id,
-                    tipo="salida",
-                    cantidad=descontado,
-                    unidad_medida=materia.unidad_medida,
-                    costo_unitario=materia.costo_unitario,
-                    referencia=pedido.folio,
-                    motivo=f"Consumo por producción de {item.descripcion}",
-                    usuario_id=usuario.id,
-                )
+            registro = requerimientos.setdefault(
+                materia.id,
+                {"materia": materia, "cantidad": 0.0, "productos": set()},
             )
+            registro["cantidad"] += requerido
+            registro["productos"].add(producto.nombre)
+
+    faltantes = []
+    for registro in requerimientos.values():
+        materia = registro["materia"]
+        requerido = registro["cantidad"]
+        disponible = max(float(materia.stock_actual or 0), 0)
+        if requerido > disponible + 1e-9:
+            producto_nombre = sorted(registro["productos"])[0]
+            faltantes.append(
+                {
+                    "materiaPrimaId": materia.id,
+                    "materia": materia.nombre,
+                    "producto": producto_nombre,
+                    "unidadMedida": materia.unidad_medida,
+                    "requerido": round(requerido, 4),
+                    "disponible": round(disponible, 4),
+                    "faltante": round(requerido - disponible, 4),
+                }
+            )
+
+    if faltantes:
+        primero = faltantes[0]
+        raise InventarioInsuficiente(
+            f"Stock insuficiente de {primero['materia']} para cotizar "
+            f"{primero['producto']}",
+            faltantes,
+        )
+
+    resultado = {"descontados": [], "alertas": []}
+    for registro in requerimientos.values():
+        materia = registro["materia"]
+        cantidad = round(registro["cantidad"], 4)
+        disponible = max(float(materia.stock_actual or 0), 0)
+        restante = round(disponible - cantidad, 4)
+        materia.stock_actual = restante
+        db.session.add(
+            MovimientoInventario(
+                materia_prima_id=materia.id,
+                tipo="salida",
+                cantidad=cantidad,
+                unidad_medida=materia.unidad_medida,
+                costo_unitario=materia.costo_unitario,
+                referencia=documento.folio,
+                motivo=f"Consumo por producción de {documento.folio}",
+                usuario_id=usuario.id,
+            )
+        )
+        bajo_stock = materia.bajo_stock
+        resultado["descontados"].append(
+            {
+                "materia": materia.nombre,
+                "cantidad": cantidad,
+                "stock_restante": restante,
+                "bajo_stock": bool(bajo_stock),
+            }
+        )
+        if bajo_stock:
+            resultado["alertas"].append(f"{materia.nombre} quedó en stock bajo")
+
+    documento.inventario_descontado = True
+    return resultado

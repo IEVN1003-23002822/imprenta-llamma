@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import re
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 from flask import current_app
 from sqlalchemy import func
@@ -42,6 +42,45 @@ def generar_folio(
         except (TypeError, ValueError):
             siguiente = inicio
     return f"{base}{siguiente:0{relleno}d}"
+
+
+MENSAJE_FECHA_MINIMA = (
+    "La fecha de entrega solicitada no es válida. "
+    "El margen mínimo es de 2 días hábiles."
+)
+
+
+def calcular_fecha_minima_entrega(
+    fecha_inicio: date,
+    dias_habiles: int = 2,
+    festivos: tuple[str, ...] | list[str] | None = None,
+) -> date:
+    """Suma días hábiles saltando sábados, domingos y días festivos.
+
+    `festivos` se recibe como fechas ISO (`YYYY-MM-DD`); si se omite, usa
+    `DIAS_FESTIVOS` de la configuración de Flask. La fecha de inicio no cuenta.
+    """
+    if dias_habiles <= 0:
+        return fecha_inicio
+
+    if festivos is None:
+        festivos = current_app.config.get("DIAS_FESTIVOS", ())
+
+    cierres: set[date] = set()
+    for valor in festivos:
+        try:
+            cierres.add(date.fromisoformat(str(valor)[:10]))
+        except ValueError:
+            continue
+
+    actual = fecha_inicio
+    contados = 0
+    while contados < dias_habiles:
+        actual += timedelta(days=1)
+        if actual.weekday() >= 5 or actual in cierres:
+            continue
+        contados += 1
+    return actual
 
 
 def parse_fecha(valor: str | None) -> date | None:

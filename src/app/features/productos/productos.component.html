@@ -128,7 +128,7 @@
           >
             @if (producto.imagenUrl && !imagenesConError().has(producto.id)) {
               <figure
-                class="relative -mx-5 -mt-5 mb-[0.55rem] aspect-[3/2] overflow-hidden border-b border-[var(--llamma-line)] bg-[#f3f1eb] [&_img]:block [&_img]:h-full [&_img]:w-full [&_img]:object-cover"
+                class="relative -mx-5 -mt-5 mb-[0.55rem] aspect-square overflow-hidden border-b border-[var(--llamma-line)] bg-[#f3f1eb] [&_img]:block [&_img]:h-full [&_img]:w-full [&_img]:object-contain"
               >
                 <img
                   [src]="producto.imagenUrl"

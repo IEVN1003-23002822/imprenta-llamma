@@ -16,10 +16,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-import {
-  ImagenMockupPreparada,
-  LlammaService,
-} from '../../../core/services/llamma.service';
+import { ImagenMockupPreparada, LlammaService } from '../../../core/services/llamma.service';
 import { ModalAccesibleDirective } from '../../../shared/modal-accesible.directive';
 
 export interface CapaDiseño3D {
@@ -464,11 +461,7 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
     if (!hit || !hit.face) {
       return { punto: new THREE.Vector3(0, 0.2, 0.4), normal: new THREE.Vector3(0, 0, 1) };
     }
-    const normal = hit.face.normal
-    
-      .clone()
-      .transformDirection(hit.object.matrixWorld)
-      .normalize();
+    const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
     if (normal.z < 0) normal.negate();
     return { punto: hit.point.clone(), normal };
   }
@@ -586,7 +579,16 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
 
       group.add(
         new THREE.Mesh(
-          new THREE.CylinderGeometry(1.046, 1.006, 1.86, 64, 1, true, Math.PI * 0.62, Math.PI * 1.76),
+          new THREE.CylinderGeometry(
+            1.046,
+            1.006,
+            1.86,
+            64,
+            1,
+            true,
+            Math.PI * 0.62,
+            Math.PI * 1.76,
+          ),
           wrapMat,
         ),
       );
@@ -599,7 +601,12 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
       frente.position.z = 0.018;
       group.add(frente);
       const ojilloGeo = new THREE.TorusGeometry(0.055, 0.016, 12, 24);
-      for (const [x, y] of [[-1.48, 0.77], [1.48, 0.77], [-1.48, -0.77], [1.48, -0.77]]) {
+      for (const [x, y] of [
+        [-1.48, 0.77],
+        [1.48, 0.77],
+        [-1.48, -0.77],
+        [1.48, -0.77],
+      ]) {
         const ojillo = new THREE.Mesh(ojilloGeo, metalMat);
         ojillo.position.set(x, y, 0.018);
         group.add(ojillo);
@@ -734,7 +741,9 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
           img.src = resp.dataUrl;
         },
         error: () => {
-          this.error.set('No pudimos procesar la imagen en el servidor. Revisa que Flask esté activo.');
+          this.error.set(
+            'No pudimos procesar la imagen en el servidor. Revisa que Flask esté activo.',
+          );
           this.procesando.set(false);
         },
       });
@@ -769,7 +778,13 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
       this.capas.update((lista) =>
         lista.map((capa) =>
           capa.id === id
-            ? { ...capa, punto3d: inicial?.punto, normal3d: inicial?.normal, escala: 55, rotacion: 0 }
+            ? {
+                ...capa,
+                punto3d: inicial?.punto,
+                normal3d: inicial?.normal,
+                escala: 55,
+                rotacion: 0,
+              }
             : capa,
         ),
       );

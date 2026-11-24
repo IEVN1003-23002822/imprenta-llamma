@@ -7,6 +7,7 @@ import {
   ClienteApi,
   ConsultaPedidosApi,
   Cotizacion,
+  DescuentoResultado,
   MateriaPrimaApi,
   MensajeChat,
   MovimientoApi,
@@ -14,18 +15,22 @@ import {
   OrdenCompraApi,
   PedidoApi,
   ProductoApi,
+  ProductoConReceta,
   ProductoPublico,
   ProveedorApi,
   RecetaApi,
   ResumenDashboardApi,
   ResumenSolicitudes,
   RespuestaPaginada,
+  RolApi,
   SeguimientoSolicitud,
   SolicitudCotizacion,
   EstadoSolicitud,
   TableroProduccion,
   OrdenProduccionApi,
   ControlCalidadApi,
+  NuevoUsuarioPayload,
+  Usuario,
 } from '../models/llamma.models';
 
 /**
@@ -47,8 +52,7 @@ export interface ImagenMockupPreparada {
 
 @Injectable({ providedIn: 'root' })
 export class LlammaService {
-
-prepararImagenMockup(
+  prepararImagenMockup(
     archivo: File,
     opciones?: { quitarFondo?: boolean; recortar?: boolean; umbral?: number },
   ): Observable<ImagenMockupPreparada> {
@@ -276,8 +280,14 @@ prepararImagenMockup(
     return this.http.get<RespuestaPaginada<Cotizacion>>(`${this.apiUrl}/cotizaciones`, { params });
   }
 
-  cambiarEstadoCotizacion(id: number, estado: string): Observable<Cotizacion> {
-    return this.http.patch<Cotizacion>(`${this.apiUrl}/cotizaciones/${id}/estado`, { estado });
+  cambiarEstadoCotizacion(
+    id: number,
+    estado: string,
+  ): Observable<Cotizacion & { descuento?: DescuentoResultado }> {
+    return this.http.patch<Cotizacion & { descuento?: DescuentoResultado }>(
+      `${this.apiUrl}/cotizaciones/${id}/estado`,
+      { estado },
+    );
   }
 
   convertirCotizacionAPedido(
@@ -289,14 +299,23 @@ prepararImagenMockup(
       metodoPago?: string;
       referenciaPago?: string;
     } = {},
-  ): Observable<PedidoApi> {
-    return this.http.post<PedidoApi>(`${this.apiUrl}/cotizaciones/${id}/convertir-pedido`, body);
+  ): Observable<PedidoApi & { descuento?: DescuentoResultado }> {
+    return this.http.post<PedidoApi & { descuento?: DescuentoResultado }>(
+      `${this.apiUrl}/cotizaciones/${id}/convertir-pedido`,
+      body,
+    );
   }
 
   /* -------------------------------- Catálogo --------------------------- */
 
   listarProductos(): Observable<{ items: ProductoApi[]; total: number }> {
     return this.http.get<{ items: ProductoApi[]; total: number }>(`${this.apiUrl}/productos`);
+  }
+
+  listarInsumosPorProducto(): Observable<{ items: ProductoConReceta[]; total: number }> {
+    return this.http.get<{ items: ProductoConReceta[]; total: number }>(
+      `${this.apiUrl}/productos/insumos`,
+    );
   }
 
   detalleProducto(id: number): Observable<ProductoApi & { receta?: RecetaApi | null }> {
@@ -523,6 +542,20 @@ prepararImagenMockup(
       `${this.apiUrl}/produccion/ordenes/${id}/calidad`,
       body,
     );
+  }
+
+  /* ------------------------------- Usuarios ---------------------------- */
+
+  listarUsuarios(): Observable<{ items: Usuario[]; total: number }> {
+    return this.http.get<{ items: Usuario[]; total: number }>(`${this.apiUrl}/usuarios`);
+  }
+
+  listarRoles(): Observable<{ items: RolApi[]; total: number }> {
+    return this.http.get<{ items: RolApi[]; total: number }>(`${this.apiUrl}/roles`);
+  }
+
+  crearUsuario(body: NuevoUsuarioPayload): Observable<Usuario> {
+    return this.http.post<Usuario>(`${this.apiUrl}/usuarios`, body);
   }
 
   /* ------------------------------- Marketing --------------------------- */

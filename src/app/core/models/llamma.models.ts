@@ -198,6 +198,21 @@ export interface Usuario {
   ultimoAcceso?: string | null;
 }
 
+export interface RolApi {
+  id: number;
+  nombre: RolUsuario;
+  descripcion?: string | null;
+  permisos?: string[];
+}
+
+export interface NuevoUsuarioPayload {
+  nombre: string;
+  correo: string;
+  password: string;
+  rol: RolUsuario;
+  telefono?: string;
+}
+
 export interface ActividadMarketing {
   id: Identificador;
   nombre: string;
@@ -384,8 +399,20 @@ export interface Cotizacion {
   anticipo: number;
   saldo: number;
   notas?: string | null;
+  inventarioDescontado?: boolean;
+  descuento?: DescuentoResultado;
   creadoEn: string;
   items?: ItemCotizacion[];
+}
+
+export interface DescuentoResultado {
+  descontados: Array<{
+    materia: string;
+    cantidad: number;
+    stock_restante: number;
+    bajo_stock: boolean;
+  }>;
+  alertas: string[];
 }
 
 export interface NuevaSolicitudPayload {
@@ -454,6 +481,29 @@ export interface RecetaApi {
   costoEstimado: number;
   tiempoProduccionMin: number;
   componentes: RecetaComponenteApi[];
+}
+
+export interface ComponenteReceta {
+  id: number;
+  materiaPrimaId: number;
+  nombreMateriaPrima: string;
+  cantidad: number;
+  unidadMedida: UnidadMedida;
+  desperdicioPorcentaje: number;
+  stockActual: number;
+  bajoStock: boolean;
+}
+
+export interface RecetaInsumos {
+  id: number;
+  nombre: string;
+  rendimiento: number;
+  unidadRendimiento: UnidadMedida;
+  componentes: ComponenteReceta[];
+}
+
+export interface ProductoConReceta extends ProductoApi {
+  receta: RecetaInsumos | null;
 }
 
 export interface MateriaPrimaApi {
@@ -596,6 +646,8 @@ export interface PedidoApi {
   items?: PedidoItemApi[];
   pagos?: PagoApi[];
   ordenProduccion?: OrdenProduccionApi | null;
+  inventarioDescontado?: boolean;
+  descuento?: DescuentoResultado;
 }
 
 export interface TableroProduccion {

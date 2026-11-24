@@ -25,6 +25,7 @@ class Cotizacion(TimestampMixin, db.Model):
     anticipo = db.Column(db.Numeric(12, 2), default=0, nullable=False)
     saldo = db.Column(db.Numeric(12, 2), default=0, nullable=False)
     notas = db.Column(db.Text)
+    inventario_descontado = db.Column(db.Boolean, default=False, nullable=False)
 
     __table_args__ = (db.Index("ix_cotizaciones_creado_en", "creado_en"),)
 
@@ -53,6 +54,7 @@ class Cotizacion(TimestampMixin, db.Model):
             "anticipo": float(self.anticipo or 0),
             "saldo": float(self.saldo or 0),
             "notas": self.notas,
+            "inventarioDescontado": bool(self.inventario_descontado),
             "creadoEn": iso(self.creado_en),
         }
         if incluir_items:
@@ -109,6 +111,7 @@ class Pedido(TimestampMixin, db.Model):
     saldo = db.Column(db.Numeric(12, 2), default=0, nullable=False)
     notas = db.Column(db.Text)
     creado_por = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
+    inventario_descontado = db.Column(db.Boolean, default=False, nullable=False)
 
     __table_args__ = (
         db.Index("ix_pedidos_creado_en", "creado_en"),
@@ -141,6 +144,7 @@ class Pedido(TimestampMixin, db.Model):
             "anticipo": float(self.anticipo or 0),
             "saldo": float(self.saldo or 0),
             "notas": self.notas,
+            "inventarioDescontado": bool(self.inventario_descontado),
         }
         if incluir_detalle:
             data["items"] = [item.to_dict() for item in self.items]

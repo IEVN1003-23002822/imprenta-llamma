@@ -146,6 +146,20 @@ export const routes: Routes = [
       import('./features/clientes/clientes.component').then((m) => m.ClientesComponent),
   },
   {
+    path: 'usuarios',
+    title: 'Llamma | Usuarios',
+    canActivate: [authGuard, roleGuard],
+    data: {
+      roles: ['admin'],
+      seo: {
+        descripcion: 'Administración de usuarios internos y roles de acceso al panel de Llamma.',
+        noindex: true,
+      },
+    },
+    loadComponent: () =>
+      import('./features/usuarios/usuarios.component').then((m) => m.UsuariosComponent),
+  },
+  {
     path: 'marketing',
     title: 'Llamma | Marketing',
     canActivate: [authGuard, roleGuard],

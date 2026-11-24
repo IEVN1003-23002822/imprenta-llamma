@@ -59,8 +59,8 @@
         <p class="m3d-hint">
           <i class="bi bi-hand-index-thumb"></i>
           @if (modoDecal()) {
-            Haz clic en cualquier parte del producto para colocar tu
-            imagen, o activa <strong>Mover imagen arrastrando</strong>.
+            Haz clic en cualquier parte del producto para colocar tu imagen, o activa
+            <strong>Mover imagen arrastrando</strong>.
           } @else {
             Arrastra sobre el producto para girarlo 360° y usa la rueda para acercar.
           }
@@ -81,11 +81,7 @@
             (change)="subirImagenes($event)"
           />
           <label class="m3d-check">
-            <input
-              type="checkbox"
-              [checked]="quitarFondo()"
-              (change)="toggleQuitarFondo($event)"
-            />
+            <input type="checkbox" [checked]="quitarFondo()" (change)="toggleQuitarFondo($event)" />
             <span>Quitar fondo blanco automáticamente</span>
           </label>
           @if (procesando()) {
@@ -103,8 +99,13 @@
               @for (capa of capas(); track capa.id) {
                 <div
                   class="m3d-layer"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-pressed]="capaActivaId() === capa.id"
                   [class.is-active]="capaActivaId() === capa.id"
                   (click)="seleccionarCapa(capa.id)"
+                  (keydown.enter)="seleccionarCapa(capa.id)"
+                  (keydown.space)="seleccionarCapa(capa.id)"
                 >
                   <img [src]="capa.dataUrl" [alt]="capa.nombre" />
                   <div class="m3d-layer-info">
@@ -141,7 +142,9 @@
             <div class="m3d-sliders">
               @if (!modoDecal()) {
                 <label>
-                  <span>Posición horizontal (alrededor): <strong>{{ activa.x }}%</strong></span>
+                  <span
+                    >Posición horizontal (alrededor): <strong>{{ activa.x }}%</strong></span
+                  >
                   <input
                     type="range"
                     min="5"
@@ -153,7 +156,9 @@
                 </label>
 
                 <label>
-                  <span>Posición vertical: <strong>{{ activa.y }}%</strong></span>
+                  <span
+                    >Posición vertical: <strong>{{ activa.y }}%</strong></span
+                  >
                   <input
                     type="range"
                     min="10"
@@ -166,7 +171,9 @@
               }
 
               <label>
-                <span>Tamaño: <strong>{{ activa.escala }}%</strong></span>
+                <span
+                  >Tamaño: <strong>{{ activa.escala }}%</strong></span
+                >
                 <input
                   type="range"
                   min="12"
@@ -178,7 +185,9 @@
               </label>
 
               <label>
-                <span>Rotación: <strong>{{ activa.rotacion }}°</strong></span>
+                <span
+                  >Rotación: <strong>{{ activa.rotacion }}°</strong></span
+                >
                 <input
                   type="range"
                   min="-180"
@@ -201,7 +210,11 @@
         [disabled]="!capas().length"
         (click)="guardarCapturaEnSolicitud()"
       >
-        <i class="bi" [class.bi-camera]="!capturaGuardada()" [class.bi-check-lg]="capturaGuardada()"></i>
+        <i
+          class="bi"
+          [class.bi-camera]="!capturaGuardada()"
+          [class.bi-check-lg]="capturaGuardada()"
+        ></i>
         {{ capturaGuardada() ? 'Captura adjuntada' : 'Adjuntar vista 3D a mi solicitud' }}
       </button>
       <button type="button" class="btn btn-ink" (click)="cerrar.emit()">Listo</button>

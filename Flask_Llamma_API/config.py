@@ -82,4 +82,29 @@ class Config:
     IVA_RATE = 0.16
     ANTICIPO_RATE = 0.50
 
+    # Días de cierre de operaciones (fines de semana aparte). Actualizar cada
+    # año en esta lista y en src/app/core/config/dias-festivos.ts.
+    # Incluye días oficiales de México y los cierres de producción del 24 y 25
+    # de diciembre indicados por el equipo de taller.
+    DIAS_FESTIVOS = (
+        # 2026
+        "2026-01-01",  # Año Nuevo
+        "2026-02-02",  # Primer lunes de febrero
+        "2026-03-16",  # Tercer lunes de marzo
+        "2026-05-01",  # Día del Trabajo
+        "2026-09-16",  # Independencia
+        "2026-11-16",  # Tercer lunes de noviembre
+        "2026-12-24",  # Cierre de taller
+        "2026-12-25",  # Navidad
+        # 2027
+        "2027-01-01",  # Año Nuevo
+        "2027-02-01",  # Primer lunes de febrero
+        "2027-03-15",  # Tercer lunes de marzo
+        "2027-05-01",  # Día del Trabajo
+        "2027-09-16",  # Independencia
+        "2027-11-15",  # Tercer lunes de noviembre
+        "2027-12-24",  # Cierre de taller
+        "2027-12-25",  # Navidad
+    )
+
     JSON_SORT_KEYS = False

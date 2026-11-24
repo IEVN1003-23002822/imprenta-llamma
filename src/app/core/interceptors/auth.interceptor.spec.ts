@@ -87,6 +87,14 @@ describe('authInterceptor', () => {
     expect(error).toHaveBeenCalledTimes(1);
   });
 
+  it('a\u00f1ade el token si una URL interna solo menciona /public/ en sus par\u00e1metros', () => {
+    http.get('/api/clientes?origen=/public/landing').subscribe();
+
+    const peticion = control.expectOne('/api/clientes?origen=/public/landing');
+    expect(peticion.request.headers.get('Authorization')).toBe('Bearer token-1');
+    peticion.flush({ items: [], total: 0 });
+  });
+
   it('deja pasar otros errores sin tocar la sesión', () => {
     const error = vi.fn();
     http.get('/api/pedidos').subscribe({ error });

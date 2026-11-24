@@ -11,10 +11,17 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import {
+  MENSAJE_FECHA_MINIMA,
+  calcularFechaMinimaEntrega,
+  esFechaEntregaValida,
+} from '../../core/utils/fechas';
 import { ESTADOS_COTIZACION, badgeDe, etiquetaDe } from '../../core/models/estados';
 import { LlammaService } from '../../core/services/llamma.service';
+import { UiService } from '../../core/services/ui.service';
 import {
   Cotizacion,
+  DescuentoResultado,
   ItemCotizacion,
   ProductoPublico,
   SegmentoCliente,
@@ -33,6 +40,7 @@ const redondear = (valor: number) => Math.round(valor * 100) / 100;
 export class CapturaComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(LlammaService);
+  private readonly ui = inject(UiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -48,6 +56,10 @@ export class CapturaComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly pedidoCreado = signal<string | null>(null);
   readonly anticipoPagado = signal(false);
+  readonly descuento = signal<DescuentoResultado | null>(null);
+  readonly fechaMinima = calcularFechaMinimaEntrega();
+  readonly fechaEntrega = signal('');
+  readonly fechaEntregaInvalida = computed(() => !esFechaEntregaValida(this.fechaEntrega()));
 
   readonly productoId = signal<number | null>(null);
   readonly descripcion = signal('');
@@ -73,6 +85,11 @@ export class CapturaComponent implements OnInit {
   );
 
   readonly yaConvertida = computed(() => this.cotizacion()?.estado === 'convertida');
+  readonly puedeAprobar = computed(() => {
+    const estado = this.cotizacion()?.estado;
+    return estado === 'borrador' || estado === 'enviada';
+  });
+  readonly aprobando = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     nombreCliente: ['', [Validators.required, Validators.minLength(3)]],
@@ -350,9 +367,48 @@ export class CapturaComponent implements OnInit {
       });
   }
 
+  aprobarCotizacion(): void {
+    const cotizacion = this.cotizacion();
+    if (!cotizacion || this.aprobando() || !this.puedeAprobar()) return;
+
+    this.aprobando.set(true);
+    this.error.set(null);
+    this.service
+      .cambiarEstadoCotizacion(cotizacion.id, 'aprobada')
+      .pipe(finalize(() => this.aprobando.set(false)))
+      .subscribe({
+        next: (respuesta) => {
+          this.cotizacion.update((actual) =>
+            actual
+              ? {
+                  ...actual,
+                  estado: respuesta.estado,
+                  inventarioDescontado:
+                    respuesta.inventarioDescontado ?? actual.inventarioDescontado,
+                }
+              : actual,
+          );
+          this.descuento.set(respuesta.descuento ?? null);
+          this.ui.exito('Cotización aprobada. El inventario quedó descontado.');
+        },
+        error: (respuesta: HttpErrorResponse) => {
+          this.error.set(
+            respuesta.error?.mensaje ||
+              respuesta.error?.error ||
+              'No pudimos aprobar la cotización.',
+          );
+        },
+      });
+  }
+
   convertirAPedido(): void {
     const cotizacion = this.cotizacion();
     if (!cotizacion || this.convirtiendo() || this.yaConvertida()) return;
+
+    if (!esFechaEntregaValida(this.fechaEntrega())) {
+      this.error.set(MENSAJE_FECHA_MINIMA);
+      return;
+    }
 
     this.convirtiendo.set(true);
     this.error.set(null);
@@ -362,18 +418,23 @@ export class CapturaComponent implements OnInit {
         anticipoPagado: this.anticipoPagado(),
         metodoPago: 'transferencia',
         prioridad: 'media',
+        fechaEntrega: this.fechaEntrega() || undefined,
       })
       .pipe(finalize(() => this.convirtiendo.set(false)))
       .subscribe({
         next: (respuesta) => {
-          const pedido = respuesta as { folio?: string };
-          this.pedidoCreado.set(pedido?.folio ?? '');
+          this.pedidoCreado.set(respuesta.folio ?? '');
+          this.descuento.set(respuesta.descuento ?? null);
           this.cotizacion.update((actual) =>
             actual ? { ...actual, estado: 'convertida' } : actual,
           );
         },
         error: (respuesta: HttpErrorResponse) => {
-          this.error.set(respuesta.error?.error || 'No pudimos convertir la cotización en pedido.');
+          this.error.set(
+            respuesta.error?.mensaje ||
+              respuesta.error?.error ||
+              'No pudimos convertir la cotización en pedido.',
+          );
         },
       });
   }
@@ -385,6 +446,9 @@ export class CapturaComponent implements OnInit {
     this.error.set(null);
     this.partidas.set([]);
     this.solicitud.set(null);
+    this.anticipoPagado.set(false);
+    this.fechaEntrega.set('');
+    this.descuento.set(null);
     this.form.reset({
       nombreCliente: '',
       empresa: '',
@@ -401,6 +465,10 @@ export class CapturaComponent implements OnInit {
 
   toggleAnticipo(evento: Event): void {
     this.anticipoPagado.set((evento.target as HTMLInputElement).checked);
+  }
+
+  cambiarFechaEntrega(evento: Event): void {
+    this.fechaEntrega.set((evento.target as HTMLInputElement).value);
   }
 
   etiquetaEstado(): string {

@@ -15,8 +15,10 @@ import { ConfirmacionService } from '../../core/services/confirmacion.service';
 import { CATEGORIAS_MATERIA, TIPOS_MOVIMIENTO, UNIDADES } from '../../core/models/estados';
 import {
   CategoriaMateriaPrima,
+  ComponenteReceta,
   MateriaPrimaApi,
   MovimientoApi,
+  ProductoConReceta,
   ProveedorApi,
   TipoMovimiento,
   UnidadMedida,
@@ -73,7 +75,10 @@ export class InventarioComponent implements OnInit {
   readonly materias = signal<MateriaPrimaApi[]>([]);
   readonly movimientos = signal<MovimientoApi[]>([]);
   readonly proveedores = signal<ProveedorApi[]>([]);
+  readonly productosInsumos = signal<ProductoConReceta[]>([]);
+  readonly vistaActual = signal<'tarjetas' | 'tabla'>('tarjetas');
   readonly cargando = signal(true);
+  readonly cargandoInsumos = signal(true);
   readonly cargandoMovimientos = signal(true);
   readonly error = signal<string | null>(null);
   readonly pagina = signal(1);
@@ -233,8 +238,40 @@ export class InventarioComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+    this.cargarInsumos();
     this.cargarMovimientos();
     this.cargarProveedores();
+  }
+
+  cargarInsumos(): void {
+    this.cargandoInsumos.set(true);
+    this.service
+      .listarInsumosPorProducto()
+      .pipe(finalize(() => this.cargandoInsumos.set(false)))
+      .subscribe({
+        next: (respuesta) => this.productosInsumos.set(respuesta.items),
+        error: (error) => {
+          this.productosInsumos.set([]);
+          this.ui.error(
+            this.ui.mensajeDeError(error, 'No pudimos cargar los insumos por producto.'),
+          );
+        },
+      });
+  }
+
+  cambiarVista(vista: 'tarjetas' | 'tabla'): void {
+    this.vistaActual.set(vista);
+  }
+
+  reponer(componente: ComponenteReceta): void {
+    const materia = this.materias().find((item) => item.id === componente.materiaPrimaId);
+    if (!materia) {
+      this.ui.info(
+        'El insumo aún no está en el inventario. Actualiza la lista e intenta de nuevo.',
+      );
+      return;
+    }
+    this.abrirAjuste(materia, 'entrada');
   }
 
   cargar(): void {

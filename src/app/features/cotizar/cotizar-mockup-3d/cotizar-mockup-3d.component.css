@@ -188,9 +188,15 @@
   text-transform: uppercase;
 }
 
-.m3d-quality.q-alta { color: #067647; }
-.m3d-quality.q-media { color: #b54708; }
-.m3d-quality.q-baja { color: #b42318; }
+.m3d-quality.q-alta {
+  color: #067647;
+}
+.m3d-quality.q-media {
+  color: #b54708;
+}
+.m3d-quality.q-baja {
+  color: #b42318;
+}
 
 .m3d-empty {
   margin: 0;
