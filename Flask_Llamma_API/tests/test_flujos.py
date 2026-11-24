@@ -602,6 +602,108 @@ class FlujosApiTest(unittest.TestCase):
         self.assertIsNotNone(producto)
         self.assertIsNone(producto["receta"])
 
+    def test_17_aprobacion_descuenta_una_sola_vez(self) -> None:
+        antes = float(MateriaPrima.query.get(self.lona.id).stock_actual)
+        creada = self.client.post(
+            "/api/cotizaciones",
+            headers=self._auth(self._token()),
+            json={
+                "clienteId": self.cliente.id,
+                "items": [{"productoId": self.producto.id, "cantidad": 1}],
+            },
+        )
+        self.assertEqual(creada.status_code, 201, creada.get_data(as_text=True))
+        cotizacion = self._json(creada)
+
+        aprobada = self.client.patch(
+            f"/api/cotizaciones/{cotizacion['id']}/estado",
+            headers=self._auth(self._token()),
+            json={"estado": "aprobada"},
+        )
+        self.assertEqual(aprobada.status_code, 200, aprobada.get_data(as_text=True))
+        datos = self._json(aprobada)
+        self.assertTrue(datos["inventarioDescontado"])
+        self.assertTrue(datos["descuento"]["descontados"])
+        despues_aprobacion = float(MateriaPrima.query.get(self.lona.id).stock_actual)
+        self.assertAlmostEqual(antes - despues_aprobacion, 2.2, places=4)
+
+        convertida = self.client.post(
+            f"/api/cotizaciones/{cotizacion['id']}/convertir-pedido",
+            headers=self._auth(self._token()),
+            json={},
+        )
+        self.assertEqual(convertida.status_code, 201, convertida.get_data(as_text=True))
+        despues_conversion = float(MateriaPrima.query.get(self.lona.id).stock_actual)
+        self.assertAlmostEqual(despues_conversion, despues_aprobacion, places=4)
+        self.assertTrue(self._json(convertida)["inventarioDescontado"])
+
+    def test_18_vincula_producto_por_nombre_si_falta_id(self) -> None:
+        antes = float(MateriaPrima.query.get(self.lona.id).stock_actual)
+        creada = self.client.post(
+            "/api/cotizaciones",
+            headers=self._auth(self._token()),
+            json={
+                "clienteId": self.cliente.id,
+                "items": [
+                    {
+                        "descripcion": self.producto.nombre,
+                        "cantidad": 1,
+                        "precioEstimado": 100,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(creada.status_code, 201, creada.get_data(as_text=True))
+        cotizacion = self._json(creada)
+        self.assertIsNone(cotizacion["items"][0]["productoId"])
+
+        aprobada = self.client.patch(
+            f"/api/cotizaciones/{cotizacion['id']}/estado",
+            headers=self._auth(self._token()),
+            json={"estado": "aprobada"},
+        )
+        self.assertEqual(aprobada.status_code, 200, aprobada.get_data(as_text=True))
+        self.assertAlmostEqual(
+            antes - float(MateriaPrima.query.get(self.lona.id).stock_actual), 2.2, places=4
+        )
+        actualizada = self.client.get(
+            f"/api/cotizaciones/{cotizacion['id']}", headers=self._auth(self._token())
+        )
+        self.assertEqual(self._json(actualizada)["items"][0]["productoId"], self.producto.id)
+
+    def test_19_aprobacion_bloquea_si_falta_stock(self) -> None:
+        antes = float(MateriaPrima.query.get(self.tinta.id).stock_actual)
+        creada = self.client.post(
+            "/api/cotizaciones",
+            headers=self._auth(self._token()),
+            json={
+                "clienteId": self.cliente.id,
+                "items": [{"productoId": self.producto_parcial.id, "cantidad": 2}],
+            },
+        )
+        self.assertEqual(creada.status_code, 201, creada.get_data(as_text=True))
+        cotizacion = self._json(creada)
+
+        rechazada = self.client.patch(
+            f"/api/cotizaciones/{cotizacion['id']}/estado",
+            headers=self._auth(self._token()),
+            json={"estado": "aprobada"},
+        )
+        self.assertEqual(rechazada.status_code, 400, rechazada.get_data(as_text=True))
+        datos = self._json(rechazada)
+        self.assertEqual(datos["error"], "Inventario insuficiente")
+        self.assertIn("Stock insuficiente de Tinta QA", datos["mensaje"])
+        self.assertIn("Playera QA con tinta escasa", datos["mensaje"])
+        self.assertAlmostEqual(
+            float(MateriaPrima.query.get(self.tinta.id).stock_actual), antes, places=4
+        )
+
+        detalle = self.client.get(
+            f"/api/cotizaciones/{cotizacion['id']}", headers=self._auth(self._token())
+        )
+        self.assertEqual(self._json(detalle)["estado"], "borrador")
+        self.assertFalse(self._json(detalle)["inventarioDescontado"])
+
 
 if __name__ == "__main__":
     unittest.main()

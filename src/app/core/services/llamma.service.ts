@@ -7,6 +7,7 @@ import {
   ClienteApi,
   ConsultaPedidosApi,
   Cotizacion,
+  DescuentoResultado,
   MateriaPrimaApi,
   MensajeChat,
   MovimientoApi,
@@ -254,8 +255,14 @@ export class LlammaService {
     return this.http.get<RespuestaPaginada<Cotizacion>>(`${this.apiUrl}/cotizaciones`, { params });
   }
 
-  cambiarEstadoCotizacion(id: number, estado: string): Observable<Cotizacion> {
-    return this.http.patch<Cotizacion>(`${this.apiUrl}/cotizaciones/${id}/estado`, { estado });
+  cambiarEstadoCotizacion(
+    id: number,
+    estado: string,
+  ): Observable<Cotizacion & { descuento?: DescuentoResultado }> {
+    return this.http.patch<Cotizacion & { descuento?: DescuentoResultado }>(
+      `${this.apiUrl}/cotizaciones/${id}/estado`,
+      { estado },
+    );
   }
 
   convertirCotizacionAPedido(
@@ -267,8 +274,11 @@ export class LlammaService {
       metodoPago?: string;
       referenciaPago?: string;
     } = {},
-  ): Observable<PedidoApi> {
-    return this.http.post<PedidoApi>(`${this.apiUrl}/cotizaciones/${id}/convertir-pedido`, body);
+  ): Observable<PedidoApi & { descuento?: DescuentoResultado }> {
+    return this.http.post<PedidoApi & { descuento?: DescuentoResultado }>(
+      `${this.apiUrl}/cotizaciones/${id}/convertir-pedido`,
+      body,
+    );
   }
 
   /* -------------------------------- Catálogo --------------------------- */

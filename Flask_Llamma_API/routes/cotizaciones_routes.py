@@ -24,9 +24,10 @@ from models import (
     utcnow,
 )
 from routes.comun import (
+    DescuentoInventarioError,
     InventarioInsuficiente,
+    _descontar_inventario,
     crear_cotizacion,
-    descontar_inventario,
 )
 from routes.helpers import campo, error, no_encontrado, payload
 from utils import (
@@ -117,7 +118,9 @@ def crear_cotizacion_desde_api():
 @cotizaciones_bp.patch("/cotizaciones/<int:cotizacion_id>/estado")
 @role_required("admin", "ventas")
 def cambiar_estado_cotizacion(cotizacion_id: int):
-    cotizacion = Cotizacion.query.get(cotizacion_id)
+    cotizacion = (
+        Cotizacion.query.filter_by(id=cotizacion_id).with_for_update().first()
+    )
     if not cotizacion:
         return no_encontrado("Cotización")
 
@@ -125,15 +128,45 @@ def cambiar_estado_cotizacion(cotizacion_id: int):
     if estado not in ESTADOS_COTIZACION:
         return error(f"Estado inválido. Usa: {', '.join(sorted(ESTADOS_COTIZACION))}")
 
+    descuento = None
+    if estado == "aprobada":
+        if cotizacion.inventario_descontado:
+            descuento = {"descontados": [], "alertas": []}
+        else:
+            try:
+                descuento = _descontar_inventario(cotizacion, g.usuario)
+            except DescuentoInventarioError as exc:
+                db.session.rollback()
+                cuerpo = {
+                    "error": (
+                        "Inventario insuficiente"
+                        if isinstance(exc, InventarioInsuficiente)
+                        else str(exc)
+                    ),
+                    "mensaje": str(exc),
+                    "detalles": exc.detalles,
+                }
+                return jsonify(cuerpo), 400
+
     cotizacion.estado = estado
-    db.session.commit()
-    return jsonify(cotizacion.to_dict(incluir_items=False))
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    data = cotizacion.to_dict(incluir_items=False)
+    if descuento is not None:
+        data["descuento"] = descuento
+    return jsonify(data)
 
 
 @cotizaciones_bp.post("/cotizaciones/<int:cotizacion_id>/convertir-pedido")
 @role_required("admin", "ventas")
 def convertir_cotizacion(cotizacion_id: int):
-    cotizacion = Cotizacion.query.get(cotizacion_id)
+    cotizacion = (
+        Cotizacion.query.filter_by(id=cotizacion_id).with_for_update().first()
+    )
     if not cotizacion:
         return no_encontrado("Cotización")
     if cotizacion.pedidos:
@@ -222,10 +255,26 @@ def convertir_cotizacion(cotizacion_id: int):
     db.session.add(pedido)
     try:
         db.session.flush()
-        descontar_inventario(pedido, g.usuario)
+        if cotizacion.inventario_descontado:
+            pedido.inventario_descontado = True
+            descuento = {"descontados": [], "alertas": []}
+        else:
+            descuento = _descontar_inventario(pedido, g.usuario)
+            cotizacion.inventario_descontado = True
         db.session.commit()
-    except InventarioInsuficiente as exc:
+    except DescuentoInventarioError as exc:
         db.session.rollback()
-        return jsonify({"error": "Inventario insuficiente", "detalles": exc.detalles}), 400
+        cuerpo = {
+            "error": (
+                "Inventario insuficiente"
+                if isinstance(exc, InventarioInsuficiente)
+                else str(exc)
+            ),
+            "mensaje": str(exc),
+            "detalles": exc.detalles,
+        }
+        return jsonify(cuerpo), 400
 
-    return jsonify(pedido.to_dict()), 201
+    data = pedido.to_dict()
+    data["descuento"] = descuento
+    return jsonify(data), 201

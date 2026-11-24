@@ -258,6 +258,14 @@ export class CotizarComponent implements OnInit {
 
   readonly productoId = signal<number | null>(null);
   readonly cantidad = signal(1);
+  readonly anchoCm = signal<number | null>(null);
+  readonly altoCm = signal<number | null>(null);
+  readonly permiteMedidas = computed(() => this.productoActual()?.unidadVenta === 'm2');
+  readonly metrosCuadrados = computed(() => {
+    const ancho = this.anchoCm() ?? 0;
+    const alto = this.altoCm() ?? 0;
+    return Math.round(((ancho * alto) / 10000) * 10000) / 10000;
+  });
   readonly especificaciones = signal('');
 
   readonly enviando = signal(false);
@@ -612,7 +620,19 @@ export class CotizarComponent implements OnInit {
   cambiarProducto(evento: Event): void {
     const valor = Number((evento.target as HTMLSelectElement).value);
     this.productoId.set(Number.isNaN(valor) ? null : valor);
+    this.anchoCm.set(null);
+    this.altoCm.set(null);
     this.guardarBorrador();
+  }
+
+  cambiarAncho(evento: Event): void {
+    const valor = Number((evento.target as HTMLInputElement).value);
+    this.anchoCm.set(Number.isFinite(valor) && valor > 0 ? valor : null);
+  }
+
+  cambiarAlto(evento: Event): void {
+    const valor = Number((evento.target as HTMLInputElement).value);
+    this.altoCm.set(Number.isFinite(valor) && valor > 0 ? valor : null);
   }
 
   cambiarCantidad(evento: Event): void {
@@ -644,12 +664,20 @@ export class CotizarComponent implements OnInit {
       return;
     }
 
-    const cantidad = Math.max(this.cantidad(), 1);
+    const cantidad =
+      this.permiteMedidas() && this.metrosCuadrados() > 0
+        ? this.metrosCuadrados()
+        : Math.max(this.cantidad(), 1);
+    const medida =
+      this.permiteMedidas() && this.metrosCuadrados() > 0
+        ? `${this.anchoCm()} × ${this.altoCm()} cm (${this.metrosCuadrados()} m²)`
+        : '';
     const item: ItemSolicitud = {
       productoId: producto.id,
       nombreProducto: producto.nombre,
       especificaciones:
         this.especificaciones().trim() ||
+        medida ||
         (producto.unidadVenta === 'm2'
           ? 'Medida exacta por confirmar (1 m² base + m² adicionales)'
           : 'Especificaciones estándar'),

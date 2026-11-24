@@ -182,14 +182,14 @@ PRODUCTOS = [
     },
     {
         "nombre": "Sticker troquelado",
-        "descripcion": "Vinil adhesivo brillante con corte de precisión, 8 × 8 cm.",
+        "descripcion": "Vinil adhesivo brillante con corte de precisión, 5 × 5 cm.",
         "categoria": "promocional",
         "linea": "promocionales",
         "precio": 35,
         "unidad": "pieza",
         "icono": "bi-stickies",
         "imagen": "assets/images/catalogo/promocionales/sticker-troquelado.webp",
-        "receta": {"rendimiento": 1, "unidad": "pieza", "costo": 12, "tiempo": 3, "componentes": [("Vinil adhesivo brillante", 0.02, "m2", 10), ("Laminado en frío", 0.05, "ml", 5)]},
+        "receta": {"rendimiento": 1, "unidad": "pieza", "costo": 12, "tiempo": 3, "componentes": [("Vinil adhesivo brillante", 0.0025, "m2", 10), ("Laminado en frío", 0.05, "ml", 5)]},
     },
     {
         "nombre": "Tarjetas Couché 300g",

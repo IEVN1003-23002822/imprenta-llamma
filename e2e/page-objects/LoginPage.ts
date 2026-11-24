@@ -16,8 +16,10 @@ export class LoginPage {
   }
 
   async expectDashboard(): Promise<void> {
-    await expect(this.page).toHaveURL(/\/dashboard/);
-    await expect(this.page.locator('main#contenido')).toContainText(/PANEL EJECUTIVO/i);
+    await expect(this.page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
+    await expect(this.page.locator('main#contenido')).toContainText(/PANEL EJECUTIVO/i, {
+      timeout: 15_000,
+    });
   }
 
   async expectError(mensaje: RegExp): Promise<void> {

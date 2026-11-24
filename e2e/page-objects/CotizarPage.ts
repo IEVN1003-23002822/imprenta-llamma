@@ -40,6 +40,15 @@ export class CotizarPage {
     await this.page.getByRole('button', { name: /Agregar a mi solicitud/i }).click();
   }
 
+  async agregarProductoConMedidas(nombre: string, anchoCm: number, altoCm: number): Promise<void> {
+    const selector = this.page.locator('#cotProducto');
+    await expect(selector.locator('option').filter({ hasText: nombre })).toHaveCount(1);
+    await selector.selectOption({ label: nombre });
+    await this.page.locator('#cotAncho').fill(String(anchoCm));
+    await this.page.locator('#cotAlto').fill(String(altoCm));
+    await this.page.getByRole('button', { name: /Agregar a mi solicitud/i }).click();
+  }
+
   async adjuntar(nombre: string, contenido: string, mimeType: string): Promise<void> {
     await this.page.locator('#cotArchivos').setInputFiles({
       name: nombre,

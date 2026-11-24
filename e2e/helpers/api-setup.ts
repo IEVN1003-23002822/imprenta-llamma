@@ -91,6 +91,34 @@ export async function convertirSolicitud(
   return respuesta.json();
 }
 
+export async function crearCotizacion(
+  api: APIRequestContext,
+  datos: Record<string, unknown>,
+): Promise<Record<string, any>> {
+  const respuesta = await api.post('/api/cotizaciones', { data: datos });
+  expect(respuesta.status(), await respuesta.text()).toBe(201);
+  return respuesta.json();
+}
+
+export async function cambiarEstadoCotizacion(
+  api: APIRequestContext,
+  id: number,
+  estado: string,
+): Promise<Record<string, any>> {
+  const respuesta = await api.patch(`/api/cotizaciones/${id}/estado`, { data: { estado } });
+  expect(respuesta.status(), await respuesta.text()).toBe(200);
+  return respuesta.json();
+}
+
+export async function obtenerCotizacion(
+  api: APIRequestContext,
+  id: number,
+): Promise<Record<string, any>> {
+  const respuesta = await api.get(`/api/cotizaciones/${id}`);
+  expect(respuesta.status(), await respuesta.text()).toBe(200);
+  return respuesta.json();
+}
+
 export async function convertirPedido(
   api: APIRequestContext,
   cotizacionId: number,

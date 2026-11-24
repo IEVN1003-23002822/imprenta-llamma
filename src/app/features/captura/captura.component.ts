@@ -20,6 +20,7 @@ import { ESTADOS_COTIZACION, badgeDe, etiquetaDe } from '../../core/models/estad
 import { LlammaService } from '../../core/services/llamma.service';
 import {
   Cotizacion,
+  DescuentoResultado,
   ItemCotizacion,
   ProductoPublico,
   SegmentoCliente,
@@ -53,6 +54,7 @@ export class CapturaComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly pedidoCreado = signal<string | null>(null);
   readonly anticipoPagado = signal(false);
+  readonly descuento = signal<DescuentoResultado | null>(null);
   readonly fechaMinima = calcularFechaMinimaEntrega();
   readonly fechaEntrega = signal('');
   readonly fechaEntregaInvalida = computed(() => !esFechaEntregaValida(this.fechaEntrega()));
@@ -380,14 +382,18 @@ export class CapturaComponent implements OnInit {
       .pipe(finalize(() => this.convirtiendo.set(false)))
       .subscribe({
         next: (respuesta) => {
-          const pedido = respuesta as { folio?: string };
-          this.pedidoCreado.set(pedido?.folio ?? '');
+          this.pedidoCreado.set(respuesta.folio ?? '');
+          this.descuento.set(respuesta.descuento ?? null);
           this.cotizacion.update((actual) =>
             actual ? { ...actual, estado: 'convertida' } : actual,
           );
         },
         error: (respuesta: HttpErrorResponse) => {
-          this.error.set(respuesta.error?.error || 'No pudimos convertir la cotización en pedido.');
+          this.error.set(
+            respuesta.error?.mensaje ||
+              respuesta.error?.error ||
+              'No pudimos convertir la cotización en pedido.',
+          );
         },
       });
   }
@@ -401,6 +407,7 @@ export class CapturaComponent implements OnInit {
     this.solicitud.set(null);
     this.anticipoPagado.set(false);
     this.fechaEntrega.set('');
+    this.descuento.set(null);
     this.form.reset({
       nombreCliente: '',
       empresa: '',

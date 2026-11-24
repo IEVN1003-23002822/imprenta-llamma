@@ -9,9 +9,9 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **17 archivos de spec, 40 pruebas, 4 proyectos → 160 ejecuciones por corrida**.
+- Suite creada: **19 archivos de spec, 44 pruebas, 4 proyectos → 176 ejecuciones por corrida**.
 - Corridas completas: **3 por proyecto (420 ejecuciones)**; todas verdes.
-- `40 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- `44 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, catálogo, edición de productos,
   solicitud pública con adjunto, seguimiento, cotización (desde solicitud y manual), totales,
   pedido, pago, producción, inventario, **alta de usuarios por UI** y smoke.
@@ -20,7 +20,7 @@ desarrollo del puerto 5000.**
   interna), **H-15** (seguimiento no muestra producción) y **H-14** (imagen LCP lazy).
 - Veredicto global: **⚠️ FUNCIONA_CON_RIESGOS** — los flujos críticos pasan; quedan dos defectos
   de dinero/precio fuera del alcance de esta iteración.
-- CI de la app: `format` ✅ · `lint` ✅ · Vitest **59/59** ✅ · `build` ✅ · backend **21/21** ✅.
+- CI de la app: `format` ✅ · `lint` ✅ · Vitest **59/59** ✅ · `build` ✅ · backend **24/24** ✅.
 
 > **Actualización 2026-11-23:** se corrigieron H-01 y H-12 (commit `54accf4`), se creó el módulo
 > `/usuarios` solo para admin (commit `dc711d1`), se implementaron las reglas de entrega de 2 días
@@ -103,12 +103,16 @@ por API.
 | Pago sobre saldo (H-06) | `flujo-compra/pagos.spec.ts` | PASS 400 | ✅ FUNCIONA |
 | Inventario insuficiente | `flujo-compra/flujo-compra.spec.ts` | PASS (400) | ✅ FUNCIONA |
 | Anticipo pagado | `flujo-compra/flujo-compra.spec.ts` | PASS | ✅ FUNCIONA |
+| Descuento al aprobar sin duplicar | `flujo-compra/descuento-cotizacion.spec.ts` | PASS | ✅ FUNCIONA |
+| Producto por nombre sin ID | `flujo-compra/descuento-cotizacion.spec.ts` | PASS | ✅ FUNCIONA |
+| Bloqueo por stock (API + UI) | `flujo-compra/descuento-cotizacion.spec.ts` | PASS 400 | ✅ FUNCIONA |
+| Cotizador por medidas 10×10 | `solicitudes/cotizador-medidas.spec.ts` | PASS | ✅ FUNCIONA |
 | Descuento por receta | `inventario/descuento-por-pedido.spec.ts` | PASS | ✅ FUNCIONA |
 | Insumos por producto | `inventario/insumos-productos.spec.ts` | PASS (5 pruebas) | ✅ FUNCIONA |
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **40/40 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
+Matriz de proyectos: **44/44 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
 corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 
 ## 5. Bugs reales
@@ -193,7 +197,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 160 pruebas (40 × 4)
+npx playwright test --list               # 176 pruebas (44 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -298,10 +302,10 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: parcial
-tests_totales: 40
+tests_totales: 44
 proyectos: [chromium, firefox, webkit, mobile-chrome]
 corridas_por_proyecto: 3
-tests_pass: 40
+tests_pass: 44
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing, login_fallido, rate_limit, logout,
@@ -324,7 +328,7 @@ config_playwright:
   db: "SQLite e2e/.tmp/e2e.db"
   projects: [chromium, firefox, webkit, mobile-chrome]
   trace: on-first-retry
-commits: [54accf4, dc711d1, cadfe28]
+commits: [54accf4, dc711d1, cadfe28, 8f50e87]
 ci_job_e2e_aprobado: false
 pendiente_usuario: "decidir H-13 y H-16; aprobar job CI e2e; evaluar axe-core y Lighthouse"
 ```

@@ -261,6 +261,51 @@
                       (input)="cambiarEspecificaciones($event)"
                     />
                   </div>
+                  @if (permiteMedidas()) {
+                    <div class="col-span-12">
+                      <div
+                        class="grid grid-cols-12 items-end gap-3 rounded-[0.7rem] border border-dashed border-[var(--llamma-line)] bg-[#fbfaf7] p-3"
+                      >
+                        <div class="col-span-6 md:col-span-3">
+                          <label class="form-label" for="cotAncho">Ancho (cm)</label>
+                          <input
+                            id="cotAncho"
+                            type="number"
+                            class="form-control"
+                            min="1"
+                            step="0.1"
+                            placeholder="100"
+                            [value]="anchoCm() ?? ''"
+                            (input)="cambiarAncho($event)"
+                          />
+                        </div>
+                        <div class="col-span-6 md:col-span-3">
+                          <label class="form-label" for="cotAlto">Alto (cm)</label>
+                          <input
+                            id="cotAlto"
+                            type="number"
+                            class="form-control"
+                            min="1"
+                            step="0.1"
+                            placeholder="100"
+                            [value]="altoCm() ?? ''"
+                            (input)="cambiarAlto($event)"
+                          />
+                        </div>
+                        <div class="col-span-12 md:col-span-6">
+                          <span
+                            class="mb-1 block text-[0.64rem] font-bold uppercase tracking-[0.08em] text-[var(--llamma-muted)]"
+                            >Área calculada</span
+                          >
+                          <strong class="text-[0.95rem]">{{ metrosCuadrados() }} m²</strong>
+                          <small class="block text-[0.68rem] text-[var(--llamma-muted)]"
+                            >Si capturas medidas, se usa el área en m² como cantidad. Si no, se
+                            respeta la cantidad capturada.</small
+                          >
+                        </div>
+                      </div>
+                    </div>
+                  }
                   <div class="col-span-12 flex flex-wrap gap-2">
                     <button class="btn btn-ink" type="button" (click)="agregarProducto()">
                       <i class="bi bi-plus-lg"></i> Agregar a mi solicitud

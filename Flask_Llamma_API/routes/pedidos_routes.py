@@ -23,8 +23,9 @@ from models import (
     utcnow,
 )
 from routes.comun import (
+    DescuentoInventarioError,
     InventarioInsuficiente,
-    descontar_inventario,
+    _descontar_inventario,
     partidas_a_cotizacion,
     totales,
 )
@@ -276,13 +277,24 @@ def crear_pedido():
     db.session.add(pedido)
     try:
         db.session.flush()
-        descontar_inventario(pedido, g.usuario)
+        descuento = _descontar_inventario(pedido, g.usuario)
         db.session.commit()
-    except InventarioInsuficiente as exc:
+    except DescuentoInventarioError as exc:
         db.session.rollback()
-        return jsonify({"error": "Inventario insuficiente", "detalles": exc.detalles}), 400
+        cuerpo = {
+            "error": (
+                "Inventario insuficiente"
+                if isinstance(exc, InventarioInsuficiente)
+                else str(exc)
+            ),
+            "mensaje": str(exc),
+            "detalles": exc.detalles,
+        }
+        return jsonify(cuerpo), 400
 
-    return jsonify(pedido.to_dict()), 201
+    data = pedido.to_dict()
+    data["descuento"] = descuento
+    return jsonify(data), 201
 
 
 @pedidos_bp.patch("/pedidos/<int:pedido_id>/estado")

@@ -399,8 +399,20 @@ export interface Cotizacion {
   anticipo: number;
   saldo: number;
   notas?: string | null;
+  inventarioDescontado?: boolean;
+  descuento?: DescuentoResultado;
   creadoEn: string;
   items?: ItemCotizacion[];
+}
+
+export interface DescuentoResultado {
+  descontados: Array<{
+    materia: string;
+    cantidad: number;
+    stock_restante: number;
+    bajo_stock: boolean;
+  }>;
+  alertas: string[];
 }
 
 export interface NuevaSolicitudPayload {
@@ -634,6 +646,8 @@ export interface PedidoApi {
   items?: PedidoItemApi[];
   pagos?: PagoApi[];
   ordenProduccion?: OrdenProduccionApi | null;
+  inventarioDescontado?: boolean;
+  descuento?: DescuentoResultado;
 }
 
 export interface TableroProduccion {

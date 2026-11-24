@@ -101,6 +101,8 @@ test.describe('Flujo de compra', () => {
     });
     const pedido = await captura.convertirAPedido();
     await captura.expectPedidoCreado(pedido.folio);
+    await expect(page.locator('main#contenido')).toContainText(/Inventario descontado/i);
+    await expect(page.locator('main#contenido')).toContainText('6.6');
 
     // 4. Inventario: 2 m² por pieza × 3 piezas × 10 % de desperdicio.
     const restante = await stockDe(api, materia.nombre);
@@ -196,6 +198,13 @@ test.describe('Flujo de compra', () => {
 
   test('H-12: registrar el anticipo como pagado reduce el saldo', async () => {
     const sufijo = unico('anticipo');
+    const producto = await crearProducto(
+      api,
+      productoFactory.valido({
+        nombre: `Concepto anticipo ${sufijo}`,
+        precioBase: 1000,
+      }),
+    );
     const cliente = await crearCliente(api, {
       nombre: `Cliente ${sufijo}`,
       correo: correoUnico('anticipo'),
@@ -203,18 +212,8 @@ test.describe('Flujo de compra', () => {
     const solicitud = await crearSolicitud(
       api,
       solicitudFactory.valida(
-        { id: null, nombre: 'Concepto anticipo' },
-        {
-          correo: cliente.correo,
-          items: [
-            {
-              productoId: null,
-              nombreProducto: 'Concepto anticipo',
-              cantidad: 1,
-              precioEstimado: 1000,
-            },
-          ],
-        },
+        { id: producto.id, nombre: producto.nombre },
+        { correo: cliente.correo },
       ),
     );
     const cotizacion = await convertirSolicitud(api, solicitud.solicitud.id);

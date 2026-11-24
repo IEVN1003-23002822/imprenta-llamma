@@ -103,6 +103,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - Los índices de rendimiento se declaran en `models/*.py` (bases nuevas) y se aplican a una base
   existente con `.venv\Scripts\python.exe migrations\indices_rendimiento.py` (idempotente). La
   versión SQL equivalente está en `migrations/2026_11_indices_rendimiento.sql`.
+- La bandera `inventario_descontado` se aplica con
+  `.venv\Scripts\python.exe migrations\inventario_descontado.py` (idempotente) en bases existentes.
+  Las medidas de recetas (sticker 5×5) se actualizan con
+  `.venv\Scripts\python.exe migrations\recetas_medidas.py`.
 - Los precios oficiales del catálogo se actualizan con
   `.venv\Scripts\python.exe migrations\precios_productos.py` (idempotente): Lona `$220` por
   `1 m²` + `$120` por m² adicional, playera `$220` (29 × 29 cm) / `$200` (menor) y taza `$85`.
@@ -164,9 +168,12 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `data.roles` en `app.routes.ts`.
 - Pasar una OC a `recibida` (`PATCH /api/ordenes-compra/<id>/estado`) suma stock y crea un
   `MovimientoInventario` tipo `entrada`; no dupliques ese ajuste a mano.
-- `descontar_inventario` valida **todo** el stock de la receta antes de tocar la base. Si falta,
-  lanza `InventarioInsuficiente`, la ruta hace rollback y responde `400` con
-  `{ error: "Inventario insuficiente", detalles: [...] }`; no hay descuento parcial.
+- `_descontar_inventario` valida **todo** el stock de la receta antes de tocar la base. Si falta,
+  lanza `InventarioInsuficiente` con `mensaje` y `detalles`; la ruta hace rollback y responde `400`
+  con `{ error: "Inventario insuficiente", mensaje, detalles }`. Se ejecuta al aprobar la cotización
+  o al convertirla en pedido, y la bandera `inventario_descontado` evita el doble descuento.
+  La respuesta incluye `descuento: { descontados, alertas }`. Aplica la migración
+  `migrations/inventario_descontado.py` en bases existentes.
 - Las fechas de entrega (`fechaDeseada` en solicitudes y `fechaEntrega` en pedidos/conversión)
   deben respetar **2 días hábiles**. La regla vive en `utils.calcular_fecha_minima_entrega()`,
   los festivos en `config.DIAS_FESTIVOS` y la API responde `400` con
@@ -202,6 +209,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - `inventario` alterna entre tarjetas por producto (default) y tabla general con
   `vistaActual`. El botón «Reponer» reutiliza `abrirAjuste(materia, 'entrada')`; no crees un
   segundo modal de entradas.
+- El cotizador público muestra Ancho × Alto (cm) para productos vendidos en m² y envía el área
+  como `cantidad`; los productos por pieza conservan la cantidad capturada. La aprobación de una
+  cotización bloquea si falta stock y devuelve `descuento` para el resumen de la UI.
 - La previsualización de mockups de `/cotizar` vive en `cotizar.component.*`: catálogo
   `MOCKUPS_CATALOGO` indexado por nombre de producto, imágenes en
   `src/assets/images/mockups/*.webp` y área de impresión en
