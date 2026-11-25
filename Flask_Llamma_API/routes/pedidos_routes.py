@@ -298,7 +298,7 @@ def crear_pedido():
 
 
 @pedidos_bp.patch("/pedidos/<int:pedido_id>/estado")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def cambiar_estado_pedido(pedido_id: int):
     pedido = Pedido.query.get(pedido_id)
     if not pedido:

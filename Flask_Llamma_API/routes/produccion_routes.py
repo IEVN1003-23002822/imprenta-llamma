@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, g, jsonify
 from sqlalchemy.orm import joinedload, selectinload
 
-from auth import role_required, token_required
+from auth import role_required
 from estados import ESTADOS_PRODUCCION, ETAPAS
 from extensions import db
 from models import ControlCalidad, OrdenProduccion, ProduccionEtapa, utcnow
@@ -16,7 +16,7 @@ produccion_bp = Blueprint("produccion", __name__)
 
 
 @produccion_bp.get("/produccion/tablero")
-@token_required
+@role_required("admin", "ventas", "inventario", "produccion")
 def tablero_produccion():
     ordenes = (
         OrdenProduccion.query.filter(

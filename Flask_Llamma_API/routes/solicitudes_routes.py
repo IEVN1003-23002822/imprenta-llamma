@@ -189,7 +189,7 @@ def descargar_adjunto_mensaje(mensaje_id: int):
 
 
 @solicitudes_bp.patch("/solicitudes/<int:solicitud_id>/estado")
-@token_required
+@role_required("admin", "ventas")
 def cambiar_estado_solicitud(solicitud_id: int):
     solicitud = SolicitudCotizacion.query.get(solicitud_id)
     if not solicitud:

@@ -115,7 +115,7 @@ export const routes: Routes = [
     path: 'inventario',
     title: 'Llamma | Inventario',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['admin', 'inventario', 'produccion'] },
+    data: { roles: ['admin', 'ventas', 'inventario', 'produccion'] },
     loadComponent: () =>
       import('./features/inventario/inventario.component').then((m) => m.InventarioComponent),
   },
@@ -133,7 +133,7 @@ export const routes: Routes = [
     path: 'produccion',
     title: 'Llamma | Producción',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['admin', 'produccion'] },
+    data: { roles: ['admin', 'ventas', 'inventario', 'produccion'] },
     loadComponent: () =>
       import('./features/produccion/produccion.component').then((m) => m.ProduccionComponent),
   },

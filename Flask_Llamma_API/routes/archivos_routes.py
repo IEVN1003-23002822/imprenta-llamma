@@ -6,7 +6,7 @@ import os
 
 from flask import Blueprint, current_app, send_from_directory
 
-from auth import token_required
+from auth import role_required
 from models import SolicitudArchivo
 from routes.helpers import no_encontrado
 
@@ -14,7 +14,7 @@ archivos_bp = Blueprint("archivos", __name__)
 
 
 @archivos_bp.get("/archivos/<int:archivo_id>")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def descargar_archivo(archivo_id: int):
     archivo = SolicitudArchivo.query.get(archivo_id)
     if not archivo:

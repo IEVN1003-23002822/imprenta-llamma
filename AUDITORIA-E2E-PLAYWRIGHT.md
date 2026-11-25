@@ -9,10 +9,10 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **26 archivos de spec, 66 pruebas, 4 proyectos → 264 ejecuciones por corrida**.
+- Suite creada: **27 archivos de spec, 72 pruebas, 4 proyectos → 288 ejecuciones por corrida**.
 - Corridas de cierre: Chromium 1 (66/66), Firefox 1 (66/66), WebKit 3 (1 fallo transitorio y dos
   corridas verdes consecutivas), Mobile Chrome 1 (66/66).
-- `66 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- `72 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, alta y primer acceso de usuarios,
   auditoría de las 10 rutas internas, catálogo, edición de productos, solicitud pública con adjunto,
   seguimiento, cotización (desde solicitud y manual), totales, pedido, pago, producción, inventario
@@ -126,6 +126,7 @@ por API.
 | Alta → login → logout | `usuarios/registro-login.spec.ts` | PASS (2 pruebas) | ✅ FUNCIONA |
 | Auditoría de 10 rutas internas | `smoke/auditoria-panel.spec.ts` | PASS (consola + red) | ✅ FUNCIONA |
 | Precio negativo en API | `productos/productos.spec.ts` | PASS (400) | ✅ FUNCIONA |
+| Matriz RBAC por rol | `auth/roles.spec.ts` | PASS (6 pruebas) | ✅ FUNCIONA |
 | Adjuntar sin diseño | `cotizaciones/mockup-guardado.spec.ts` | PASS (botón deshabilitado) | ✅ FUNCIONA |
 | Mockup 2D sin vista | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS (aviso) | ✅ FUNCIONA |
 | 3D Tote + fallback Taza | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS | ✅ FUNCIONA |
@@ -134,7 +135,7 @@ por API.
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **66/66 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
+Matriz de proyectos: **72/72 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
 corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 
 ## 5. Bugs reales
@@ -220,7 +221,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 264 pruebas (66 × 4)
+npx playwright test --list               # 288 pruebas (72 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -325,14 +326,15 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: completado
-tests_totales: 66
+tests_totales: 72
 proyectos: [chromium, firefox, webkit, mobile-chrome]
-corridas_por_proyecto: "chromium 1, firefox 1, webkit 3, mobile-chrome 1"
-tests_pass: 66
+corridas_por_proyecto: "chromium 1, firefox 1, webkit 1, mobile-chrome 1"
+tests_pass: 72
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing, login_fallido, rate_limit, logout,
   alta_login_logout, alta_usuarios_ui, auditoria_rutas_internas, precio_negativo_api,
+  rbac_roles, login_sin_marketing, solo_lectura_ventas,
   catalogo, editar_precio, editar_descripcion, editar_imagen, publicar,
   solicitud_publica, adjuntos, seguimiento, cotizacion_desde_solicitud, cotizacion_manual, totales,
   flujo_compra, pago, produccion, inventario_estricto, anticipo_pagado, insumos_por_producto,
@@ -355,6 +357,7 @@ config_playwright:
   trace: on-first-retry
 commits: [54accf4, dc711d1, cadfe28, 8f50e87, 0a9216a]
 commit_auditoria_mensaje: "fix(audit): reject negative prices and cover login flows end to end"
+commit_rbac_mensaje: "fix(rbac): enforce role matrix and hide marketing from login"
 ci_job_e2e_aprobado: false
 pendiente_usuario: "decidir H-16; aprobar job CI e2e; evaluar axe-core y Lighthouse"
 ```
@@ -375,33 +378,32 @@ pendiente_usuario: "decidir H-16; aprobar job CI e2e; evaluar axe-core y Lightho
 
 ## 13. Cierre de matriz E2E (auditoría final)
 
-Fecha de cierre: **25 de noviembre de 2026**. Total: **66 pruebas por navegador**.
-Commit de cierre: `fix(audit): reject negative prices and cover login flows end to end`.
+Fecha de cierre: **25 de noviembre de 2026**. Total: **72 pruebas por navegador**.
+Commit de cierre: `fix(rbac): enforce role matrix and hide marketing from login`.
 
 | Navegador | Totales | Pass | Fail | Tiempo | Estado |
 |---|---:|---:|---:|---:|---|
-| Chromium | 66 | 66 | 0 | 2.7 min | ✅ VERDE |
-| Firefox | 66 | 66 | 0 | 6.4 min | ✅ VERDE |
-| WebKit | 66 | 66 | 0 | 4.3 min | ✅ VERDE |
-| Mobile Chrome | 66 | 66 | 0 | 3.0 min | ✅ VERDE |
+| Chromium | 72 | 72 | 0 | 2.8 min | ✅ VERDE |
+| Firefox | 72 | 72 | 0 | 7.0 min | ✅ VERDE |
+| WebKit | 72 | 72 | 0 | 5.2 min | ✅ VERDE |
+| Mobile Chrome | 72 | 72 | 0 | 3.2 min | ✅ VERDE |
 
-Tiempo secuencial aproximado: **16.4 min** por matriz completa, más el arranque de los dos
+Tiempo secuencial aproximado: **18.2 min** por matriz completa, más el arranque de los dos
 servidores (Flask en `:5001` y `ng serve` en `:4300`).
 
 ### Correcciones cross-browser aplicadas
 
-- **Ninguna corrección de código específica de navegador.** En la primera pasada de WebKit falló
-  1 prueba; el fallo no se reprodujo en **dos corridas completas consecutivas** (66/66 cada una) y
-  no dejó artefactos porque la corrida siguiente limpió `test-results/`. Se trató de un flake
-  transitorio del entorno (arranque de servidores), no de una diferencia de API o de CSS.
+- **Ninguna corrección de código específica de navegador.** En esta corrida los cuatro proyectos
+  pasaron a la primera. El flake de WebKit documentado en la sección anterior no reapareció.
 - No se usó `test.skip()` ni `test.fixme()`. WebGL, descargas PDF, `localStorage`, `sessionStorage`
   y los menús móviles funcionan en los cuatro proyectos.
-- Los cambios de esta iteración fueron de auditoría funcional, no de compatibilidad:
-  validación de precios negativos (H-13), `aria-invalid` tras un `401`, filtros de marketing y
-  pluralización de contadores.
+- Los cambios de esta iteración fueron de seguridad funcional: matriz RBAC en backend/frontend,
+  Marketing fuera del login, badges de solo lectura y pruebas por rol.
 
 ### Cobertura añadida en esta auditoría
 
+- `e2e/tests/auth/roles.spec.ts` — 6 pruebas de la matriz RBAC, login sin Marketing y rechazos
+  `403` directos a la API.
 - `e2e/tests/usuarios/registro-login.spec.ts` — alta desde el panel, login en contexto limpio,
   logout y limpieza de ambos storages, más credenciales incorrectas con campo marcado.
 - `e2e/tests/smoke/auditoria-panel.spec.ts` — 10 rutas internas sin `console.error`, `pageerror`
@@ -410,6 +412,53 @@ servidores (Flask en `:5001` y `ng serve` en `:4300`).
 
 ### Conclusión
 
-**Suite estable en los 4 navegadores**: 66/66 en Chromium, Firefox, WebKit y Mobile Chrome, con
-264 ejecuciones verdes por matriz. Los bugs abiertos (H-16, H-15, H-14) son decisiones de producto
+**Suite estable en los 4 navegadores**: 72/72 en Chromium, Firefox, WebKit y Mobile Chrome, con
+288 ejecuciones verdes por matriz. Los bugs abiertos (H-16, H-15, H-14) son decisiones de producto
 o mejoras de rendimiento, no fallos de la suite.
+
+## 14. Auditoría RBAC (25 de noviembre de 2026)
+
+### Login sin Marketing
+
+- Se eliminó la fila y la columna **Marketing** de la matriz de roles del login; el badge pasó de
+  «5 roles» a «4 roles».
+- El rol sigue existiendo en backend, en `/usuarios` y en la matriz de permisos. El módulo
+  Marketing ahora aparece en el menú «Módulos» solo para `admin` y `marketing`
+  (`modulosVisibles.marketing = true` + `auth.tieneRol('admin', 'marketing')`).
+- Test: `e2e/tests/auth/roles.spec.ts` → «la matriz muestra 4 roles y no anuncia Marketing».
+
+### Matriz aplicada (frontend + backend)
+
+| Rol | Ventas | Producción | Inventario | Clientes | Marketing | Config. |
+|---|---|---|---|---|---|---|
+| Administrador | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Ventas | ✅ | 👁️ | 👁️ | ✅ | — | — |
+| Producción | 👁️ | ✅ | ✅ | — | — | — |
+| Inventario | — | 👁️ | ✅ | — | — | — |
+| Marketing | 👁️ | — | — | ✅ | ✅ | — |
+
+- **Frontend:** `/inventario` y `/produccion` aceptan a los roles de solo lectura; el menú muestra
+  los accesos correspondientes; `puedeGestionar()` oculta los botones de escritura y aparece el
+  badge `data-testid="modo-lectura"` en Inventario y Producción. Marketing puede crear/editar
+  clientes (`puedeGestionar` incluye marketing); desactivar sigue siendo solo admin.
+- **Backend (doble capa):** se sustituyeron varios `@token_required` por `@role_required` en:
+  marketing (GET/POST/PUT), clientes (GET/POST/PUT), inventario y movimientos (GET/escrituras),
+  compras (GET/escrituras), producción (GET), archivos (GET), cambio de estado de pedidos
+  (`admin`, `ventas`, `produccion`) y de solicitudes (`admin`, `ventas`). Producción puede escribir
+  inventario; Marketing puede crear/editar clientes; Ventas/Inventario no escriben producción.
+- **Test backend:** `tests/test_flujos.py::test_02b_rbac_por_rol` valida `200/403/404` con tokens
+  reales de ventas, producción, inventario y marketing.
+- **Tests E2E:** 4 cruces de UI (ventas, producción, inventario, marketing), 1 prueba de la API por
+  rol y 1 del login sin Marketing, todos en **PASS**.
+
+### Evidencia E2E
+
+```
+✓ Ventas: solicitudes + inventario/producción solo lectura, /usuarios → /dashboard
+✓ Producción: producción + inventario, /clientes y /marketing → /dashboard
+✓ Inventario: inventario + producción solo lectura, /marketing y /clientes → /dashboard
+✓ Marketing: marketing + clientes, /inventario → /dashboard
+✓ Login sin Marketing: 4 roles visibles
+✓ API por rol: 403 en escrituras/módulos fuera de la matriz
+6 passed
+```

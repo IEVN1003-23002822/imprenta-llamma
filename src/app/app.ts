@@ -37,11 +37,11 @@ export class App implements OnDestroy {
   readonly modulosAbiertos = signal(false);
 
   /**
-   * Visibilidad de módulos en la navegación. Marketing queda oculto por decisión
-   * de producto: su componente, su ruta y sus permisos siguen intactos. Cambia
-   * el valor a `true` para reactivarlo en el menú.
+   * Visibilidad de módulos en la navegación. Marketing se muestra solo a admin y
+   * marketing (ver `app.html`); el resto de roles no ve el acceso. Cambia el
+   * valor a `false` para ocultarlo también a esos dos roles.
    */
-  readonly modulosVisibles: Readonly<Record<'marketing', boolean>> = { marketing: false };
+  readonly modulosVisibles: Readonly<Record<'marketing', boolean>> = { marketing: true };
   private readonly router = inject(Router);
   private readonly seo = inject(SeoService);
   private refresco: ReturnType<typeof setInterval> | null = null;

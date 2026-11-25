@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy.orm import joinedload, selectinload
 
-from auth import role_required, token_required
+from auth import role_required
 from estados import ESTADOS_COMPRA
 from extensions import db
 from models import MateriaPrima, MovimientoInventario, OrdenCompra, OrdenCompraItem, Proveedor
@@ -17,14 +17,14 @@ compras_bp = Blueprint("compras", __name__)
 
 
 @compras_bp.get("/proveedores")
-@token_required
+@role_required("admin", "ventas", "inventario", "produccion")
 def listar_proveedores():
     proveedores = Proveedor.query.order_by(Proveedor.nombre.asc()).all()
     return jsonify({"items": [p.to_dict() for p in proveedores], "total": len(proveedores)})
 
 
 @compras_bp.post("/proveedores")
-@role_required("admin", "inventario")
+@role_required("admin", "inventario", "produccion")
 def crear_proveedor():
     data = payload()
     nombre = str(campo(data, "nombre", default="")).strip()
@@ -43,7 +43,7 @@ def crear_proveedor():
 
 
 @compras_bp.get("/ordenes-compra")
-@token_required
+@role_required("admin", "ventas", "inventario", "produccion")
 def listar_ordenes_compra():
     query = (
         OrdenCompra.query.options(
@@ -63,7 +63,7 @@ def listar_ordenes_compra():
 
 
 @compras_bp.post("/ordenes-compra")
-@role_required("admin", "inventario")
+@role_required("admin", "inventario", "produccion")
 def crear_orden_compra():
     data = payload()
     proveedor_id = parse_int(campo(data, "proveedorId", "proveedor_id"))
@@ -109,7 +109,7 @@ def crear_orden_compra():
 
 
 @compras_bp.patch("/ordenes-compra/<int:orden_id>/estado")
-@role_required("admin", "inventario")
+@role_required("admin", "inventario", "produccion")
 def cambiar_estado_orden_compra(orden_id: int):
     orden = OrdenCompra.query.get(orden_id)
     if not orden:

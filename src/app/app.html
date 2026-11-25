@@ -169,7 +169,7 @@
                     ><i class="bi bi-funnel"></i> Consultas</a
                   >
                 </li>
-                @if (auth.tieneRol('admin', 'inventario', 'produccion')) {
+                @if (auth.tieneRol('admin', 'ventas', 'inventario', 'produccion')) {
                   <li>
                     <a
                       class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
@@ -189,7 +189,7 @@
                     >
                   </li>
                 }
-                @if (auth.tieneRol('admin', 'produccion')) {
+                @if (auth.tieneRol('admin', 'ventas', 'inventario', 'produccion')) {
                   <li>
                     <a
                       class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"

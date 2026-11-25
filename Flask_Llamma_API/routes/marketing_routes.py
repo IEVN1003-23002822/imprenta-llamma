@@ -1,4 +1,4 @@
-"""Campañas y actividades de marketing."""
+﻿"""CampaÃ±as y actividades de marketing."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from datetime import date
 
 from flask import Blueprint, g, jsonify
 
-from auth import role_required, token_required
+from auth import role_required
 from estados import CANALES
 from extensions import db
 from models import ActividadMarketing
@@ -17,7 +17,7 @@ marketing_bp = Blueprint("marketing", __name__)
 
 
 @marketing_bp.get("/marketing/actividades")
-@token_required
+@role_required("admin", "marketing")
 def listar_actividades():
     actividades = ActividadMarketing.query.order_by(ActividadMarketing.fecha_inicio.desc()).all()
     return jsonify({"items": [a.to_dict() for a in actividades], "total": len(actividades)})
@@ -29,10 +29,10 @@ def crear_actividad():
     data = payload()
     nombre = str(campo(data, "nombre", default="")).strip()
     if not nombre:
-        return error("El nombre de la campaña es obligatorio")
+        return error("El nombre de la campaÃ±a es obligatorio")
     canal = str(campo(data, "canal", default="redes-sociales"))
     if canal not in CANALES:
-        return error("Canal inválido")
+        return error("Canal invÃ¡lido")
 
     actividad = ActividadMarketing(
         nombre=nombre[:180],

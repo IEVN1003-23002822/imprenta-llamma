@@ -1,7 +1,7 @@
 import { test as base } from '@playwright/test';
 import path from 'node:path';
 
-export type Rol = 'admin' | 'vendedor' | 'marketing' | 'anonimo';
+export type Rol = 'admin' | 'vendedor' | 'produccion' | 'inventario' | 'marketing' | 'anonimo';
 
 /**
  * `storageState` se genera en `global-setup.ts` con la clave real de sesión

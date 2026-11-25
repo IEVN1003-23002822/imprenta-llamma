@@ -166,6 +166,14 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - Permisos: `@token_required` y `@role_required(...)` de `Flask_Llamma_API/auth.py`; roles `admin`,
   `ventas`, `produccion`, `inventario`, `marketing`. En Angular, `authGuard`/`roleGuard` con
   `data.roles` en `app.routes.ts`.
+- Matriz RBAC: Ventas lee Producción e Inventario; Inventario lee Producción; Producción e
+  Inventario escriben su módulo; Marketing crea/edita Clientes y gestiona Marketing. En las
+  pantallas de solo lectura `puedeGestionar()` oculta los botones y muestra el badge
+  `data-testid="modo-lectura"`. El backend aplica la misma matriz con `@role_required` en GET y
+  escrituras (marketing, clientes, inventario, compras, producción, archivos y cambios de estado
+  de pedidos/solicitudes); no confíes solo en el guard.
+- La matriz del login muestra **4 roles** y no anuncia Marketing; el rol existe, se administra
+  desde `/usuarios` y su módulo solo aparece en el menú de `admin`/`marketing`.
 - Pasar una OC a `recibida` (`PATCH /api/ordenes-compra/<id>/estado`) suma stock y crea un
   `MovimientoInventario` tipo `entrada`; no dupliques ese ajuste a mano.
 - `_descontar_inventario` valida **todo** el stock de la receta antes de tocar la base. Si falta,
@@ -199,8 +207,8 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `signal` y recuerdan su estado por dispositivo en `llamma.detalle.secciones.v1`. `imprimir()` los
   abre antes de imprimir y restaura la preferencia; un panel nuevo debe seguir ese mismo patrón.
 - La visibilidad de los accesos del menú «Módulos» se controla con `modulosVisibles` en `app.ts`.
-  Marketing está en `false` por decisión de producto: su ruta, componente y permisos siguen
-  activos. Cambia la bandera a `true` para reactivarlo; no borres la entrada de `app.html`.
+  Marketing está en `true` y el template lo muestra solo a `admin`/`marketing`; el resto de roles
+  no ve el acceso, pero la ruta, el componente y los permisos siguen activos.
 - `/usuarios` es solo para `admin` (`authGuard` + `roleGuard`), con tabla y alta en la misma
   página. El acceso del menú «Módulos» se muestra con `auth.esAdmin()`. El formulario incluye
   indicador de fuerza de contraseña; el mínimo de 8 se valida también en el backend.

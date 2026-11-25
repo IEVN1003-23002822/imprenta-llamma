@@ -8,6 +8,8 @@ const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:4300';
 export const USUARIOS = {
   admin: { correo: 'ana@llamma.mx', password: 'llamma2026' },
   vendedor: { correo: 'diego@llamma.mx', password: 'llamma2026' },
+  produccion: { correo: 'mariana@llamma.mx', password: 'llamma2026' },
+  inventario: { correo: 'ivan@llamma.mx', password: 'llamma2026' },
   marketing: { correo: 'paola@llamma.mx', password: 'llamma2026' },
 } as const;
 

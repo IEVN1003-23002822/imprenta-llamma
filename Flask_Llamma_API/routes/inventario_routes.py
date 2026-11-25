@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy.orm import joinedload
 
-from auth import role_required, token_required
+from auth import role_required
 from estados import TIPOS_MOVIMIENTO
 from extensions import db
 from models import MateriaPrima, MovimientoInventario
@@ -16,7 +16,7 @@ inventario_bp = Blueprint("inventario", __name__)
 
 
 @inventario_bp.get("/materias-primas")
-@token_required
+@role_required("admin", "ventas", "inventario", "produccion")
 def listar_materias():
     query = MateriaPrima.query.options(joinedload(MateriaPrima.proveedor)).filter_by(activo=True)
     if request.args.get("categoria"):
@@ -28,7 +28,7 @@ def listar_materias():
 
 
 @inventario_bp.post("/materias-primas")
-@role_required("admin", "inventario")
+@role_required("admin", "inventario", "produccion")
 def crear_materia():
     data = payload()
     nombre = str(campo(data, "nombre", default="")).strip()
@@ -50,7 +50,7 @@ def crear_materia():
 
 
 @inventario_bp.put("/materias-primas/<int:materia_id>")
-@role_required("admin", "inventario")
+@role_required("admin", "inventario", "produccion")
 def actualizar_materia(materia_id: int):
     materia = MateriaPrima.query.get(materia_id)
     if not materia:
@@ -83,7 +83,7 @@ def actualizar_materia(materia_id: int):
 
 
 @inventario_bp.delete("/materias-primas/<int:materia_id>")
-@role_required("admin", "inventario")
+@role_required("admin", "inventario", "produccion")
 def desactivar_materia(materia_id: int):
     materia = MateriaPrima.query.get(materia_id)
     if not materia:
@@ -94,7 +94,7 @@ def desactivar_materia(materia_id: int):
 
 
 @inventario_bp.post("/materias-primas/<int:materia_id>/ajuste")
-@role_required("admin", "inventario")
+@role_required("admin", "inventario", "produccion")
 def ajustar_inventario(materia_id: int):
     materia = MateriaPrima.query.get(materia_id)
     if not materia:
@@ -132,7 +132,7 @@ def ajustar_inventario(materia_id: int):
 
 
 @inventario_bp.get("/movimientos")
-@token_required
+@role_required("admin", "ventas", "inventario", "produccion")
 def listar_movimientos():
     query = MovimientoInventario.query.options(
         joinedload(MovimientoInventario.materia_prima),

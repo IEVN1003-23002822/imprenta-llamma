@@ -71,6 +71,20 @@ class FlujosApiTest(unittest.TestCase):
         cls.admin.set_password("llamma2026")
         db.session.add(cls.admin)
 
+        cls.usuarios_por_rol: dict[str, Usuario] = {}
+        for nombre_rol in ("ventas", "produccion", "inventario", "marketing"):
+            rol = Rol(nombre=nombre_rol, descripcion=nombre_rol.capitalize())
+            db.session.add(rol)
+            db.session.flush()
+            usuario = Usuario(
+                nombre=f"QA {nombre_rol}",
+                correo=f"qa-{nombre_rol}@llamma.mx",
+                rol_id=rol.id,
+            )
+            usuario.set_password("llamma2026")
+            db.session.add(usuario)
+            cls.usuarios_por_rol[nombre_rol] = usuario
+
         cls.cliente = Cliente(nombre="Cliente QA", correo="cliente-qa@example.com")
         db.session.add(cls.cliente)
 
@@ -188,6 +202,14 @@ class FlujosApiTest(unittest.TestCase):
     def _auth(self, token: str) -> dict:
         return {"Authorization": f"Bearer {token}"}
 
+    def _token_rol(self, rol: str) -> str:
+        respuesta = self.client.post(
+            "/api/auth/login",
+            json={"correo": f"qa-{rol}@llamma.mx", "password": "llamma2026"},
+        )
+        self.assertEqual(respuesta.status_code, 200, respuesta.get_data(as_text=True))
+        return self._json(respuesta)["token"]
+
     def _solicitud(self, correo: str, nombre: str = "Cliente QA") -> dict:
         respuesta = self.client.post(
             "/api/public/solicitudes",
@@ -230,6 +252,103 @@ class FlujosApiTest(unittest.TestCase):
         )
         self.assertEqual(malo.status_code, 401)
         self.assertEqual(self._json(malo)["codigo"], "credenciales_invalidas")
+
+    def test_02b_rbac_por_rol(self) -> None:
+        """La matriz de roles se respeta también al llamar la API directamente."""
+        ventas = self._token_rol("ventas")
+        self.assertEqual(
+            self.client.get("/api/materias-primas", headers=self._auth(ventas)).status_code, 200
+        )
+        self.assertEqual(
+            self.client.get("/api/produccion/tablero", headers=self._auth(ventas)).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.post(
+                "/api/materias-primas",
+                headers=self._auth(ventas),
+                json={"nombre": "No permitido ventas", "categoria": "lona", "unidadMedida": "m2"},
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get("/api/marketing/actividades", headers=self._auth(ventas)).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get("/api/usuarios", headers=self._auth(ventas)).status_code, 403
+        )
+        self.assertEqual(
+            self.client.patch(
+                "/api/pedidos/999/estado",
+                headers=self._auth(ventas),
+                json={"estado": "confirmado"},
+            ).status_code,
+            404,
+        )
+
+        produccion = self._token_rol("produccion")
+        self.assertEqual(
+            self.client.get("/api/clientes", headers=self._auth(produccion)).status_code, 403
+        )
+        self.assertEqual(
+            self.client.get(
+                "/api/marketing/actividades", headers=self._auth(produccion)
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.patch(
+                "/api/pedidos/999/estado",
+                headers=self._auth(produccion),
+                json={"estado": "confirmado"},
+            ).status_code,
+            404,
+        )
+
+        inventario = self._token_rol("inventario")
+        self.assertEqual(
+            self.client.get("/api/produccion/tablero", headers=self._auth(inventario)).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(
+                "/api/marketing/actividades", headers=self._auth(inventario)
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get("/api/clientes", headers=self._auth(inventario)).status_code, 403
+        )
+        self.assertEqual(
+            self.client.patch(
+                "/api/pedidos/999/estado",
+                headers=self._auth(inventario),
+                json={"estado": "confirmado"},
+            ).status_code,
+            403,
+        )
+
+        marketing = self._token_rol("marketing")
+        self.assertEqual(
+            self.client.get(
+                "/api/marketing/actividades", headers=self._auth(marketing)
+            ).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get("/api/clientes", headers=self._auth(marketing)).status_code, 200
+        )
+        self.assertEqual(
+            self.client.get("/api/materias-primas", headers=self._auth(marketing)).status_code,
+            403,
+        )
+        creado = self.client.post(
+            "/api/clientes",
+            headers=self._auth(marketing),
+            json={"nombre": "Cliente Marketing QA", "correo": "marketing-cliente@example.com"},
+        )
+        self.assertEqual(creado.status_code, 201, creado.get_data(as_text=True))
 
     def test_03_rate_limit_login(self) -> None:
         for intento in range(5):

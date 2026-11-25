@@ -17,6 +17,14 @@
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        @if (!puedeGestionar()) {
+          <span
+            data-testid="modo-lectura"
+            class="inline-flex items-center gap-2 rounded-xl border border-[#f0d48a] bg-[#fff8e1] px-[0.9rem] py-[0.62rem] text-[0.82rem] font-semibold text-[#8a6100]"
+          >
+            <i class="bi bi-eye"></i> Solo lectura
+          </span>
+        }
         <span
           class="inline-flex items-center gap-2 rounded-xl border border-[var(--llamma-line)] bg-white px-[0.9rem] py-[0.62rem] text-[0.82rem] font-semibold text-[var(--llamma-muted)] shadow-[var(--llamma-shadow-sm)] [&_i]:text-[var(--llamma-magenta)]"
         >
