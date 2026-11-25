@@ -239,41 +239,66 @@
                     </select>
                   </div>
                   @if (esPorM2()) {
+                    @if (esLonaFrontlit()) {
+                      <div class="col-span-6 md:col-span-3">
+                        <label class="form-label" for="cotMaterial">Material</label>
+                        <select
+                          id="cotMaterial"
+                          class="form-select"
+                          [value]="material()"
+                          (change)="cambiarMaterial($event)"
+                        >
+                          <option value="lona">Lona</option>
+                          <option value="vinil">Vinil</option>
+                        </select>
+                      </div>
+                    }
                     <div class="col-span-4 md:col-span-2">
                       <label class="form-label" for="cotAncho">Ancho (m)</label>
                       <input
                         id="cotAncho"
                         type="number"
                         class="form-control"
-                        min="0.1"
-                        step="0.1"
+                        min="0"
+                        step="0.01"
                         [value]="anchoMetros()"
                         (input)="cambiarAncho($event)"
                       />
                     </div>
                     <div class="col-span-4 md:col-span-2">
-                      <label class="form-label" for="cotAlto">Alto (m)</label>
+                      <label class="form-label" for="cotAlto">Largo (m)</label>
                       <input
                         id="cotAlto"
                         type="number"
                         class="form-control"
-                        min="0.1"
-                        step="0.1"
+                        min="0"
+                        step="0.01"
                         [value]="altoMetros()"
                         (input)="cambiarAlto($event)"
                       />
                     </div>
-                    <div class="col-span-4 md:col-span-3">
-                      <label class="form-label" for="cotCantidad">Lonas</label>
-                      <input
-                        id="cotCantidad"
-                        type="number"
-                        class="form-control"
-                        min="1"
-                        step="1"
-                        [value]="cantidad()"
-                        (input)="cambiarCantidad($event)"
-                      />
+                    @if (!esLonaFrontlit()) {
+                      <div class="col-span-4 md:col-span-3">
+                        <label class="form-label" for="cotCantidad">Lonas</label>
+                        <input
+                          id="cotCantidad"
+                          type="number"
+                          class="form-control"
+                          min="1"
+                          step="1"
+                          [value]="cantidad()"
+                          (input)="cambiarCantidad($event)"
+                        />
+                      </div>
+                    }
+                    <div class="col-span-12">
+                      <small class="block text-[0.72rem] text-[var(--llamma-muted)]">
+                        Área calculada: <strong>{{ areaTotalM2() }} m²</strong>
+                        @if (esLonaFrontlit()) {
+                          · {{ material() === 'vinil' ? 'Vinil' : 'Lona' }} ·
+                          {{ moneda(estimadoLinea()) }}
+                        }
+                      </small>
                     </div>
                     <div class="col-span-12">
                       <label class="form-label" for="cotEspecificaciones">Especificaciones</label>

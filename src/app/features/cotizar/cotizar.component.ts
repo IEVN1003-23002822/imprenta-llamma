@@ -32,6 +32,10 @@ import {
 } from '../../core/models/llamma.models';
 
 const CLAVE_BORRADOR = 'llamma.cotizacion.borrador.v1';
+const LONA_BASE = 220;
+const LONA_ADICIONAL = 120;
+const VINIL_BASE = 180;
+const VINIL_ADICIONAL = 90;
 const DIAS_BORRADOR = 30;
 
 interface BorradorFormulario {
@@ -260,6 +264,7 @@ export class CotizarComponent implements OnInit {
   readonly cantidad = signal(1);
   readonly anchoMetros = signal(2);
   readonly altoMetros = signal(1);
+  readonly material = signal<'lona' | 'vinil'>('lona');
 
   readonly especificaciones = signal('');
 
@@ -298,6 +303,9 @@ export class CotizarComponent implements OnInit {
   );
 
   readonly esPorM2 = computed(() => this.productoActual()?.unidadVenta === 'm2');
+  readonly esLonaFrontlit = computed(() =>
+    (this.productoActual()?.nombre ?? '').toLowerCase().includes('lona frontlit'),
+  );
 
   readonly areaTotalM2 = computed(() => {
     const area = this.anchoMetros() * this.altoMetros() * this.cantidad();
@@ -307,6 +315,9 @@ export class CotizarComponent implements OnInit {
   readonly estimadoLinea = computed(() => {
     const producto = this.productoActual();
     if (!producto) return 0;
+    if (this.esLonaFrontlit()) {
+      return this.precioMaterial(this.anchoMetros() * this.altoMetros());
+    }
     const factor = producto.unidadVenta === 'm2' ? this.areaTotalM2() : this.cantidad();
     return Math.round(producto.precioBase * factor * 100) / 100;
   });
@@ -626,21 +637,24 @@ export class CotizarComponent implements OnInit {
   cambiarProducto(evento: Event): void {
     const valor = Number((evento.target as HTMLSelectElement).value);
     this.productoId.set(Number.isNaN(valor) ? null : valor);
+    this.material.set('lona');
+    this.cantidad.set(1);
     this.guardarBorrador();
+  }
+
+  cambiarMaterial(evento: Event): void {
+    const valor = (evento.target as HTMLSelectElement).value;
+    this.material.set(valor === 'vinil' ? 'vinil' : 'lona');
   }
 
   cambiarAncho(evento: Event): void {
     const valor = Number((evento.target as HTMLInputElement).value);
-    this.anchoMetros.set(
-      Number.isFinite(valor) && valor >= 0.1 ? Math.round(valor * 100) / 100 : 0.1,
-    );
+    this.anchoMetros.set(Number.isFinite(valor) ? Math.round(valor * 100) / 100 : 0);
   }
 
   cambiarAlto(evento: Event): void {
     const valor = Number((evento.target as HTMLInputElement).value);
-    this.altoMetros.set(
-      Number.isFinite(valor) && valor >= 0.1 ? Math.round(valor * 100) / 100 : 0.1,
-    );
+    this.altoMetros.set(Number.isFinite(valor) ? Math.round(valor * 100) / 100 : 0);
   }
 
   cambiarCantidad(evento: Event): void {
@@ -654,14 +668,26 @@ export class CotizarComponent implements OnInit {
     this.guardarBorrador();
   }
 
+  private precioMaterial(area: number): number {
+    const esVinil = this.material() === 'vinil';
+    const base = esVinil ? VINIL_BASE : LONA_BASE;
+    const adicional = esVinil ? VINIL_ADICIONAL : LONA_ADICIONAL;
+    return Math.round((base + Math.max(0, area - 1) * adicional) * 100) / 100;
+  }
+
   agregarProducto(): void {
     const producto = this.productoActual();
     if (!producto) {
       this.error.set('Selecciona un producto del catálogo para agregarlo.');
       return;
     }
+    if (producto.unidadVenta === 'm2' && (this.anchoMetros() <= 0 || this.altoMetros() <= 0)) {
+      this.error.set('Captura un ancho y un largo mayores a cero.');
+      return;
+    }
 
-    const piezas = Math.max(this.cantidad(), 1);
+    const esLona = this.esLonaFrontlit();
+    const piezas = esLona ? 1 : Math.max(this.cantidad(), 1);
     const notas = this.especificaciones().trim();
 
     let cantidadFinal = piezas;
@@ -670,27 +696,38 @@ export class CotizarComponent implements OnInit {
     if (producto.unidadVenta === 'm2') {
       const ancho = this.anchoMetros();
       const alto = this.altoMetros();
-      const totalM2 = this.areaTotalM2();
-      cantidadFinal = totalM2;
+      const totalM2 = esLona ? ancho * alto : this.areaTotalM2();
+      const redondeado = Math.round(totalM2 * 100) / 100;
+      cantidadFinal = redondeado;
       const textoMedida =
         piezas > 1
-          ? `${piezas} lonas de ${ancho} × ${alto} m (${totalM2} m²)`
-          : `Medida ${ancho} × ${alto} m (${totalM2} m²)`;
-      especificacionesFinal = notas ? `${textoMedida} · ${notas}` : textoMedida;
+          ? `${piezas} lonas de ${ancho} × ${alto} m (${redondeado} m²)`
+          : `Medida ${ancho} × ${alto} m (${redondeado} m²)`;
+      const materialTexto = esLona
+        ? `Material: ${this.material() === 'vinil' ? 'Vinil' : 'Lona'} · `
+        : '';
+      especificacionesFinal = `${materialTexto}${textoMedida}${notas ? ` · ${notas}` : ''}`;
     }
+
+    const nombreProducto =
+      esLona && this.material() === 'vinil' ? `${producto.nombre} (Vinil)` : producto.nombre;
+    const precioEstimado = esLona
+      ? this.precioMaterial(cantidadFinal)
+      : Math.round(producto.precioBase * cantidadFinal * 100) / 100;
 
     const item: ItemSolicitud = {
       productoId: producto.id,
-      nombreProducto: producto.nombre,
+      nombreProducto,
       especificaciones: especificacionesFinal,
       cantidad: cantidadFinal,
-      precioEstimado: Math.round(producto.precioBase * cantidadFinal * 100) / 100,
+      precioEstimado: Math.round(precioEstimado * 100) / 100,
     };
 
     this.carrito.update((items) => [...items, item]);
     this.cantidad.set(1);
     this.anchoMetros.set(2);
     this.altoMetros.set(1);
+    this.material.set('lona');
     this.especificaciones.set('');
     this.error.set(null);
     this.guardarBorrador();

@@ -212,9 +212,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - `inventario` alterna entre tarjetas por producto (default) y tabla general con
   `vistaActual`. El botón «Reponer» reutiliza `abrirAjuste(materia, 'entrada')`; no crees un
   segundo modal de entradas.
-- El cotizador público muestra Ancho × Alto (cm) para productos vendidos en m² y envía el área
-  como `cantidad`; los productos por pieza conservan la cantidad capturada. La aprobación de una
-  cotización bloquea si falta stock y devuelve `descuento` para el resumen de la UI.
+- El cotizador público muestra Ancho × Largo (m) para productos vendidos en m² y envía el área
+  como `cantidad`; «Lona Frontlit impresa» añade selector Lona/Vinil y oculta «Lonas». Los
+  productos por pieza conservan la cantidad capturada. Fórmulas: lona `$220 + $120/m² adicional`;
+  vinil `$180 + $90/m² adicional`. La aprobación bloquea si falta stock y devuelve `descuento`.
 - La previsualización de mockups de `/cotizar` vive en `cotizar.component.*`: catálogo
   `MOCKUPS_CATALOGO` indexado por nombre de producto, imágenes en
   `src/assets/images/mockups/*.webp` y área de impresión en

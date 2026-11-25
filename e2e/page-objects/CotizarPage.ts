@@ -41,7 +41,10 @@ export class CotizarPage {
       await ancho.fill('1');
       await this.page.locator('#cotAlto').fill('1');
     }
-    await this.page.locator('#cotCantidad').fill(String(cantidad));
+    const cantidadInput = this.page.locator('#cotCantidad');
+    if (await cantidadInput.isVisible().catch(() => false)) {
+      await cantidadInput.fill(String(cantidad));
+    }
     await this.page.getByRole('button', { name: /Agregar a mi solicitud/i }).click();
   }
 
@@ -55,8 +58,15 @@ export class CotizarPage {
     await selector.selectOption({ label: nombre });
     await this.page.locator('#cotAncho').fill(String(anchoMetros));
     await this.page.locator('#cotAlto').fill(String(altoMetros));
-    await this.page.locator('#cotCantidad').fill('1');
+    const cantidad = this.page.locator('#cotCantidad');
+    if (await cantidad.isVisible().catch(() => false)) {
+      await cantidad.fill('1');
+    }
     await this.page.getByRole('button', { name: /Agregar a mi solicitud/i }).click();
+  }
+
+  async seleccionarMaterial(material: 'lona' | 'vinil'): Promise<void> {
+    await this.page.locator('#cotMaterial').selectOption(material);
   }
 
   async adjuntar(nombre: string, contenido: string, mimeType: string): Promise<void> {
