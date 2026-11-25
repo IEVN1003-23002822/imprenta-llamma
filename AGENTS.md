@@ -230,6 +230,12 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   (`import('jspdf')`, chunk aparte): A4 vectorial, sin `window.print()` ni HTML oculto, logo
   rasterizado a 220 px y archivo `Comprobante_<folio>_Llamma.pdf`. Las tablas largas paginan solas y
   cada página lleva pie con las cláusulas de entrega y datos de contacto.
+- El login marca correo y contraseña con `aria-invalid` cuando la API responde `401` y limpia esa
+  marca al escribir; el mensaje global queda en un `role="alert"` con `id="authError"`.
+  `POST/PUT /api/productos` rechazan `precioBase < 0` con `400 precio_invalido`.
+- `e2e/tests/smoke/auditoria-panel.spec.ts` recorre las 10 rutas internas y falla ante cualquier
+  `console.error`, `pageerror` o respuesta `4xx/5xx`. `e2e/tests/usuarios/registro-login.spec.ts`
+  cubre alta → login → logout con un contexto limpio y verifica que se vacíen ambos storages.
 - El visor 3D usa `CotizarMockup3dComponent` con `three` y modelos GLB en
   `src/assets/models/`; las imágenes del cliente se optimizan en
   `POST /api/public/mockups/preparar-imagen` (Pillow en `requirements.txt`). Mientras carga

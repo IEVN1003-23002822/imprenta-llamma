@@ -78,9 +78,9 @@
               class="block font-[family-name:var(--llamma-font-display)] text-xl leading-none"
               >{{ resumen().admins }}</strong
             >
-            <span class="mt-1 block text-[0.7rem] font-medium text-[var(--llamma-muted)]"
-              >Administradores</span
-            >
+            <span class="mt-1 block text-[0.7rem] font-medium text-[var(--llamma-muted)]">{{
+              resumen().admins === 1 ? 'Administrador' : 'Administradores'
+            }}</span>
           </div>
         </div>
       </div>

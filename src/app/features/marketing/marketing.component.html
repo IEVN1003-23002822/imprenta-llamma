@@ -66,13 +66,13 @@
           </div>
 
           <form class="grid grid-cols-12 gap-2 mb-4" [formGroup]="filtros" (ngSubmit)="filtrar()">
-            <div class="col-span-12 lg:col-span-5">
+            <div class="col-span-12 lg:col-span-4">
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input
                   type="search"
                   class="form-control"
-                  placeholder="Buscar campaña…"
+                  placeholder="Filtrar"
                   aria-label="Buscar campaña"
                   formControlName="q"
                 />
@@ -87,7 +87,7 @@
                 }
               </select>
             </div>
-            <div class="col-span-6 lg:col-span-2">
+            <div class="col-span-6 lg:col-span-3">
               <select class="form-select" aria-label="Filtrar por estado" formControlName="estado">
                 <option value="">Todo estado</option>
                 @for (estado of estados; track estado.valor) {
@@ -96,7 +96,11 @@
               </select>
             </div>
             <div class="col-span-12 lg:col-span-2">
-              <button class="btn btn-soft w-full" type="button" (click)="limpiar()">
+              <button
+                class="btn btn-soft w-full whitespace-nowrap"
+                type="button"
+                (click)="limpiar()"
+              >
                 <i class="bi bi-arrow-counterclockwise"></i> Limpiar
               </button>
             </div>

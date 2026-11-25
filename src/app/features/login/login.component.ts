@@ -21,6 +21,7 @@ export class LoginComponent {
 
   readonly enviando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly credencialesInvalidas = signal(false);
   readonly mostrarPassword = signal(false);
   readonly ayudaAcceso = signal(false);
 
@@ -46,6 +47,7 @@ export class LoginComponent {
 
     this.enviando.set(true);
     this.error.set(null);
+    this.credencialesInvalidas.set(false);
 
     const { correo, password, recordarme } = this.form.getRawValue();
 
@@ -62,9 +64,16 @@ export class LoginComponent {
             respuesta.status === 0
               ? 'No pudimos conectar con el servidor. Verifica que la API esté en línea.'
               : respuesta.error?.error || 'Credenciales incorrectas. Intenta de nuevo.';
+          this.credencialesInvalidas.set(respuesta.status === 401);
           this.error.set(mensaje);
         },
       });
+  }
+
+  limpiarCredenciales(): void {
+    if (!this.credencialesInvalidas()) return;
+    this.credencialesInvalidas.set(false);
+    this.error.set(null);
   }
 
   alternarPassword(): void {

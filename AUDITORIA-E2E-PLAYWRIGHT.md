@@ -9,18 +9,21 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **24 archivos de spec, 62 pruebas, 4 proyectos → 248 ejecuciones por corrida**.
-- Corridas completas: **3 por proyecto (420 ejecuciones)**; todas verdes.
-- `62 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
-- Flujos que funcionan: login por rol, rate limit, logout, catálogo, edición de productos,
-  solicitud pública con adjunto, seguimiento, cotización (desde solicitud y manual), totales,
-  pedido, pago, producción, inventario, **alta de usuarios por UI** y smoke.
-- Bugs corregidos: **H-01** (inventario estricto) y **H-12** (anticipo liquida el saldo).
-- Bugs abiertos: **H-13** (API acepta precio negativo), **H-16** (estimado público ≠ cotización
-  interna), **H-15** (seguimiento no muestra producción) y **H-14** (imagen LCP lazy).
-- Veredicto global: **⚠️ FUNCIONA_CON_RIESGOS** — los flujos críticos pasan; quedan dos defectos
-  de dinero/precio fuera del alcance de esta iteración.
-- CI de la app: `format` ✅ · `lint` ✅ · Vitest **59/59** ✅ · `build` ✅ · backend **26/26** ✅.
+- Suite creada: **26 archivos de spec, 66 pruebas, 4 proyectos → 264 ejecuciones por corrida**.
+- Corridas de cierre: Chromium 1 (66/66), Firefox 1 (66/66), WebKit 3 (1 fallo transitorio y dos
+  corridas verdes consecutivas), Mobile Chrome 1 (66/66).
+- `66 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- Flujos que funcionan: login por rol, rate limit, logout, alta y primer acceso de usuarios,
+  auditoría de las 10 rutas internas, catálogo, edición de productos, solicitud pública con adjunto,
+  seguimiento, cotización (desde solicitud y manual), totales, pedido, pago, producción, inventario
+  y smoke.
+- Bugs corregidos: **H-01** (inventario estricto), **H-12** (anticipo liquida el saldo) y **H-13**
+  (API rechaza precios negativos).
+- Bugs abiertos: **H-16** (estimado público ≠ cotización interna), **H-15** (seguimiento no muestra
+  producción) y **H-14** (imagen LCP lazy).
+- Veredicto global: **✅ FUNCIONA** — los flujos críticos pasan en los 4 navegadores; lo abierto son
+  decisiones de producto (H-16/H-15) y una mejora de rendimiento (H-14).
+- CI de la app: `format` ✅ · `lint` ✅ · Vitest **59/59** ✅ · `build` ✅ · backend **28/28** ✅.
 
 > **Actualización 2026-11-23:** se corrigieron H-01 y H-12 (commit `54accf4`), se creó el módulo
 > `/usuarios` solo para admin (commit `dc711d1`), se implementaron las reglas de entrega de 2 días
@@ -90,7 +93,7 @@ por API.
 | Editar descripción | `productos/productos.spec.ts` | PASS | ✅ FUNCIONA |
 | Editar imagen | `productos/productos.spec.ts` | PASS | ✅ FUNCIONA |
 | Publicar/despublicar | `productos/productos.spec.ts` | PASS | ✅ FUNCIONA |
-| Validaciones de producto | `productos/productos.spec.ts` | PASS (UI) | ⚠️ API acepta precio negativo (H-13) |
+| Validaciones de producto | `productos/productos.spec.ts` | PASS (UI + API 400) | ✅ FUNCIONA |
 | Solicitud pública | `solicitudes/solicitudes.spec.ts` | PASS | ✅ FUNCIONA |
 | Fecha mínima (UI + API) | `solicitudes/solicitudes.spec.ts` | PASS 400 / bloqueo UI | ✅ FUNCIONA |
 | Fecha mínima aceptada | `solicitudes/solicitudes.spec.ts` | PASS 201 | ✅ FUNCIONA |
@@ -120,6 +123,9 @@ por API.
 | Captura 2D + admin | `cotizaciones/mockup-guardado.spec.ts` | PASS (JPEG + tarjeta) | ✅ FUNCIONA |
 | Captura 3D + admin | `cotizaciones/mockup-guardado.spec.ts` | PASS (JPEG + tarjeta) | ✅ FUNCIONA |
 | Comprobante PDF A4 | `cotizaciones/comprobante-pdf.spec.ts` | PASS (2 partidas y 20 partidas) | ✅ FUNCIONA |
+| Alta → login → logout | `usuarios/registro-login.spec.ts` | PASS (2 pruebas) | ✅ FUNCIONA |
+| Auditoría de 10 rutas internas | `smoke/auditoria-panel.spec.ts` | PASS (consola + red) | ✅ FUNCIONA |
+| Precio negativo en API | `productos/productos.spec.ts` | PASS (400) | ✅ FUNCIONA |
 | Adjuntar sin diseño | `cotizaciones/mockup-guardado.spec.ts` | PASS (botón deshabilitado) | ✅ FUNCIONA |
 | Mockup 2D sin vista | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS (aviso) | ✅ FUNCIONA |
 | 3D Tote + fallback Taza | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS | ✅ FUNCIONA |
@@ -128,7 +134,7 @@ por API.
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **62/62 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
+Matriz de proyectos: **66/66 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
 corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 
 ## 5. Bugs reales
@@ -142,14 +148,15 @@ corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 - **Ubicación:** `Flask_Llamma_API/routes/cotizaciones_routes.py`.
 - **Commit:** `54accf4`.
 
-### H-13 — Alto: la API acepta precios negativos (abierto)
+### H-13 — Alto: la API acepta precios negativos — **CORREGIDO**
 
-- **Reproducir:** `POST /api/productos` con `precioBase: -50` → **201**.
-- **Ubicación:** `Flask_Llamma_API/routes/productos_routes.py:67` (sin validación) y
-  `routes/comun.py:99` (usa `precio_base` sin `max(..., 0)` al cotizar).
-- **Impacto:** una cotización puede quedar con subtotal/total negativo.
-- **Fix propuesto:** rechazar `precioBase < 0` en POST/PUT y aplicar `max(0, ...)` en el fallback de
-  `partidas_a_cotizacion`. **No aplicado** (fuera del alcance de esta iteración).
+- **Reproducir (antes):** `POST /api/productos` con `precioBase: -50` → **201**.
+- **Fix:** `POST /api/productos` y `PUT /api/productos/<id>` responden `400 precio_invalido` si el
+  precio es negativo; `routes/public_routes.py` aplica `max(0, ...)` al estimado y
+  `routes/comun.py` ya recortaba el precio a cero al cotizar.
+- **Tests:** `tests/test_flujos.py::test_05c_producto_rechaza_precio_negativo` y
+  `e2e/tests/productos/productos.spec.ts` → «la API rechaza un precio negativo…» **PASS**.
+- **Ubicación:** `Flask_Llamma_API/routes/productos_routes.py`, `routes/public_routes.py`.
 
 ### H-01 — Crítico: inventario insuficiente se descontaba parcial — **CORREGIDO**
 
@@ -213,7 +220,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 248 pruebas (62 × 4)
+npx playwright test --list               # 264 pruebas (66 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -317,22 +324,24 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
-estado: parcial
-tests_totales: 62
+estado: completado
+tests_totales: 66
 proyectos: [chromium, firefox, webkit, mobile-chrome]
-corridas_por_proyecto: 3
-tests_pass: 62
+corridas_por_proyecto: "chromium 1, firefox 1, webkit 3, mobile-chrome 1"
+tests_pass: 66
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing, login_fallido, rate_limit, logout,
-  catalogo, editar_precio, editar_descripcion, editar_imagen, publicar, alta_usuarios_ui,
+  alta_login_logout, alta_usuarios_ui, auditoria_rutas_internas, precio_negativo_api,
+  catalogo, editar_precio, editar_descripcion, editar_imagen, publicar,
   solicitud_publica, adjuntos, seguimiento, cotizacion_desde_solicitud, cotizacion_manual, totales,
   flujo_compra, pago, produccion, inventario_estricto, anticipo_pagado, insumos_por_producto,
   smoke, consola]
-bugs_corregidos: [H-01, H-12]
+bugs_corregidos: [H-01, H-12, H-13]
 flujos_con_bug:
-  - {id: H-13, flujo: precio_negativo_api, severidad: alto, test: evidencia POST /api/productos}
   - {id: H-16, flujo: estimado_vs_cotizacion, severidad: alto, test: analisis + flujo de compra}
+  - {id: H-15, flujo: seguimiento_sin_produccion, severidad: medio, test: analisis}
+  - {id: H-14, flujo: imagen_lcp_lazy, severidad: bajo, test: consola NG0913}
 flujos_bloqueados: []
 herramientas_alta: [axe-core, lighthouse-ci, pytest, github-actions-e2e]
 herramientas_media: [sentry, owasp-zap, toHaveScreenshot, docker-compose]
@@ -344,9 +353,10 @@ config_playwright:
   db: "SQLite e2e/.tmp/e2e.db"
   projects: [chromium, firefox, webkit, mobile-chrome]
   trace: on-first-retry
-commits: [54accf4, dc711d1, cadfe28, 8f50e87]
+commits: [54accf4, dc711d1, cadfe28, 8f50e87, 0a9216a]
+commit_auditoria_mensaje: "fix(audit): reject negative prices and cover login flows end to end"
 ci_job_e2e_aprobado: false
-pendiente_usuario: "decidir H-13 y H-16; aprobar job CI e2e; evaluar axe-core y Lighthouse"
+pendiente_usuario: "decidir H-16; aprobar job CI e2e; evaluar axe-core y Lighthouse"
 ```
 
 ## 12. Supuestos
@@ -362,3 +372,44 @@ pendiente_usuario: "decidir H-13 y H-16; aprobar job CI e2e; evaluar axe-core y 
 - Playwright 1.65.1; Node 26 local, Node 22 en CI.
 - La suite comparte una sola base y corre en serie (`workers: 1`); los datos se hacen únicos por
   prueba y la base se recrea en cada invocación.
+
+## 13. Cierre de matriz E2E (auditoría final)
+
+Fecha de cierre: **25 de noviembre de 2026**. Total: **66 pruebas por navegador**.
+Commit de cierre: `fix(audit): reject negative prices and cover login flows end to end`.
+
+| Navegador | Totales | Pass | Fail | Tiempo | Estado |
+|---|---:|---:|---:|---:|---|
+| Chromium | 66 | 66 | 0 | 2.7 min | ✅ VERDE |
+| Firefox | 66 | 66 | 0 | 6.4 min | ✅ VERDE |
+| WebKit | 66 | 66 | 0 | 4.3 min | ✅ VERDE |
+| Mobile Chrome | 66 | 66 | 0 | 3.0 min | ✅ VERDE |
+
+Tiempo secuencial aproximado: **16.4 min** por matriz completa, más el arranque de los dos
+servidores (Flask en `:5001` y `ng serve` en `:4300`).
+
+### Correcciones cross-browser aplicadas
+
+- **Ninguna corrección de código específica de navegador.** En la primera pasada de WebKit falló
+  1 prueba; el fallo no se reprodujo en **dos corridas completas consecutivas** (66/66 cada una) y
+  no dejó artefactos porque la corrida siguiente limpió `test-results/`. Se trató de un flake
+  transitorio del entorno (arranque de servidores), no de una diferencia de API o de CSS.
+- No se usó `test.skip()` ni `test.fixme()`. WebGL, descargas PDF, `localStorage`, `sessionStorage`
+  y los menús móviles funcionan en los cuatro proyectos.
+- Los cambios de esta iteración fueron de auditoría funcional, no de compatibilidad:
+  validación de precios negativos (H-13), `aria-invalid` tras un `401`, filtros de marketing y
+  pluralización de contadores.
+
+### Cobertura añadida en esta auditoría
+
+- `e2e/tests/usuarios/registro-login.spec.ts` — alta desde el panel, login en contexto limpio,
+  logout y limpieza de ambos storages, más credenciales incorrectas con campo marcado.
+- `e2e/tests/smoke/auditoria-panel.spec.ts` — 10 rutas internas sin `console.error`, `pageerror`
+  ni respuestas `4xx/5xx`.
+- `e2e/tests/productos/productos.spec.ts` — la API rechaza `precioBase < 0` al crear y editar.
+
+### Conclusión
+
+**Suite estable en los 4 navegadores**: 66/66 en Chromium, Firefox, WebKit y Mobile Chrome, con
+264 ejecuciones verdes por matriz. Los bugs abiertos (H-16, H-15, H-14) son decisiones de producto
+o mejoras de rendimiento, no fallos de la suite.

@@ -114,6 +114,10 @@ def crear_producto():
     if Producto.query.filter(func.lower(Producto.nombre) == nombre.lower()).first():
         return error("Ya existe un producto con ese nombre", 409, "nombre_duplicado")
 
+    precio_base = parse_decimal(campo(data, "precioBase", "precio_base"), 0)
+    if precio_base < 0:
+        return error("El precio base no puede ser negativo", 400, "precio_invalido")
+
     producto = Producto(
         nombre=nombre[:160],
         descripcion=str(campo(data, "descripcion", default="") or "") or None,
@@ -121,7 +125,7 @@ def crear_producto():
         linea_produccion=str(
             campo(data, "lineaProduccion", "linea_produccion", default="gran-formato")
         )[:40],
-        precio_base=parse_decimal(campo(data, "precioBase", "precio_base"), 0),
+        precio_base=precio_base,
         unidad_venta=str(campo(data, "unidadVenta", "unidad_venta", default="pieza"))[:20],
         icono=str(campo(data, "icono", default="bi-box-seam"))[:60],
         imagen_url=str(campo(data, "imagenUrl", "imagen_url", default="") or "")[:300] or None,
@@ -159,7 +163,10 @@ def actualizar_producto(producto_id: int):
         producto.imagen_url = (str(valor).strip()[:300] or None) if valor else None
     precio = campo(data, "precioBase", "precio_base")
     if precio is not None:
-        producto.precio_base = parse_decimal(precio, 0)
+        nuevo_precio = parse_decimal(precio, 0)
+        if nuevo_precio < 0:
+            return error("El precio base no puede ser negativo", 400, "precio_invalido")
+        producto.precio_base = nuevo_precio
     if "publicado" in data:
         producto.publicado = bool(data["publicado"])
     if "activo" in data:

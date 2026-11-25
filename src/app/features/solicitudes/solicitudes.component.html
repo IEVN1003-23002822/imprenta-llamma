@@ -58,7 +58,7 @@
           <span class="icon-tile icon-tile-magenta"><i class="bi bi-file-earmark-text"></i></span>
           <div>
             <strong>{{ store.resumen().porEstado.cotizada }}</strong>
-            <span>Cotizadas</span>
+            <span>{{ store.resumen().porEstado.cotizada === 1 ? 'Cotizada' : 'Cotizadas' }}</span>
           </div>
         </div>
       </div>

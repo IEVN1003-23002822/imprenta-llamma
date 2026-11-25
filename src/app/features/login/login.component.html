@@ -88,6 +88,7 @@
             <div
               class="mb-4 flex items-start gap-2 rounded-[0.7rem] border border-[rgba(180,35,24,0.26)] bg-[#fdecec] px-[0.75rem] py-[0.65rem] text-[0.72rem] leading-[1.45] text-[#a01212] [&_i]:mt-[0.05rem]"
               role="alert"
+              id="authError"
             >
               <i class="bi bi-exclamation-triangle-fill"></i>
               <span>{{ error() }}</span>
@@ -107,13 +108,22 @@
               formControlName="correo"
               placeholder="nombre&#64;llamma.mx"
               autocomplete="username"
-              [attr.aria-invalid]="form.controls.correo.touched && form.controls.correo.invalid"
+              (input)="limpiarCredenciales()"
+              [attr.aria-invalid]="
+                (form.controls.correo.touched && form.controls.correo.invalid) ||
+                credencialesInvalidas()
+              "
               [attr.aria-describedby]="
                 form.controls.correo.touched && form.controls.correo.invalid
                   ? 'authEmailError'
-                  : null
+                  : credencialesInvalidas()
+                    ? 'authError'
+                    : null
               "
-              [class.border-red-600]="form.controls.correo.touched && form.controls.correo.invalid"
+              [class.border-red-600]="
+                (form.controls.correo.touched && form.controls.correo.invalid) ||
+                credencialesInvalidas()
+              "
             />
             @if (form.controls.correo.touched && form.controls.correo.invalid) {
               <span class="mt-1 block text-[0.66rem] font-medium text-[#b42318]" id="authEmailError"
@@ -136,16 +146,21 @@
                 formControlName="password"
                 placeholder="Tu contraseña"
                 autocomplete="current-password"
+                (input)="limpiarCredenciales()"
                 [attr.aria-invalid]="
-                  form.controls.password.touched && form.controls.password.invalid
+                  (form.controls.password.touched && form.controls.password.invalid) ||
+                  credencialesInvalidas()
                 "
                 [attr.aria-describedby]="
                   form.controls.password.touched && form.controls.password.invalid
                     ? 'authPasswordError'
-                    : null
+                    : credencialesInvalidas()
+                      ? 'authError'
+                      : null
                 "
                 [class.border-red-600]="
-                  form.controls.password.touched && form.controls.password.invalid
+                  (form.controls.password.touched && form.controls.password.invalid) ||
+                  credencialesInvalidas()
                 "
               />
               <button

@@ -342,6 +342,35 @@ class FlujosApiTest(unittest.TestCase):
             "Playera DTF 29 × 29 cm",
         )
 
+    def test_05c_producto_rechaza_precio_negativo(self) -> None:
+        """H-13: el backend no debe aceptar precios negativos ni al crear ni al editar."""
+        negativo = self.client.post(
+            "/api/productos",
+            headers=self._auth(self._token()),
+            json={"nombre": "Producto Negativo QA", "precioBase": -50},
+        )
+        self.assertEqual(negativo.status_code, 400, negativo.get_data(as_text=True))
+        self.assertIn("negativo", self._json(negativo)["error"].lower())
+
+        valido = self.client.post(
+            "/api/productos",
+            headers=self._auth(self._token()),
+            json={"nombre": "Producto Precio Cero QA", "precioBase": 0},
+        )
+        self.assertEqual(valido.status_code, 201, valido.get_data(as_text=True))
+        producto_id = self._json(valido)["id"]
+
+        actualizado = self.client.put(
+            f"/api/productos/{producto_id}",
+            headers=self._auth(self._token()),
+            json={"precioBase": -1},
+        )
+        self.assertEqual(actualizado.status_code, 400, actualizado.get_data(as_text=True))
+        detalle = self.client.get(
+            f"/api/productos/{producto_id}", headers=self._auth(self._token())
+        )
+        self.assertEqual(self._json(detalle)["precioBase"], 0)
+
     def test_06_cotizacion_calcula_iva_y_anticipo(self) -> None:
         solicitud = self._solicitud("cotizacion@example.com")
         respuesta = self.client.post(

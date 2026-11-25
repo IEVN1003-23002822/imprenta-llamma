@@ -4,7 +4,7 @@ import { test, expect } from '../../fixtures/auth.fixture';
 import { tokenDe } from '../../fixtures/api.fixture';
 import { apiConToken, crearProducto, obtenerProducto } from '../../helpers/api-setup';
 import { vigilarConsola } from '../../helpers/assert-consola';
-import { productoFactory } from '../../factories/producto.factory';
+import { productoFactory, productoInvalido } from '../../factories/producto.factory';
 import { ProductosPage } from '../../page-objects/ProductosPage';
 
 test.describe('Productos — edición interna', () => {
@@ -112,6 +112,21 @@ test.describe('Productos — edición interna', () => {
 
     await expect(page.getByRole('heading', { name: /Nuevo producto/i })).toBeVisible();
     expect(peticiones, 'No debe crear productos inválidos').toEqual([]);
+  });
+
+  test('la API rechaza un precio negativo aunque se omita el formulario', async () => {
+    const creado = await api.post('/api/productos', {
+      data: productoInvalido.precioNegativo(),
+    });
+    expect(creado.status(), await creado.text()).toBe(400);
+    expect((await creado.json()).error).toMatch(/precio.*negativo/i);
+
+    const valido = await crearProducto(api, productoFactory.valido({ precioBase: 100 }));
+    const actualizado = await api.put(`/api/productos/${valido.id}`, {
+      data: { precioBase: -1 },
+    });
+    expect(actualizado.status(), await actualizado.text()).toBe(400);
+    expect((await obtenerProducto(api, valido.id)).precioBase).toBe(100);
   });
 
   test('el catálogo público lista todos los productos publicados', async ({ page }) => {

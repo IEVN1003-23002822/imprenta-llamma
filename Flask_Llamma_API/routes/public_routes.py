@@ -239,7 +239,7 @@ def crear_solicitud():
         ).strip()
 
         if producto and producto.precio_base:
-            estimado = round(float(producto.precio_base) * cantidad, 2)
+            estimado = round(max(float(producto.precio_base), 0) * cantidad, 2)
         else:
             estimado = campo(bruto, "precioEstimado", "precio_estimado")
             estimado = parse_decimal(estimado, 0) if estimado is not None else None
