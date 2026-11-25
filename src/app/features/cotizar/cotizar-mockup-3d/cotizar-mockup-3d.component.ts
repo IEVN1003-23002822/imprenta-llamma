@@ -16,10 +16,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-import {
-  ImagenMockupPreparada,
-  LlammaService,
-} from '../../../core/services/llamma.service';
+import { ImagenMockupPreparada, LlammaService } from '../../../core/services/llamma.service';
 import { ModalAccesibleDirective } from '../../../shared/modal-accesible.directive';
 
 export interface CapaDiseño3D {
@@ -147,6 +144,10 @@ const CONFIG_PRODUCTOS: Record<string, ConfigProducto3D> = {
   },
 };
 
+// El catálogo público usa estos nombres; ambos comparten el modelo DTF.
+CONFIG_PRODUCTOS['Playera DTF 29 × 29 cm'] = CONFIG_PRODUCTOS['Playera DTF unisex'];
+CONFIG_PRODUCTOS['Playera DTF menor a 29 × 29 cm'] = CONFIG_PRODUCTOS['Playera DTF unisex'];
+
 @Component({
   selector: 'app-cotizar-mockup-3d',
   imports: [ModalAccesibleDirective],
@@ -180,6 +181,8 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
   readonly capaActivaId = signal<number | null>(null);
   readonly procesando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly cargandoModelo = signal(true);
+  readonly modeloAproximado = signal(false);
   readonly capturaGuardada = signal(false);
 
   readonly capaActiva = computed(
@@ -264,17 +267,31 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
     camera.position.set(0, 0.45, cfg.cameraZ);
     this.camera = camera;
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      preserveDrawingBuffer: true,
-    });
+    const renderer = (() => {
+      try {
+        return new THREE.WebGLRenderer({
+          antialias: true,
+          preserveDrawingBuffer: true,
+        });
+      } catch {
+        return null;
+      }
+    })();
+
+    if (!renderer) {
+      this.cargandoModelo.set(false);
+      this.error.set(
+        'Tu navegador no pudo iniciar WebGL. Actualiza el navegador o activa la aceleración por hardware.',
+      );
+      return;
+    }
+    this.renderer = renderer;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
     container.appendChild(renderer.domElement);
-    this.renderer = renderer;
 
     renderer.domElement.addEventListener('pointerdown', this.onPointerDownBound);
     renderer.domElement.addEventListener('pointermove', this.onPointerMoveBound);
@@ -348,11 +365,15 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
         modelo.updateMatrixWorld(true);
 
         this.modoDecal.set(true);
+        this.modeloAproximado.set(false);
+        this.cargandoModelo.set(false);
         this.reconstruirDecals();
       },
       undefined,
       () => {
         this.modoDecal.set(false);
+        this.modeloAproximado.set(true);
+        this.cargandoModelo.set(false);
         scene.add(this.construirModeloBase(cfg.tipo, baseMaterial, wrapMaterial));
       },
     );
@@ -451,26 +472,33 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
   }
 
   private obtenerPuntoInicialPecho(): { punto: THREE.Vector3; normal: THREE.Vector3 } | null {
-    if (!this.decalTargets.length) return null;
-    // Rayo desde el frente hacia el centro del pecho
-    const origen = new THREE.Vector3(0, 0.25, 5);
-    const direccion = new THREE.Vector3(0, 0, -1);
+    if (!this.decalTargets.length || !this.camera) return null;
+
+    const caja = new THREE.Box3();
+    this.decalTargets.forEach((mesh) => caja.expandByObject(mesh));
+    const centro = caja.getCenter(new THREE.Vector3());
+
+    // Rayo desde la cámara al centro del modelo: garantiza impactar la cara frontal.
+    const origen = this.camera.position.clone();
+    const direccion = centro.clone().sub(origen).normalize();
     this.raycaster.set(origen, direccion);
     const hits = this.raycaster.intersectObjects(this.decalTargets, false);
-    if (!hits.length || !hits[0].face) {
-      return { punto: new THREE.Vector3(0, 0.2, 0.4), normal: new THREE.Vector3(0, 0, 1) };
+    if (hits.length && hits[0].face) {
+      const hit = hits[0];
+      const normal = hit
+        .face!.normal.clone()
+        .transformDirection(hit.object.matrixWorld)
+        .normalize();
+      const haciaCamara = this.camera.position.clone().sub(hit.point).normalize();
+      if (normal.dot(haciaCamara) < 0) normal.negate();
+      return { punto: hit.point.clone(), normal };
     }
-    const hit = hits[0];
-    if (!hit || !hit.face) {
-      return { punto: new THREE.Vector3(0, 0.2, 0.4), normal: new THREE.Vector3(0, 0, 1) };
-    }
-    const normal = hit.face.normal
-    
-      .clone()
-      .transformDirection(hit.object.matrixWorld)
-      .normalize();
-    if (normal.z < 0) normal.negate();
-    return { punto: hit.point.clone(), normal };
+
+    // Fallback: plano frontal de la caja envolvente.
+    return {
+      punto: new THREE.Vector3(centro.x, centro.y, caja.max.z),
+      normal: new THREE.Vector3(0, 0, 1),
+    };
   }
 
   private limpiarDecalsEscena(): void {
@@ -496,7 +524,10 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
     const helper = new THREE.Object3D();
 
     this.capas().forEach((capa, idx) => {
-      if (!capa.punto3d || !capa.normal3d) return;
+      const inicial = !capa.punto3d || !capa.normal3d ? this.obtenerPuntoInicialPecho() : null;
+      const punto = capa.punto3d ?? inicial?.punto;
+      const normal = capa.normal3d ?? inicial?.normal;
+      if (!punto || !normal) return;
 
       let tex = this.decalTextures.get(capa.id);
       if (!tex) {
@@ -512,9 +543,9 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
       // Profundidad acotada para que NUNCA atraviese hasta la espalda
       const profundidad = 0.28;
 
-      helper.position.copy(capa.punto3d);
+      helper.position.copy(punto);
       helper.up.set(0, 1, 0);
-      helper.lookAt(capa.punto3d.clone().add(capa.normal3d));
+      helper.lookAt(punto.clone().add(normal));
       helper.rotateZ((-capa.rotacion * Math.PI) / 180);
 
       const orientacion = helper.rotation.clone();
@@ -523,17 +554,20 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
       const decalMat = new THREE.MeshStandardMaterial({
         map: tex,
         transparent: true,
+        alphaTest: 0.1,
         roughness: 0.72,
         metalness: 0.02,
         depthTest: true,
         depthWrite: false,
         polygonOffset: true,
         polygonOffsetFactor: -4 - idx,
+        polygonOffsetUnits: -1,
+        toneMapped: false,
       });
 
       for (const mesh of this.decalTargets) {
         mesh.updateWorldMatrix(true, false);
-        const geo = new DecalGeometry(mesh, capa.punto3d, orientacion, tamano);
+        const geo = new DecalGeometry(mesh, punto, orientacion, tamano);
         const posAttr = geo.attributes['position'];
         if (posAttr && posAttr.count > 0) {
           this.decalGroup!.add(new THREE.Mesh(geo, decalMat));
@@ -586,7 +620,16 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
 
       group.add(
         new THREE.Mesh(
-          new THREE.CylinderGeometry(1.046, 1.006, 1.86, 64, 1, true, Math.PI * 0.62, Math.PI * 1.76),
+          new THREE.CylinderGeometry(
+            1.046,
+            1.006,
+            1.86,
+            64,
+            1,
+            true,
+            Math.PI * 0.62,
+            Math.PI * 1.76,
+          ),
           wrapMat,
         ),
       );
@@ -599,7 +642,12 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
       frente.position.z = 0.018;
       group.add(frente);
       const ojilloGeo = new THREE.TorusGeometry(0.055, 0.016, 12, 24);
-      for (const [x, y] of [[-1.48, 0.77], [1.48, 0.77], [-1.48, -0.77], [1.48, -0.77]]) {
+      for (const [x, y] of [
+        [-1.48, 0.77],
+        [1.48, 0.77],
+        [-1.48, -0.77],
+        [1.48, -0.77],
+      ]) {
         const ojillo = new THREE.Mesh(ojilloGeo, metalMat);
         ojillo.position.set(x, y, 0.018);
         group.add(ojillo);
@@ -734,7 +782,9 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
           img.src = resp.dataUrl;
         },
         error: () => {
-          this.error.set('No pudimos procesar la imagen en el servidor. Revisa que Flask esté activo.');
+          this.error.set(
+            'No pudimos procesar la imagen en el servidor. Revisa que Flask esté activo.',
+          );
           this.procesando.set(false);
         },
       });
@@ -769,7 +819,13 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
       this.capas.update((lista) =>
         lista.map((capa) =>
           capa.id === id
-            ? { ...capa, punto3d: inicial?.punto, normal3d: inicial?.normal, escala: 55, rotacion: 0 }
+            ? {
+                ...capa,
+                punto3d: inicial?.punto,
+                normal3d: inicial?.normal,
+                escala: 55,
+                rotacion: 0,
+              }
             : capa,
         ),
       );

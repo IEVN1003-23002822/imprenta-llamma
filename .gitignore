@@ -56,3 +56,19 @@ Flask_Llamma_API/uploads/
 
 # Mockups originales usados para generar src/assets/images/portafolio
 Lamma  Mockup realista/
+
+# Imagenes fuente del catalogo (se publican solo las versiones WebP)
+Imagenes catalago/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+/e2e/.auth/
+/e2e/.tmp/
+
+# Salida de repomix usada para contexto, no se versiona
+/repomix-output.xml

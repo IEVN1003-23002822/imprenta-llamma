@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload, selectinload
@@ -20,9 +22,23 @@ from models import (
     Producto,
     utcnow,
 )
-from routes.comun import descontar_inventario, partidas_a_cotizacion, totales
+from routes.comun import (
+    DescuentoInventarioError,
+    InventarioInsuficiente,
+    _descontar_inventario,
+    partidas_a_cotizacion,
+    totales,
+)
 from routes.helpers import campo, error, lista_items, no_encontrado, payload
-from utils import generar_folio, paginar, parse_decimal, parse_fecha, parse_int
+from utils import (
+    MENSAJE_FECHA_MINIMA,
+    calcular_fecha_minima_entrega,
+    generar_folio,
+    paginar,
+    parse_decimal,
+    parse_fecha,
+    parse_int,
+)
 
 pedidos_bp = Blueprint("pedidos", __name__)
 
@@ -229,12 +245,16 @@ def crear_pedido():
         return error("El pedido necesita al menos una partida")
 
     items, subtotal = partidas_a_cotizacion(items_brutos, data)
+    fecha_entrega = parse_fecha(campo(data, "fechaEntrega", "fecha_entrega"))
+    if fecha_entrega and fecha_entrega < calcular_fecha_minima_entrega(date.today()):
+        return error(MENSAJE_FECHA_MINIMA, 400, "fecha_invalida")
+
     pedido = Pedido(
         folio=generar_folio("LLM", Pedido, con_anio=False, relleno=4, inicio=1040),
         cliente_id=cliente.id,
         estado=str(campo(data, "estado", default="confirmado")),
         prioridad=str(campo(data, "prioridad", default="media")),
-        fecha_entrega=parse_fecha(campo(data, "fechaEntrega")),
+        fecha_entrega=fecha_entrega,
         notas=str(campo(data, "notas", default="") or "") or None,
         creado_por=g.usuario.id,
         **totales(subtotal),
@@ -255,11 +275,26 @@ def crear_pedido():
     orden.etapas.append(ProduccionEtapa(etapa="diseno", estado="en-proceso", inicio=utcnow()))
 
     db.session.add(pedido)
-    db.session.flush()
-    descontar_inventario(pedido, g.usuario)
+    try:
+        db.session.flush()
+        descuento = _descontar_inventario(pedido, g.usuario)
+        db.session.commit()
+    except DescuentoInventarioError as exc:
+        db.session.rollback()
+        cuerpo = {
+            "error": (
+                "Inventario insuficiente"
+                if isinstance(exc, InventarioInsuficiente)
+                else str(exc)
+            ),
+            "mensaje": str(exc),
+            "detalles": exc.detalles,
+        }
+        return jsonify(cuerpo), 400
 
-    db.session.commit()
-    return jsonify(pedido.to_dict()), 201
+    data = pedido.to_dict()
+    data["descuento"] = descuento
+    return jsonify(data), 201
 
 
 @pedidos_bp.patch("/pedidos/<int:pedido_id>/estado")
@@ -293,8 +328,11 @@ def registrar_pago(pedido_id: int):
     if monto <= 0:
         return error("El monto del pago debe ser mayor a cero")
 
-    pagado = sum(float(p.monto or 0) for p in pedido.pagos if p.confirmado)
-    if monto > round(float(pedido.total or 0) - pagado, 2) + 0.01:
+    # El saldo del pedido ya descuenta el anticipo pactado al crearlo. Se usa
+    # ese saldo como tope: comparar contra `total - pagado` permitía cobrar de
+    # más cuando el anticipo aún no estaba registrado como pago.
+    saldo_actual = round(float(pedido.saldo or 0), 2)
+    if monto > saldo_actual + 0.01:
         return error("El pago excede el saldo pendiente del pedido")
 
     pago = Pago(
@@ -309,8 +347,8 @@ def registrar_pago(pedido_id: int):
     pedido.pagos.append(pago)
     db.session.flush()
 
-    pagado = sum(float(p.monto or 0) for p in pedido.pagos if p.confirmado)
-    pedido.saldo = round(max(float(pedido.total or 0) - pagado, 0), 2)
+    if pago.confirmado:
+        pedido.saldo = round(max(saldo_actual - monto, 0), 2)
     if pedido.saldo <= 0 and pedido.estado == "confirmado":
         pedido.estado = "en-produccion"
 

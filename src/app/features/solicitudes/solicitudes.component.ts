@@ -299,7 +299,9 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
             return;
           }
           this.errorAccion.set(
-            respuesta.error?.error || 'No pudimos convertir la solicitud en cotización.',
+            respuesta.error?.mensaje ||
+              respuesta.error?.error ||
+              'No pudimos convertir la solicitud en cotización.',
           );
         },
       });

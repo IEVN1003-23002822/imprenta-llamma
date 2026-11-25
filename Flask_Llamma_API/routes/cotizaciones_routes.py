@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+from decimal import Decimal
 
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import or_
@@ -22,9 +23,21 @@ from models import (
     SolicitudCotizacion,
     utcnow,
 )
-from routes.comun import crear_cotizacion, descontar_inventario
+from routes.comun import (
+    DescuentoInventarioError,
+    InventarioInsuficiente,
+    _descontar_inventario,
+    crear_cotizacion,
+)
 from routes.helpers import campo, error, no_encontrado, payload
-from utils import generar_folio, paginar, parse_fecha, parse_int
+from utils import (
+    MENSAJE_FECHA_MINIMA,
+    calcular_fecha_minima_entrega,
+    generar_folio,
+    paginar,
+    parse_fecha,
+    parse_int,
+)
 
 cotizaciones_bp = Blueprint("cotizaciones", __name__)
 
@@ -105,7 +118,9 @@ def crear_cotizacion_desde_api():
 @cotizaciones_bp.patch("/cotizaciones/<int:cotizacion_id>/estado")
 @role_required("admin", "ventas")
 def cambiar_estado_cotizacion(cotizacion_id: int):
-    cotizacion = Cotizacion.query.get(cotizacion_id)
+    cotizacion = (
+        Cotizacion.query.filter_by(id=cotizacion_id).with_for_update().first()
+    )
     if not cotizacion:
         return no_encontrado("Cotización")
 
@@ -113,15 +128,45 @@ def cambiar_estado_cotizacion(cotizacion_id: int):
     if estado not in ESTADOS_COTIZACION:
         return error(f"Estado inválido. Usa: {', '.join(sorted(ESTADOS_COTIZACION))}")
 
+    descuento = None
+    if estado == "aprobada":
+        if cotizacion.inventario_descontado:
+            descuento = {"descontados": [], "alertas": []}
+        else:
+            try:
+                descuento = _descontar_inventario(cotizacion, g.usuario)
+            except DescuentoInventarioError as exc:
+                db.session.rollback()
+                cuerpo = {
+                    "error": (
+                        "Inventario insuficiente"
+                        if isinstance(exc, InventarioInsuficiente)
+                        else str(exc)
+                    ),
+                    "mensaje": str(exc),
+                    "detalles": exc.detalles,
+                }
+                return jsonify(cuerpo), 400
+
     cotizacion.estado = estado
-    db.session.commit()
-    return jsonify(cotizacion.to_dict(incluir_items=False))
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    data = cotizacion.to_dict(incluir_items=False)
+    if descuento is not None:
+        data["descuento"] = descuento
+    return jsonify(data)
 
 
 @cotizaciones_bp.post("/cotizaciones/<int:cotizacion_id>/convertir-pedido")
 @role_required("admin", "ventas")
 def convertir_cotizacion(cotizacion_id: int):
-    cotizacion = Cotizacion.query.get(cotizacion_id)
+    cotizacion = (
+        Cotizacion.query.filter_by(id=cotizacion_id).with_for_update().first()
+    )
     if not cotizacion:
         return no_encontrado("Cotización")
     if cotizacion.pedidos:
@@ -137,6 +182,8 @@ def convertir_cotizacion(cotizacion_id: int):
 
     data = payload()
     fecha_entrega = parse_fecha(campo(data, "fechaEntrega", "fecha_entrega"))
+    if fecha_entrega and fecha_entrega < calcular_fecha_minima_entrega(date.today()):
+        return error(MENSAJE_FECHA_MINIMA, 400, "fecha_invalida")
     if not fecha_entrega:
         fecha_entrega = date.today() + timedelta(days=10)
 
@@ -169,16 +216,21 @@ def convertir_cotizacion(cotizacion_id: int):
         )
 
     if campo(data, "anticipoPagado", "anticipo_pagado", default=False) in (True, "true", "1", 1):
+        anticipo = Decimal(str(cotizacion.anticipo or 0)).quantize(Decimal("0.01"))
         pedido.pagos.append(
             Pago(
                 tipo="anticipo",
                 metodo=str(campo(data, "metodoPago", default="transferencia")),
-                monto=cotizacion.anticipo,
+                monto=float(anticipo),
                 referencia=str(campo(data, "referenciaPago", default="") or "") or None,
                 confirmado=True,
                 registrado_por=g.usuario.id,
             )
         )
+        saldo_actual = Decimal(str(pedido.saldo or 0))
+        pedido.saldo = float(max(saldo_actual - anticipo, Decimal("0.00")))
+        if pedido.saldo <= 0 and pedido.estado == "confirmado":
+            pedido.estado = "en-produccion"
 
     orden = OrdenProduccion(
         etapa="diseno",
@@ -201,7 +253,28 @@ def convertir_cotizacion(cotizacion_id: int):
         cotizacion.solicitud.estado = "convertida"
 
     db.session.add(pedido)
-    db.session.flush()
-    descontar_inventario(pedido, g.usuario)
-    db.session.commit()
-    return jsonify(pedido.to_dict()), 201
+    try:
+        db.session.flush()
+        if cotizacion.inventario_descontado:
+            pedido.inventario_descontado = True
+            descuento = {"descontados": [], "alertas": []}
+        else:
+            descuento = _descontar_inventario(pedido, g.usuario)
+            cotizacion.inventario_descontado = True
+        db.session.commit()
+    except DescuentoInventarioError as exc:
+        db.session.rollback()
+        cuerpo = {
+            "error": (
+                "Inventario insuficiente"
+                if isinstance(exc, InventarioInsuficiente)
+                else str(exc)
+            ),
+            "mensaje": str(exc),
+            "detalles": exc.detalles,
+        }
+        return jsonify(cuerpo), 400
+
+    data = pedido.to_dict()
+    data["descuento"] = descuento
+    return jsonify(data), 201

@@ -183,8 +183,29 @@
                       type="date"
                       class="form-control"
                       formControlName="fechaDeseada"
-                      [min]="hoy"
+                      [min]="fechaMinima"
+                      aria-describedby="cotFechaAyuda"
                     />
+                    <small
+                      id="cotFechaAyuda"
+                      class="mt-2 block text-[0.72rem] leading-[1.5] text-[var(--llamma-muted)]"
+                    >
+                      ⏱️ <strong class="text-[var(--llamma-carbon)]">Tiempo de entrega:</strong>
+                      2 días hábiles. No se entregan pedidos en fines de semana ni días festivos.
+                    </small>
+                    <details
+                      class="mt-2 rounded-[0.55rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-3 py-2 text-[0.72rem] text-[var(--llamma-muted)]"
+                    >
+                      <summary class="cursor-pointer font-semibold text-[var(--llamma-carbon)]">
+                        Ver política de entrega
+                      </summary>
+                      <p class="mb-0 mt-2 leading-[1.55]">
+                        Los pedidos se programan con un mínimo de 2 días hábiles contados desde la
+                        solicitud. No se realizan entregas en sábados, domingos ni días festivos. Si
+                        la fecha solicitada cae en un día no hábil, se recorre al siguiente día
+                        hábil disponible.
+                      </p>
+                    </details>
                   </div>
                 </div>
               </section>
@@ -298,8 +319,8 @@
                       <i class="bi bi-eye"></i> Previsualizar diseño
                     </button>
                     <button class="btn btn-outline-ink" type="button" (click)="openPreview3d()">
-  <i class="bi bi-box"></i> Vista 3D
-</button>
+                      <i class="bi bi-box"></i> Vista 3D
+                    </button>
                   </div>
                 </div>
 
@@ -318,13 +339,13 @@
                     </div>
                   </div>
                   <p class="line-estimate">
-                  <i class="bi bi-calculator"></i>
-                  @if (esPorM2()) {
-                    Área total: <strong>{{ areaTotalM2() }} m²</strong> ·
-                  }
-                  Estimado de esta línea: <strong>{{ moneda(estimadoLinea()) }}</strong> + IVA ·
-                  sujeto a revisión de diseño.
-                </p>
+                    <i class="bi bi-calculator"></i>
+                    @if (esPorM2()) {
+                      Área total: <strong>{{ areaTotalM2() }} m²</strong> ·
+                    }
+                    Estimado de esta línea: <strong>{{ moneda(estimadoLinea()) }}</strong> + IVA ·
+                    sujeto a revisión de diseño.
+                  </p>
                 }
 
                 @if (carrito().length) {

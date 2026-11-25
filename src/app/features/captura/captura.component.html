@@ -220,7 +220,78 @@
               </div>
             </div>
 
+            @if (descuento(); as resumen) {
+              <div
+                class="mt-4 rounded-[0.7rem] border border-[var(--llamma-line)] bg-white p-3 text-left"
+              >
+                <strong class="mb-2 block text-[0.78rem]">Inventario descontado</strong>
+                @if (resumen.descontados.length) {
+                  <ul class="mb-0 list-none space-y-1 p-0 text-[0.72rem]">
+                    @for (item of resumen.descontados; track item.materia) {
+                      <li class="flex items-center justify-between gap-2">
+                        <span>{{ item.materia }}</span>
+                        <span class="font-semibold"
+                          >-{{ item.cantidad }} · quedan {{ item.stock_restante }}</span
+                        >
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="mb-0 text-[0.72rem] text-[var(--llamma-muted)]">
+                    El inventario ya se había descontado al aprobar la cotización.
+                  </p>
+                }
+                @for (alerta of resumen.alertas; track alerta) {
+                  <p class="mb-0 mt-2 text-[0.7rem] font-semibold text-[#b42318]">
+                    <i class="bi bi-exclamation-triangle-fill"></i> {{ alerta }}
+                  </p>
+                }
+              </div>
+            }
+
             @if (!yaConvertida()) {
+              @if (puedeAprobar()) {
+                <button
+                  class="btn btn-outline-ink mb-2 mt-4 w-full"
+                  type="button"
+                  [disabled]="aprobando() || convirtiendo()"
+                  (click)="aprobarCotizacion()"
+                >
+                  @if (aprobando()) {
+                    <i class="bi bi-hourglass-split"></i> Aprobando cotización...
+                  } @else {
+                    <i class="bi bi-check2-circle"></i> Aprobar cotización
+                  }
+                </button>
+              }
+              <div class="mt-4">
+                <label
+                  class="mb-1 block text-[0.72rem] font-semibold text-[var(--llamma-carbon)]"
+                  for="cotFechaEntrega"
+                  >Fecha deseada de entrega</label
+                >
+                <input
+                  id="cotFechaEntrega"
+                  type="date"
+                  class="w-full rounded-[0.6rem] border border-[var(--llamma-line)] bg-white px-3 py-2 text-sm text-[var(--llamma-carbon)] outline-none transition focus:border-[var(--llamma-cyan)] focus:ring-4 focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)]"
+                  [min]="fechaMinima"
+                  [value]="fechaEntrega()"
+                  (input)="cambiarFechaEntrega($event)"
+                  aria-describedby="cotFechaEntregaAyuda"
+                />
+                <small
+                  id="cotFechaEntregaAyuda"
+                  class="mt-1 block text-[0.68rem] leading-[1.5] text-[var(--llamma-muted)]"
+                >
+                  ⏱️ 2 días hábiles. Sin entregas en fines de semana ni días festivos.
+                </small>
+                @if (fechaEntregaInvalida()) {
+                  <p class="mt-1 text-[0.68rem] font-medium text-[#b42318]" role="alert">
+                    La fecha debe respetar el margen mínimo de 2 días hábiles.
+                  </p>
+                }
+              </div>
+
               <div class="form-check capture-check">
                 <input
                   class="form-check-input"

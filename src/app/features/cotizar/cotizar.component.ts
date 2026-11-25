@@ -12,6 +12,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import {
+  MENSAJE_FECHA_MINIMA,
+  calcularFechaMinimaEntrega,
+  esFechaEntregaValida,
+} from '../../core/utils/fechas';
 import { EXTENSIONES_ARCHIVO, MAX_BYTES_ARCHIVO } from '../../core/models/estados';
 import { LlammaService } from '../../core/services/llamma.service';
 import { ModalAccesibleDirective } from '../../shared/modal-accesible.directive';
@@ -73,7 +78,7 @@ export interface MockupVista {
 
 /**
  * Vistas de mockup por nombre de producto. Las imágenes son copias WebP
- * optimizadas de `Toni/mockups` y viven en `src/assets/images/mockups/`.
+ * optimizadas y viven en `src/assets/images/mockups/`.
  * Las coordenadas son porcentajes, así que no dependen de la resolución.
  */
 const MOCKUPS_CATALOGO: Record<string, MockupVista[]> = {
@@ -119,7 +124,7 @@ const MOCKUPS_CATALOGO: Record<string, MockupVista[]> = {
       transform: 'perspective(700px) rotateY(-21.5deg) skewY(4.5deg)',
     },
   ],
-  'Playera DTF unisex': [
+  'Playera DTF 29 × 29 cm': [
     {
       id: 'playera-1',
       nombre: 'Espalda / Plana',
@@ -225,6 +230,8 @@ const MOCKUPS_CATALOGO: Record<string, MockupVista[]> = {
   ],
 };
 
+MOCKUPS_CATALOGO['Playera DTF menor a 29 × 29 cm'] = MOCKUPS_CATALOGO['Playera DTF 29 × 29 cm'];
+
 @Component({
   selector: 'app-cotizar',
   imports: [
@@ -251,7 +258,6 @@ export class CotizarComponent implements OnInit {
 
   readonly productoId = signal<number | null>(null);
   readonly cantidad = signal(1);
-
   readonly anchoMetros = signal(2);
   readonly altoMetros = signal(1);
 
@@ -274,7 +280,7 @@ export class CotizarComponent implements OnInit {
 
   private persistenciaActiva = false;
 
-  readonly hoy = new Date().toISOString().slice(0, 10);
+  readonly fechaMinima = calcularFechaMinimaEntrega();
 
   readonly form = this.fb.nonNullable.group({
     nombreCliente: ['', [Validators.required, Validators.minLength(3)]],
@@ -336,18 +342,17 @@ export class CotizarComponent implements OnInit {
 
   readonly showPreview3dModal = signal(false);
 
-openPreview3d(): void {
-  this.showPreview3dModal.set(true);
-}
+  openPreview3d(): void {
+    this.showPreview3dModal.set(true);
+  }
 
-closePreview3d(): void {
-  this.showPreview3dModal.set(false);
-}
+  closePreview3d(): void {
+    this.showPreview3dModal.set(false);
+  }
 
-adjuntarCaptura3d(archivo: File): void {
-  this.archivos.update((actuales) => [...actuales, archivo]);
-}
-
+  adjuntarCaptura3d(archivo: File): void {
+    this.archivos.update((actuales) => [...actuales, archivo]);
+  }
 
   readonly previewImage = signal<string | null>(null);
   readonly selectedMockupIndex = signal(0);
@@ -622,17 +627,20 @@ adjuntarCaptura3d(archivo: File): void {
     const valor = Number((evento.target as HTMLSelectElement).value);
     this.productoId.set(Number.isNaN(valor) ? null : valor);
     this.guardarBorrador();
-    
   }
 
   cambiarAncho(evento: Event): void {
     const valor = Number((evento.target as HTMLInputElement).value);
-    this.anchoMetros.set(Number.isFinite(valor) && valor >= 0.1 ? Math.round(valor * 100) / 100 : 0.1);
+    this.anchoMetros.set(
+      Number.isFinite(valor) && valor >= 0.1 ? Math.round(valor * 100) / 100 : 0.1,
+    );
   }
 
   cambiarAlto(evento: Event): void {
     const valor = Number((evento.target as HTMLInputElement).value);
-    this.altoMetros.set(Number.isFinite(valor) && valor >= 0.1 ? Math.round(valor * 100) / 100 : 0.1);
+    this.altoMetros.set(
+      Number.isFinite(valor) && valor >= 0.1 ? Math.round(valor * 100) / 100 : 0.1,
+    );
   }
 
   cambiarCantidad(evento: Event): void {
@@ -735,6 +743,12 @@ adjuntarCaptura3d(archivo: File): void {
       this.form.markAllAsTouched();
       this.paso.set(1);
       this.error.set('Revisa los datos de contacto: nos falta información para responderte.');
+      setTimeout(() => this.enfocarPrimerError());
+      return;
+    }
+    if (!esFechaEntregaValida(this.form.controls.fechaDeseada.value)) {
+      this.paso.set(1);
+      this.error.set(MENSAJE_FECHA_MINIMA);
       setTimeout(() => this.enfocarPrimerError());
       return;
     }
