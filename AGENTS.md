@@ -226,6 +226,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   el campo `mockups`. El backend la persiste en `solicitud_archivos.mockup_data` (JSON). El panel
   `/solicitudes` muestra la tarjeta «Previsualización del diseño» descargando el blob con token y
   ofrece la descarga de la captura; aplica `migrations/mockup_data_archivos.py` en bases existentes.
+- El comprobante de `/cotizar` se genera con `jspdf` + `jspdf-autotable` bajo demanda
+  (`import('jspdf')`, chunk aparte): A4 vectorial, sin `window.print()` ni HTML oculto, logo
+  rasterizado a 220 px y archivo `Comprobante_<folio>_Llamma.pdf`. Las tablas largas paginan solas y
+  cada página lleva pie con las cláusulas de entrega y datos de contacto.
 - El visor 3D usa `CotizarMockup3dComponent` con `three` y modelos GLB en
   `src/assets/models/`; las imágenes del cliente se optimizan en
   `POST /api/public/mockups/preparar-imagen` (Pillow en `requirements.txt`). Mientras carga

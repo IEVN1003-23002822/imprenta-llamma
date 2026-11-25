@@ -72,11 +72,25 @@
     <a class="btn btn-brand" routerLink="/seguimiento" [queryParams]="{ folio: folio(), correo }">
       <i class="bi bi-search"></i> Consultar estatus
     </a>
-    <button class="btn btn-yellow" type="button" (click)="descargar.emit()">
-      <i class="bi bi-download"></i> Descargar comprobante
+    <button
+      class="btn btn-yellow"
+      type="button"
+      [disabled]="generandoPdf()"
+      (click)="descargarComprobante()"
+    >
+      <i
+        class="bi"
+        [class.bi-download]="!generandoPdf()"
+        [class.bi-hourglass-split]="generandoPdf()"
+      ></i>
+      {{ generandoPdf() ? 'Generando PDF…' : 'Descargar comprobante' }}
     </button>
     <button class="btn btn-outline-ink" type="button" (click)="nueva.emit()">
       <i class="bi bi-plus-lg"></i> Enviar otra solicitud
     </button>
   </div>
+
+  @if (errorPdf()) {
+    <p class="field-error mt-3" role="alert">{{ errorPdf() }}</p>
+  }
 </section>

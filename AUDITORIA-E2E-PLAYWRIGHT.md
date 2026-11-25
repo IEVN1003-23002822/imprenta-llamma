@@ -9,9 +9,9 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **23 archivos de spec, 60 pruebas, 4 proyectos → 240 ejecuciones por corrida**.
+- Suite creada: **24 archivos de spec, 62 pruebas, 4 proyectos → 248 ejecuciones por corrida**.
 - Corridas completas: **3 por proyecto (420 ejecuciones)**; todas verdes.
-- `60 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- `62 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, catálogo, edición de productos,
   solicitud pública con adjunto, seguimiento, cotización (desde solicitud y manual), totales,
   pedido, pago, producción, inventario, **alta de usuarios por UI** y smoke.
@@ -119,6 +119,7 @@ por API.
 | Mockup 2D reactivo | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS (playera/lona) | ✅ FUNCIONA |
 | Captura 2D + admin | `cotizaciones/mockup-guardado.spec.ts` | PASS (JPEG + tarjeta) | ✅ FUNCIONA |
 | Captura 3D + admin | `cotizaciones/mockup-guardado.spec.ts` | PASS (JPEG + tarjeta) | ✅ FUNCIONA |
+| Comprobante PDF A4 | `cotizaciones/comprobante-pdf.spec.ts` | PASS (2 partidas y 20 partidas) | ✅ FUNCIONA |
 | Adjuntar sin diseño | `cotizaciones/mockup-guardado.spec.ts` | PASS (botón deshabilitado) | ✅ FUNCIONA |
 | Mockup 2D sin vista | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS (aviso) | ✅ FUNCIONA |
 | 3D Tote + fallback Taza | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS | ✅ FUNCIONA |
@@ -127,7 +128,7 @@ por API.
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **60/60 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
+Matriz de proyectos: **62/62 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
 corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 
 ## 5. Bugs reales
@@ -212,7 +213,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 240 pruebas (60 × 4)
+npx playwright test --list               # 248 pruebas (62 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -317,10 +318,10 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: parcial
-tests_totales: 60
+tests_totales: 62
 proyectos: [chromium, firefox, webkit, mobile-chrome]
 corridas_por_proyecto: 3
-tests_pass: 60
+tests_pass: 62
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing, login_fallido, rate_limit, logout,

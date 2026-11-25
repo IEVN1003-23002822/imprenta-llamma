@@ -1020,72 +1020,6 @@ export class CotizarComponent implements OnInit {
     );
   }
 
-  descargarComprobante(): void {
-    const folio = this.folio();
-    const solicitud = this.solicitudCreada();
-    if (!folio) return;
-
-    const lineas: string[] = [
-      'LLAMMA · Imprenta y estudio de transformación',
-      'Comprobante de solicitud de cotización',
-      '==========================================',
-      '',
-      `Folio: ${folio}`,
-      `Cliente: ${solicitud?.nombreCliente ?? ''}`,
-    ];
-
-    if (solicitud?.empresa) lineas.push(`Empresa o marca: ${solicitud.empresa}`);
-    lineas.push(
-      `Correo: ${solicitud?.correo ?? ''}`,
-      `Teléfono / WhatsApp: ${solicitud?.telefono ?? ''}`,
-      `Tipo de cliente: ${this.etiquetaSegmento(solicitud?.segmento)}`,
-      `Fecha de solicitud: ${this.fecha(solicitud?.fechaCreacion ?? new Date().toISOString())}`,
-      `Entrega preferida: ${this.etiquetaEntrega(solicitud?.metodoEntrega)}`,
-      `Fecha deseada: ${this.fecha(solicitud?.fechaDeseada)}`,
-      '',
-      'Partidas solicitadas',
-      '--------------------',
-    );
-
-    const partidas = this.partidasComprobante();
-    if (partidas.length) {
-      partidas.forEach((item, indice) => {
-        const especificaciones = item.especificaciones ? ` · ${item.especificaciones}` : '';
-        const precio = item.precioEstimado != null ? ` · ${this.moneda(item.precioEstimado)}` : '';
-        lineas.push(
-          `${indice + 1}. ${item.nombreProducto} — ${item.cantidad}${especificaciones}${precio}`,
-        );
-      });
-    } else {
-      lineas.push('Sin partidas de catálogo: solicitud descrita en el mensaje.');
-    }
-
-    lineas.push(
-      '',
-      `Total de piezas / unidades: ${this.totalPiezas()}`,
-      `Total estimado (IVA incluido): ${this.moneda(this.totalConIva())}`,
-      '',
-      'Mensaje del proyecto',
-      '--------------------',
-      solicitud?.mensaje?.trim() || 'Sin mensaje adicional.',
-      '',
-      '------------------------------------------',
-      'Los precios son referenciales y están sujetos a revisión de diseño.',
-      'Consulta el estatus de tu solicitud en /seguimiento del portal',
-      `con el folio ${folio} y tu correo registrado.`,
-    );
-
-    const blob = new Blob([lineas.join('\n')], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const enlace = document.createElement('a');
-    enlace.href = url;
-    enlace.download = `LLAMMA-${folio}.txt`;
-    document.body.appendChild(enlace);
-    enlace.click();
-    enlace.remove();
-    URL.revokeObjectURL(url);
-  }
-
   /* --------------------------- Mockup: acciones ---------------------------- */
 
   openPreview(): void {
@@ -1230,28 +1164,5 @@ export class CotizarComponent implements OnInit {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  etiquetaSegmento(segmento: SegmentoCliente | null | undefined): string {
-    const etiquetas: Record<SegmentoCliente, string> = {
-      particular: 'Particular',
-      pyme: 'Pyme',
-      corporativo: 'Corporativo',
-      eventos: 'Eventos',
-      escolar: 'Escolar',
-      gobierno: 'Gobierno',
-      otro: 'Otro',
-    };
-    return segmento ? etiquetas[segmento] : 'Por confirmar';
-  }
-
-  etiquetaEntrega(metodo: MetodoEntrega | null | undefined): string {
-    const etiquetas: Record<MetodoEntrega, string> = {
-      taller: 'Recoger en taller',
-      domicilio: 'Envío a domicilio',
-      paqueteria: 'Paquetería nacional',
-      instalacion: 'Instalación en sitio',
-    };
-    return metodo ? etiquetas[metodo] : 'Por confirmar';
   }
 }
