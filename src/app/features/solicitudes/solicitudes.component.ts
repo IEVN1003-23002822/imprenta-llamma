@@ -20,6 +20,7 @@ import {
   badgeDe,
   etiquetaDe,
 } from '../../core/models/estados';
+import { AuthService } from '../../core/services/auth.service';
 import { LlammaService } from '../../core/services/llamma.service';
 import { SolicitudesStore } from '../../core/services/solicitudes.store';
 import {
@@ -48,6 +49,7 @@ const OPCIONES_ESTADO = [
 export class SolicitudesComponent implements OnInit, OnDestroy {
   private readonly service = inject(LlammaService);
   private readonly store = inject(SolicitudesStore);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private scrollBloqueado = false;
@@ -97,6 +99,7 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   private readonly hiloChat = viewChild<ElementRef<HTMLDivElement>>('hiloChat');
 
   readonly hayFiltros = computed(() => this.estadoFiltro() !== '' || this.texto().trim() !== '');
+  readonly puedeGestionar = computed(() => this.auth.puedeEditarVentas());
 
   readonly nuevoConteo = computed(() => this.store.resumen().nuevas);
 

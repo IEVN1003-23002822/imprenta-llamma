@@ -62,7 +62,7 @@ export class AbastecimientoComponent implements OnInit {
   readonly proveedorAbierto = signal(false);
   readonly guardandoProveedor = signal(false);
 
-  readonly puedeGestionar = computed(() => this.auth.tieneRol('admin', 'inventario'));
+  readonly puedeGestionar = computed(() => this.auth.puedeEditarInventario());
 
   readonly filtros = this.fb.nonNullable.group({ q: [''], estado: [''] });
 

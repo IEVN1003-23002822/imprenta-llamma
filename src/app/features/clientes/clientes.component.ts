@@ -46,7 +46,7 @@ export class ClientesComponent implements OnInit {
   readonly guardando = signal(false);
   readonly notaAbierta = signal(false);
 
-  readonly puedeGestionar = computed(() => this.auth.tieneRol('admin', 'ventas', 'marketing'));
+  readonly puedeGestionar = computed(() => this.auth.puedeEditarClientes());
   readonly puedeDesactivar = computed(() => this.auth.tieneRol('admin'));
 
   readonly filtros = this.fb.nonNullable.group({

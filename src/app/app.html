@@ -108,24 +108,26 @@
                 >Dashboard</a
               >
             </li>
-            <li>
-              <a
-                class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white inline-flex items-center gap-[0.4rem]"
-                routerLink="/solicitudes"
-                routerLinkActive="bg-white/[0.075] text-white shadow-[inset_0_-2px_0_var(--llamma-cyan)]"
-                [attr.aria-current]="esRuta('/solicitudes') ? 'page' : null"
-              >
-                Solicitudes
-                @if (store.resumen().nuevas > 0) {
-                  <span
-                    class="inline-grid h-[1.35rem] min-w-[1.35rem] place-items-center rounded-full bg-[var(--llamma-yellow)] px-[0.32rem] text-[0.62rem] font-extrabold leading-none text-[var(--llamma-carbon)]"
-                    [attr.aria-label]="store.resumen().nuevas + ' solicitudes nuevas'"
-                  >
-                    {{ store.resumen().nuevas }}
-                  </span>
-                }
-              </a>
-            </li>
+            @if (auth.tieneRol('admin', 'ventas', 'produccion')) {
+              <li>
+                <a
+                  class="block rounded-[0.65rem] px-[0.85rem] py-[0.55rem] text-[0.88rem] font-medium text-white/[0.72] no-underline transition-colors hover:bg-white/[0.075] hover:text-white inline-flex items-center gap-[0.4rem]"
+                  routerLink="/solicitudes"
+                  routerLinkActive="bg-white/[0.075] text-white shadow-[inset_0_-2px_0_var(--llamma-cyan)]"
+                  [attr.aria-current]="esRuta('/solicitudes') ? 'page' : null"
+                >
+                  Solicitudes
+                  @if (store.resumen().nuevas > 0) {
+                    <span
+                      class="inline-grid h-[1.35rem] min-w-[1.35rem] place-items-center rounded-full bg-[var(--llamma-yellow)] px-[0.32rem] text-[0.62rem] font-extrabold leading-none text-[var(--llamma-carbon)]"
+                      [attr.aria-label]="store.resumen().nuevas + ' solicitudes nuevas'"
+                    >
+                      {{ store.resumen().nuevas }}
+                    </span>
+                  }
+                </a>
+              </li>
+            }
             @if (auth.tieneRol('admin', 'ventas')) {
               <li>
                 <a
@@ -161,14 +163,16 @@
                     >
                   </li>
                 }
-                <li>
-                  <a
-                    class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
-                    routerLink="/consultas"
-                    [attr.aria-current]="esRuta('/consultas') ? 'page' : null"
-                    ><i class="bi bi-funnel"></i> Consultas</a
-                  >
-                </li>
+                @if (auth.tieneRol('admin', 'ventas', 'produccion')) {
+                  <li>
+                    <a
+                      class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
+                      routerLink="/consultas"
+                      [attr.aria-current]="esRuta('/consultas') ? 'page' : null"
+                      ><i class="bi bi-funnel"></i> Consultas</a
+                    >
+                  </li>
+                }
                 @if (auth.tieneRol('admin', 'ventas', 'inventario', 'produccion')) {
                   <li>
                     <a
@@ -179,7 +183,7 @@
                     >
                   </li>
                 }
-                @if (auth.tieneRol('admin', 'inventario')) {
+                @if (auth.tieneRol('admin', 'ventas', 'inventario', 'produccion')) {
                   <li>
                     <a
                       class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
@@ -199,7 +203,7 @@
                     >
                   </li>
                 }
-                @if (auth.tieneRol('admin', 'ventas', 'marketing')) {
+                @if (auth.tieneRol('admin', 'ventas')) {
                   <li>
                     <a
                       class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
@@ -216,16 +220,6 @@
                       routerLink="/usuarios"
                       [attr.aria-current]="esRuta('/usuarios') ? 'page' : null"
                       ><i class="bi bi-person-gear"></i> Usuarios</a
-                    >
-                  </li>
-                }
-                @if (modulosVisibles.marketing && auth.tieneRol('admin', 'marketing')) {
-                  <li>
-                    <a
-                      class="flex w-full items-center gap-[0.65rem] rounded-[0.6rem] px-3 py-[0.62rem] text-[0.88rem] text-white/70 no-underline transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white [&_i]:w-[1.1rem] [&_i]:text-[var(--llamma-cyan)]"
-                      routerLink="/marketing"
-                      [attr.aria-current]="esRuta('/marketing') ? 'page' : null"
-                      ><i class="bi bi-megaphone"></i> Marketing</a
                     >
                   </li>
                 }

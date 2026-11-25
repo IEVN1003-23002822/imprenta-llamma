@@ -91,7 +91,7 @@ export class InventarioComponent implements OnInit {
   readonly materiaAjuste = signal<MateriaPrimaApi | null>(null);
   readonly ajustando = signal(false);
 
-  readonly puedeGestionar = computed(() => this.auth.tieneRol('admin', 'inventario', 'produccion'));
+  readonly puedeGestionar = computed(() => this.auth.puedeEditarInventario());
 
   readonly filtros = this.fb.nonNullable.group({
     q: [''],

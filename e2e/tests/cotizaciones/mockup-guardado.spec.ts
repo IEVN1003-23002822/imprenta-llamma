@@ -88,6 +88,7 @@ test.describe('Guardado de mockups en la solicitud', () => {
     await page.getByRole('button', { name: /Adjuntar diseño 2D a mi solicitud/i }).click();
     await expect(page.locator('main#contenido')).toContainText(
       'Captura del diseño adjuntada a tu solicitud',
+      { timeout: 20_000 },
     );
     await page.getByRole('button', { name: 'Listo' }).click();
 

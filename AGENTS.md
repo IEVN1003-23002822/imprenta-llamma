@@ -82,9 +82,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   El job `backend` instala `requirements.txt` y ejecuta las pruebas de flujo en SQLite.
 - E2E: `npm run test:e2e` (Playwright) usa un backend Flask aislado en `:5001` con SQLite en
   `e2e/.tmp/` y un `ng serve` en `:4300` con `e2e/proxy.e2e.json`; nunca toca `llamma_db`.
-  `e2e/global-setup.ts` crea un `storageState` por rol (admin `ana`, ventas `diego`, marketing
-  `paola`). Los 4 proyectos son `chromium`, `firefox`, `webkit` y `mobile-chrome`. El job E2E de CI
-  aún no está aplicado; la propuesta vive en `AUDITORIA-E2E-PLAYWRIGHT.md`.
+  `e2e/global-setup.ts` crea un `storageState` por rol (admin `ana`, ventas `diego`, producción
+  `mariana`, inventario `ivan`, marketing `paola`). Los 4 proyectos son `chromium`, `firefox`,
+  `webkit` y `mobile-chrome`. El job E2E de CI aún no está aplicado; la propuesta vive en
+  `AUDITORIA-E2E-PLAYWRIGHT.md`.
 - Budget de producción: 16 kB warning / 20 kB **error** por estilos de componente
   (`anyComponentStyle`). Los estilos compartidos van a `src/styles.css`.
 
@@ -166,14 +167,19 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - Permisos: `@token_required` y `@role_required(...)` de `Flask_Llamma_API/auth.py`; roles `admin`,
   `ventas`, `produccion`, `inventario`, `marketing`. En Angular, `authGuard`/`roleGuard` con
   `data.roles` en `app.routes.ts`.
-- Matriz RBAC: Ventas lee Producción e Inventario; Inventario lee Producción; Producción e
-  Inventario escriben su módulo; Marketing crea/edita Clientes y gestiona Marketing. En las
-  pantallas de solo lectura `puedeGestionar()` oculta los botones y muestra el badge
-  `data-testid="modo-lectura"`. El backend aplica la misma matriz con `@role_required` en GET y
-  escrituras (marketing, clientes, inventario, compras, producción, archivos y cambios de estado
-  de pedidos/solicitudes); no confíes solo en el guard.
-- La matriz del login muestra **4 roles** y no anuncia Marketing; el rol existe, se administra
-  desde `/usuarios` y su módulo solo aparece en el menú de `admin`/`marketing`.
+- Matriz RBAC (4 roles de frontend): Ventas tiene total en ventas/clientes y solo lectura en
+  producción/inventario; Producción tiene total en producción/inventario y solo lectura en ventas;
+  Inventario tiene total en inventario, solo lectura en producción y sin acceso a ventas/clientes.
+  En las pantallas de solo lectura `puedeGestionar()` oculta los botones y muestra el badge
+  `data-testid="modo-lectura"` (solicitudes, inventario, producción y abastecimiento). Los permisos
+  de edición se centralizan en `AuthService.puedeEditarVentas/Inventario/Clientes/Produccion`; los
+  componentes solo leen `puedeGestionar`. El backend aplica la misma matriz con `@role_required` en
+  GET y escrituras (ventas, clientes, inventario, compras, producción, archivos y cambios de
+  estado); no confíes solo en el guard.
+- Marketing está retirado del frontend: la matriz del login muestra **4 roles**, el menú no tiene
+  Marketing, `/clientes` es solo `admin`/`ventas` y la ruta `/marketing` queda como legado solo
+  para `admin`. El rol y sus datos siguen en la base; el storage E2E de `paola` se conserva para
+  probar que no tiene módulos.
 - Pasar una OC a `recibida` (`PATCH /api/ordenes-compra/<id>/estado`) suma stock y crea un
   `MovimientoInventario` tipo `entrada`; no dupliques ese ajuste a mano.
 - `_descontar_inventario` valida **todo** el stock de la receta antes de tocar la base. Si falta,
@@ -206,9 +212,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `pagos`, `entrega`, `archivos`) se pliegan con `estaAbierta()`/`alternarSeccion()` sobre un
   `signal` y recuerdan su estado por dispositivo en `llamma.detalle.secciones.v1`. `imprimir()` los
   abre antes de imprimir y restaura la preferencia; un panel nuevo debe seguir ese mismo patrón.
-- La visibilidad de los accesos del menú «Módulos» se controla con `modulosVisibles` en `app.ts`.
-  Marketing está en `true` y el template lo muestra solo a `admin`/`marketing`; el resto de roles
-  no ve el acceso, pero la ruta, el componente y los permisos siguen activos.
+- El menú «Módulos» se arma con `auth.tieneRol(...)` en `app.html`; ya no existe la bandera
+  `modulosVisibles`. Marketing no se muestra a ningún rol y `/marketing` queda como legado solo
+  para admin.
 - `/usuarios` es solo para `admin` (`authGuard` + `roleGuard`), con tabla y alta en la misma
   página. El acceso del menú «Módulos» se muestra con `auth.esAdmin()`. El formulario incluye
   indicador de fuerza de contraseña; el mínimo de 8 se valida también en el backend.

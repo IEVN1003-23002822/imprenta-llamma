@@ -9,7 +9,7 @@ from flask import Blueprint, g, jsonify, request
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from auth import role_required, token_required
+from auth import role_required
 from estados import ESTADOS_COTIZACION
 from extensions import db
 from models import (
@@ -43,7 +43,7 @@ cotizaciones_bp = Blueprint("cotizaciones", __name__)
 
 
 @cotizaciones_bp.get("/cotizaciones")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def listar_cotizaciones():
     query = Cotizacion.query.options(
         joinedload(Cotizacion.cliente), joinedload(Cotizacion.usuario)
@@ -69,7 +69,7 @@ def listar_cotizaciones():
 
 
 @cotizaciones_bp.get("/cotizaciones/<int:cotizacion_id>")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def detalle_cotizacion(cotizacion_id: int):
     cotizacion = (
         Cotizacion.query.options(

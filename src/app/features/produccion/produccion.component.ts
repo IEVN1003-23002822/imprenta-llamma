@@ -57,7 +57,7 @@ export class ProduccionComponent implements OnInit {
   readonly registrandoCalidad = signal(false);
   readonly moviendoId = signal<number | null>(null);
 
-  readonly puedeGestionar = computed(() => this.auth.tieneRol('admin', 'produccion'));
+  readonly puedeGestionar = computed(() => this.auth.puedeEditarProduccion());
 
   readonly ordenForm = this.fb.nonNullable.group({
     etapa: ['diseno' as EtapaProduccion, [Validators.required]],

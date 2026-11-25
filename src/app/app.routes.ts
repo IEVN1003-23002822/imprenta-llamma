@@ -84,7 +84,7 @@ export const routes: Routes = [
     path: 'solicitudes',
     title: 'Llamma | Bandeja de solicitudes',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['admin', 'ventas'] },
+    data: { roles: ['admin', 'ventas', 'produccion'] },
     loadComponent: () =>
       import('./features/solicitudes/solicitudes.component').then((m) => m.SolicitudesComponent),
   },
@@ -107,7 +107,8 @@ export const routes: Routes = [
   {
     path: 'consultas',
     title: 'Llamma | Consultas',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['admin', 'ventas', 'produccion'] },
     loadComponent: () =>
       import('./features/consultas/consultas.component').then((m) => m.ConsultasComponent),
   },
@@ -123,7 +124,7 @@ export const routes: Routes = [
     path: 'abastecimiento',
     title: 'Llamma | Abastecimiento',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['admin', 'inventario'] },
+    data: { roles: ['admin', 'ventas', 'inventario', 'produccion'] },
     loadComponent: () =>
       import('./features/abastecimiento/abastecimiento.component').then(
         (m) => m.AbastecimientoComponent,
@@ -141,7 +142,7 @@ export const routes: Routes = [
     path: 'clientes',
     title: 'Llamma | Clientes',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['admin', 'ventas', 'marketing'] },
+    data: { roles: ['admin', 'ventas'] },
     loadComponent: () =>
       import('./features/clientes/clientes.component').then((m) => m.ClientesComponent),
   },
@@ -163,7 +164,7 @@ export const routes: Routes = [
     path: 'marketing',
     title: 'Llamma | Marketing',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['admin', 'marketing'] },
+    data: { roles: ['admin'] },
     loadComponent: () =>
       import('./features/marketing/marketing.component').then((m) => m.MarketingComponent),
   },

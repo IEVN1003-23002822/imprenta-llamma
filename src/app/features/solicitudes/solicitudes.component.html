@@ -17,6 +17,14 @@
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
+        @if (!puedeGestionar()) {
+          <span
+            data-testid="modo-lectura"
+            class="inline-flex items-center gap-2 rounded-xl border border-[#f0d48a] bg-[#fff8e1] px-3 py-2 text-[0.75rem] font-semibold text-[#8a6100]"
+          >
+            <i class="bi bi-eye"></i> Solo lectura
+          </span>
+        }
         <button
           class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
           type="button"
@@ -25,12 +33,14 @@
         >
           <i class="bi bi-arrow-clockwise"></i> Actualizar
         </button>
-        <a
-          class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
-          routerLink="/captura"
-        >
-          <i class="bi bi-plus-lg"></i> Nueva cotización
-        </a>
+        @if (puedeGestionar()) {
+          <a
+            class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)]"
+            routerLink="/captura"
+          >
+            <i class="bi bi-plus-lg"></i> Nueva cotización
+          </a>
+        }
       </div>
     </header>
 
@@ -293,19 +303,21 @@
               >
                 {{ etiquetaEstado(solicitud.estado) }}
               </span>
-              <select
-                class="block min-h-[2.8rem] w-full w-auto! min-w-[9.5rem] rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
-                aria-label="Cambiar estado de la solicitud"
-                [value]="solicitud.estado"
-                [disabled]="accion() === 'estado'"
-                (change)="cambiarEstado($any($event.target).value)"
-              >
-                <option value="nueva">Nueva</option>
-                <option value="en-revision">En revisión</option>
-                <option value="cotizada">Cotizada</option>
-                <option value="convertida">Convertida</option>
-                <option value="descartada">Descartada</option>
-              </select>
+              @if (puedeGestionar()) {
+                <select
+                  class="block min-h-[2.8rem] w-full w-auto! min-w-[9.5rem] rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
+                  aria-label="Cambiar estado de la solicitud"
+                  [value]="solicitud.estado"
+                  [disabled]="accion() === 'estado'"
+                  (change)="cambiarEstado($any($event.target).value)"
+                >
+                  <option value="nueva">Nueva</option>
+                  <option value="en-revision">En revisión</option>
+                  <option value="cotizada">Cotizada</option>
+                  <option value="convertida">Convertida</option>
+                  <option value="descartada">Descartada</option>
+                </select>
+              }
             </div>
 
             <div class="detail-contact">
@@ -533,60 +545,66 @@
                 </div>
               }
 
-              <div class="chat-compose">
-                <label class="sr-only" for="chatInternoMensaje">Respuesta para el cliente</label>
-                <textarea
-                  id="chatInternoMensaje"
-                  class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
-                  rows="2"
-                  maxlength="4000"
-                  placeholder="Escribe la respuesta al cliente..."
-                  [value]="borradorChat()"
-                  (input)="actualizarBorradorChat($event)"
-                ></textarea>
-                <div class="chat-compose-actions">
-                  <div class="chat-adjunto">
-                    <label
-                      class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white mb-0"
+              @if (puedeGestionar()) {
+                <div class="chat-compose">
+                  <label class="sr-only" for="chatInternoMensaje">Respuesta para el cliente</label>
+                  <textarea
+                    id="chatInternoMensaje"
+                    class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
+                    rows="2"
+                    maxlength="4000"
+                    placeholder="Escribe la respuesta al cliente..."
+                    [value]="borradorChat()"
+                    (input)="actualizarBorradorChat($event)"
+                  ></textarea>
+                  <div class="chat-compose-actions">
+                    <div class="chat-adjunto">
+                      <label
+                        class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white mb-0"
+                      >
+                        <i class="bi bi-paperclip"></i> Adjuntar
+                        <input
+                          type="file"
+                          hidden
+                          accept=".pdf,.ai,.psd,.png,.jpg,.jpeg,.svg,.zip"
+                          (change)="seleccionarAdjuntoChat($event)"
+                        />
+                      </label>
+                      @if (adjuntoChat(); as archivo) {
+                        <span class="chat-adjunto-chip">
+                          {{ archivo.name }}
+                          <button
+                            type="button"
+                            aria-label="Quitar adjunto"
+                            (click)="quitarAdjuntoChat()"
+                          >
+                            <i class="bi bi-x"></i>
+                          </button>
+                        </span>
+                      }
+                    </div>
+                    <button
+                      class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white"
+                      type="button"
+                      [disabled]="enviandoChat()"
+                      (click)="enviarRespuesta()"
                     >
-                      <i class="bi bi-paperclip"></i> Adjuntar
-                      <input
-                        type="file"
-                        hidden
-                        accept=".pdf,.ai,.psd,.png,.jpg,.jpeg,.svg,.zip"
-                        (change)="seleccionarAdjuntoChat($event)"
-                      />
-                    </label>
-                    @if (adjuntoChat(); as archivo) {
-                      <span class="chat-adjunto-chip">
-                        {{ archivo.name }}
-                        <button
-                          type="button"
-                          aria-label="Quitar adjunto"
-                          (click)="quitarAdjuntoChat()"
-                        >
-                          <i class="bi bi-x"></i>
-                        </button>
-                      </span>
-                    }
+                      @if (enviandoChat()) {
+                        <i class="bi bi-hourglass-split"></i> Enviando...
+                      } @else {
+                        <i class="bi bi-send"></i> Responder
+                      }
+                    </button>
                   </div>
-                  <button
-                    class="inline-block cursor-pointer select-none rounded px-2 py-1 text-center align-middle text-sm font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] text-white hover:border-black hover:bg-black hover:text-white"
-                    type="button"
-                    [disabled]="enviandoChat()"
-                    (click)="enviarRespuesta()"
-                  >
-                    @if (enviandoChat()) {
-                      <i class="bi bi-hourglass-split"></i> Enviando...
-                    } @else {
-                      <i class="bi bi-send"></i> Responder
-                    }
-                  </button>
+                  <small class="chat-hint">
+                    El cliente verá la respuesta al consultar su folio y correo en el portal.
+                  </small>
                 </div>
-                <small class="chat-hint">
-                  El cliente verá la respuesta al consultar su folio y correo en el portal.
-                </small>
-              </div>
+              } @else {
+                <p class="chat-empty">
+                  <i class="bi bi-eye"></i> Solo lectura: un usuario de ventas puede responder.
+                </p>
+              }
             </div>
 
             @if (aviso()) {
@@ -663,7 +681,12 @@
               </div>
             } @else {
               <div class="detail-cta">
-                @if (sinPartidas()) {
+                @if (!puedeGestionar()) {
+                  <p class="detail-note">
+                    <i class="bi bi-eye"></i> Solo lectura: un usuario de ventas puede convertir
+                    esta solicitud en cotización.
+                  </p>
+                } @else if (sinPartidas()) {
                   <button
                     class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border-0 bg-[linear-gradient(115deg,#0077a3_0%,#c4006f_100%)] text-white shadow-[0_10px_28px_rgba(var(--llamma-magenta-rgb),0.24)] hover:bg-[linear-gradient(115deg,#00688c_0%,#b30066_100%)] hover:text-white hover:shadow-[0_14px_34px_rgba(var(--llamma-magenta-rgb),0.3)] w-full"
                     type="button"

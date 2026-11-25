@@ -8,7 +8,7 @@ from flask import Blueprint, g, jsonify, request
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from auth import role_required, token_required
+from auth import role_required
 from estados import ESTADOS_PEDIDO
 from extensions import db
 from models import (
@@ -44,7 +44,7 @@ pedidos_bp = Blueprint("pedidos", __name__)
 
 
 @pedidos_bp.get("/pedidos")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def listar_pedidos():
     query = Pedido.query.options(joinedload(Pedido.cliente))
     estado = request.args.get("estado")
@@ -68,7 +68,7 @@ def listar_pedidos():
 
 
 @pedidos_bp.get("/pedidos/<int:pedido_id>")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def detalle_pedido(pedido_id: int):
     pedido = (
         Pedido.query.options(
@@ -91,7 +91,7 @@ def detalle_pedido(pedido_id: int):
 
 
 @pedidos_bp.get("/consultas/pedidos")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def consultar_pedidos():
     """Búsqueda avanzada de pedidos con filtros y agregados del periodo."""
     query = Pedido.query.join(Cliente)

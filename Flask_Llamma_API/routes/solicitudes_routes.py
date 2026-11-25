@@ -8,7 +8,7 @@ from flask import Blueprint, current_app, g, jsonify, request, send_from_directo
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from auth import role_required, token_required
+from auth import role_required
 from estados import ESTADOS_SOLICITUD
 from extensions import db
 from models import MensajeChat, SolicitudCotizacion
@@ -26,7 +26,7 @@ solicitudes_bp = Blueprint("solicitudes", __name__)
 
 
 @solicitudes_bp.get("/solicitudes")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def listar_solicitudes():
     query = SolicitudCotizacion.query.options(
         selectinload(SolicitudCotizacion.items),
@@ -61,7 +61,7 @@ def listar_solicitudes():
 
 
 @solicitudes_bp.get("/solicitudes/resumen")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def resumen_solicitudes():
     conteos = dict(
         db.session.query(SolicitudCotizacion.estado, func.count(SolicitudCotizacion.id))
@@ -80,7 +80,7 @@ def resumen_solicitudes():
 
 
 @solicitudes_bp.get("/solicitudes/<int:solicitud_id>")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def detalle_solicitud(solicitud_id: int):
     solicitud = (
         SolicitudCotizacion.query.options(
@@ -98,7 +98,7 @@ def detalle_solicitud(solicitud_id: int):
 
 
 @solicitudes_bp.get("/solicitudes/<int:solicitud_id>/mensajes")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def listar_mensajes_solicitud(solicitud_id: int):
     solicitud = (
         SolicitudCotizacion.query.options(
@@ -170,7 +170,7 @@ def enviar_mensaje_solicitud(solicitud_id: int):
 
 
 @solicitudes_bp.get("/mensajes/<int:mensaje_id>/archivo")
-@token_required
+@role_required("admin", "ventas", "produccion")
 def descargar_adjunto_mensaje(mensaje_id: int):
     mensaje = MensajeChat.query.get(mensaje_id)
     if not mensaje or not mensaje.adjunto_guardado:

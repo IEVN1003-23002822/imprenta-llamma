@@ -9,7 +9,7 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **27 archivos de spec, 72 pruebas, 4 proyectos → 288 ejecuciones por corrida**.
+- Suite creada: **26 archivos de spec, 72 pruebas, 4 proyectos → 288 ejecuciones por corrida**.
 - Corridas de cierre: Chromium 1 (66/66), Firefox 1 (66/66), WebKit 3 (1 fallo transitorio y dos
   corridas verdes consecutivas), Mobile Chrome 1 (66/66).
 - `72 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
@@ -79,7 +79,7 @@ por API.
 |---|---|---|---|
 | Login admin por UI + menú | `auth/login-admin.spec.ts` | PASS | ✅ FUNCIONA |
 | Login vendedor y `roleGuard` | `auth/login-vendedor.spec.ts` | PASS | ✅ FUNCIONA |
-| Login marketing y `roleGuard` | `auth/login-marketing.spec.ts` | PASS | ✅ FUNCIONA |
+| Marketing retirado y `roleGuard` | `auth/matriz-estricta.spec.ts` | PASS | ✅ FUNCIONA |
 | Login fallido (mismo mensaje) | `auth/login-fallido.spec.ts` | PASS | ✅ FUNCIONA |
 | Rate limit (6.º intento) | `auth/rate-limit-login.spec.ts` | PASS 429 | ✅ FUNCIONA |
 | Logout y protección de ruta | `auth/logout.spec.ts` | PASS | ✅ FUNCIONA |
@@ -126,7 +126,7 @@ por API.
 | Alta → login → logout | `usuarios/registro-login.spec.ts` | PASS (2 pruebas) | ✅ FUNCIONA |
 | Auditoría de 10 rutas internas | `smoke/auditoria-panel.spec.ts` | PASS (consola + red) | ✅ FUNCIONA |
 | Precio negativo en API | `productos/productos.spec.ts` | PASS (400) | ✅ FUNCIONA |
-| Matriz RBAC por rol | `auth/roles.spec.ts` | PASS (6 pruebas) | ✅ FUNCIONA |
+| Matriz RBAC por rol | `auth/matriz-estricta.spec.ts` | PASS (7 pruebas) | ✅ FUNCIONA |
 | Adjuntar sin diseño | `cotizaciones/mockup-guardado.spec.ts` | PASS (botón deshabilitado) | ✅ FUNCIONA |
 | Mockup 2D sin vista | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS (aviso) | ✅ FUNCIONA |
 | 3D Tote + fallback Taza | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS | ✅ FUNCIONA |
@@ -332,9 +332,10 @@ corridas_por_proyecto: "chromium 1, firefox 1, webkit 1, mobile-chrome 1"
 tests_pass: 72
 tests_fail: 0
 fallas_esperadas: []
-flujos_funcionan: [login_admin, login_vendedor, login_marketing, login_fallido, rate_limit, logout,
+flujos_funcionan: [login_admin, login_vendedor, login_marketing_sin_modulos, login_fallido,
+  rate_limit, logout,
   alta_login_logout, alta_usuarios_ui, auditoria_rutas_internas, precio_negativo_api,
-  rbac_roles, login_sin_marketing, solo_lectura_ventas,
+  rbac_roles, login_sin_marketing, solo_lectura_ventas, marketing_retirado,
   catalogo, editar_precio, editar_descripcion, editar_imagen, publicar,
   solicitud_publica, adjuntos, seguimiento, cotizacion_desde_solicitud, cotizacion_manual, totales,
   flujo_compra, pago, produccion, inventario_estricto, anticipo_pagado, insumos_por_producto,
@@ -357,7 +358,7 @@ config_playwright:
   trace: on-first-retry
 commits: [54accf4, dc711d1, cadfe28, 8f50e87, 0a9216a]
 commit_auditoria_mensaje: "fix(audit): reject negative prices and cover login flows end to end"
-commit_rbac_mensaje: "fix(rbac): enforce role matrix and hide marketing from login"
+commit_rbac_mensaje: "fix(rbac): enforce strict 4-role matrix in UI and API"
 ci_job_e2e_aprobado: false
 pendiente_usuario: "decidir H-16; aprobar job CI e2e; evaluar axe-core y Lighthouse"
 ```
@@ -379,22 +380,23 @@ pendiente_usuario: "decidir H-16; aprobar job CI e2e; evaluar axe-core y Lightho
 ## 13. Cierre de matriz E2E (auditoría final)
 
 Fecha de cierre: **25 de noviembre de 2026**. Total: **72 pruebas por navegador**.
-Commit de cierre: `fix(rbac): enforce role matrix and hide marketing from login`.
+Commit de cierre: `fix(rbac): enforce strict 4-role matrix in UI and API`.
 
 | Navegador | Totales | Pass | Fail | Tiempo | Estado |
 |---|---:|---:|---:|---:|---|
-| Chromium | 72 | 72 | 0 | 2.8 min | ✅ VERDE |
-| Firefox | 72 | 72 | 0 | 7.0 min | ✅ VERDE |
-| WebKit | 72 | 72 | 0 | 5.2 min | ✅ VERDE |
+| Chromium | 72 | 72 | 0 | 2.6 min | ✅ VERDE |
+| Firefox | 72 | 72 | 0 | 6.7 min | ✅ VERDE |
+| WebKit | 72 | 72 | 0 | 4.7 min | ✅ VERDE |
 | Mobile Chrome | 72 | 72 | 0 | 3.2 min | ✅ VERDE |
 
-Tiempo secuencial aproximado: **18.2 min** por matriz completa, más el arranque de los dos
+Tiempo secuencial aproximado: **17.2 min** por matriz completa, más el arranque de los dos
 servidores (Flask en `:5001` y `ng serve` en `:4300`).
 
 ### Correcciones cross-browser aplicadas
 
-- **Ninguna corrección de código específica de navegador.** En esta corrida los cuatro proyectos
-  pasaron a la primera. El flake de WebKit documentado en la sección anterior no reapareció.
+- **Mobile Chrome:** `abrirNavegacionSiHaceFalta()` ahora revisa `aria-expanded` antes de pulsar el
+  hamburguesa. Antes, llamarlo dos veces seguidas cerraba el menú y los tests de Producción/
+  Inventario no encontraban el enlace «Módulos».
 - No se usó `test.skip()` ni `test.fixme()`. WebGL, descargas PDF, `localStorage`, `sessionStorage`
   y los menús móviles funcionan en los cuatro proyectos.
 - Los cambios de esta iteración fueron de seguridad funcional: matriz RBAC en backend/frontend,
@@ -402,8 +404,8 @@ servidores (Flask en `:5001` y `ng serve` en `:4300`).
 
 ### Cobertura añadida en esta auditoría
 
-- `e2e/tests/auth/roles.spec.ts` — 6 pruebas de la matriz RBAC, login sin Marketing y rechazos
-  `403` directos a la API.
+- `e2e/tests/auth/matriz-estricta.spec.ts` — 7 pruebas de la matriz RBAC, retiro de Marketing y
+  rechazos `403` directos a la API.
 - `e2e/tests/usuarios/registro-login.spec.ts` — alta desde el panel, login en contexto limpio,
   logout y limpieza de ambos storages, más credenciales incorrectas con campo marcado.
 - `e2e/tests/smoke/auditoria-panel.spec.ts` — 10 rutas internas sin `console.error`, `pageerror`
@@ -418,47 +420,46 @@ o mejoras de rendimiento, no fallos de la suite.
 
 ## 14. Auditoría RBAC (25 de noviembre de 2026)
 
-### Login sin Marketing
+### Marketing retirado del frontend
 
-- Se eliminó la fila y la columna **Marketing** de la matriz de roles del login; el badge pasó de
-  «5 roles» a «4 roles».
-- El rol sigue existiendo en backend, en `/usuarios` y en la matriz de permisos. El módulo
-  Marketing ahora aparece en el menú «Módulos» solo para `admin` y `marketing`
-  (`modulosVisibles.marketing = true` + `auth.tieneRol('admin', 'marketing')`).
-- Test: `e2e/tests/auth/roles.spec.ts` → «la matriz muestra 4 roles y no anuncia Marketing».
+- El login muestra **4 roles** y no anuncia Marketing.
+- El menú «Módulos» ya no tiene el acceso a Marketing. La ruta `/marketing` queda como legado
+  **solo para admin**; un usuario marketing es redirigido a `/dashboard`.
+- `/clientes` y la API de clientes vuelven a ser solo `admin`/`ventas`; marketing ya no crea ni
+  edita clientes.
 
 ### Matriz aplicada (frontend + backend)
 
-| Rol | Ventas | Producción | Inventario | Clientes | Marketing | Config. |
-|---|---|---|---|---|---|---|
-| Administrador | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Ventas | ✅ | 👁️ | 👁️ | ✅ | — | — |
-| Producción | 👁️ | ✅ | ✅ | — | — | — |
-| Inventario | — | 👁️ | ✅ | — | — | — |
-| Marketing | 👁️ | — | — | ✅ | ✅ | — |
+| Rol | Ventas | Producción | Inventario | Clientes | Config. |
+|---|---|---|---|---|---|
+| Administrador | ✅ Total | ✅ Total | ✅ Total | ✅ Total | ✅ Total |
+| Ventas | ✅ Total | 👁️ Solo lectura | 👁️ Solo lectura | ✅ Total | — |
+| Producción | 👁️ Solo lectura | ✅ Total | ✅ Total | — | — |
+| Inventario | — | 👁️ Solo lectura | ✅ Total | — | — |
 
-- **Frontend:** `/inventario` y `/produccion` aceptan a los roles de solo lectura; el menú muestra
-  los accesos correspondientes; `puedeGestionar()` oculta los botones de escritura y aparece el
-  badge `data-testid="modo-lectura"` en Inventario y Producción. Marketing puede crear/editar
-  clientes (`puedeGestionar` incluye marketing); desactivar sigue siendo solo admin.
-- **Backend (doble capa):** se sustituyeron varios `@token_required` por `@role_required` en:
-  marketing (GET/POST/PUT), clientes (GET/POST/PUT), inventario y movimientos (GET/escrituras),
-  compras (GET/escrituras), producción (GET), archivos (GET), cambio de estado de pedidos
-  (`admin`, `ventas`, `produccion`) y de solicitudes (`admin`, `ventas`). Producción puede escribir
-  inventario; Marketing puede crear/editar clientes; Ventas/Inventario no escriben producción.
-- **Test backend:** `tests/test_flujos.py::test_02b_rbac_por_rol` valida `200/403/404` con tokens
-  reales de ventas, producción, inventario y marketing.
-- **Tests E2E:** 4 cruces de UI (ventas, producción, inventario, marketing), 1 prueba de la API por
-  rol y 1 del login sin Marketing, todos en **PASS**.
+- **Frontend:** `/solicitudes` acepta a producción en solo lectura; `/abastecimiento` se abre a
+  ventas y producción (ventas solo lectura); `/consultas` queda para admin/ventas/producción.
+  `AuthService.puedeEditarVentas/Inventario/Clientes/Produccion` centraliza la matriz y los
+  componentes exponen `puedeGestionar()`; el badge `data-testid="modo-lectura"` aparece en
+  Solicitudes (producción), Inventario, Producción y Abastecimiento (ventas).
+- **Backend (doble capa):** las lecturas de solicitudes, cotizaciones, pedidos y consultas exigen
+  `admin`/`ventas`/`produccion`; inventario y compras exigen `admin`/`ventas`/`inventario`/
+  `produccion`; clientes solo `admin`/`ventas`; usuarios solo `admin`; archivos
+  `admin`/`ventas`/`produccion`. Las escrituras de ventas siguen en `admin`/`ventas`, las de
+  inventario en `admin`/`inventario`/`produccion` y producción en `admin`/`produccion`.
+- **Tests:** `e2e/tests/auth/matriz-estricta.spec.ts` (7 pruebas) y
+  `tests/test_flujos.py::test_02b_rbac_por_rol` validan `200/403/404` con tokens reales de los
+  cuatro roles.
 
 ### Evidencia E2E
 
 ```
-✓ Ventas: solicitudes + inventario/producción solo lectura, /usuarios → /dashboard
-✓ Producción: producción + inventario, /clientes y /marketing → /dashboard
-✓ Inventario: inventario + producción solo lectura, /marketing y /clientes → /dashboard
-✓ Marketing: marketing + clientes, /inventario → /dashboard
-✓ Login sin Marketing: 4 roles visibles
-✓ API por rol: 403 en escrituras/módulos fuera de la matriz
-6 passed
+✓ Admin: 5 módulos, sin Marketing; puede crear en inventario/clientes y entrar a usuarios
+✓ Ventas: inventario/producción en solo lectura; clientes con alta; /usuarios denegado
+✓ Producción: /solicitudes en solo lectura sin "Convertir en cotización"; inventario con alta
+✓ Inventario: inventario con alta; producción en solo lectura; /solicitudes y /clientes denegados
+✓ Marketing retirado: login válido pero sin módulo de marketing ni clientes
+✓ Login: 4 roles, sin Marketing
+✓ API por rol: 403 en escrituras y lecturas fuera de la matriz
+7 passed
 ```

@@ -17,7 +17,7 @@ clientes_bp = Blueprint("clientes", __name__)
 
 
 @clientes_bp.get("/clientes")
-@role_required("admin", "ventas", "marketing")
+@role_required("admin", "ventas")
 def listar_clientes():
     query = Cliente.query.options(selectinload(Cliente.pedidos))
     if request.args.get("segmento"):
@@ -49,7 +49,7 @@ def listar_clientes():
 
 
 @clientes_bp.get("/clientes/<int:cliente_id>")
-@role_required("admin", "ventas", "marketing")
+@role_required("admin", "ventas")
 def detalle_cliente(cliente_id: int):
     cliente = (
         Cliente.query.options(selectinload(Cliente.pedidos)).filter_by(id=cliente_id).first()
@@ -60,7 +60,7 @@ def detalle_cliente(cliente_id: int):
 
 
 @clientes_bp.post("/clientes")
-@role_required("admin", "ventas", "marketing")
+@role_required("admin", "ventas")
 def crear_cliente():
     data = payload()
     correo = str(campo(data, "correo", "email", default="")).strip().lower()
@@ -87,7 +87,7 @@ def crear_cliente():
 
 
 @clientes_bp.put("/clientes/<int:cliente_id>")
-@role_required("admin", "ventas", "marketing")
+@role_required("admin", "ventas")
 def actualizar_cliente(cliente_id: int):
     cliente = Cliente.query.get(cliente_id)
     if not cliente:

@@ -10,6 +10,14 @@
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
+        @if (!puedeGestionar()) {
+          <span
+            data-testid="modo-lectura"
+            class="inline-flex items-center gap-2 rounded-xl border border-[#f0d48a] bg-[#fff8e1] px-3 py-2 text-[0.75rem] font-semibold text-[#8a6100]"
+          >
+            <i class="bi bi-eye"></i> Solo lectura
+          </span>
+        }
         <button class="btn btn-outline-ink" type="button" (click)="exportar()">
           <i class="bi bi-download"></i> Exportar
         </button>

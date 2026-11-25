@@ -114,6 +114,23 @@ export class AuthService {
     return !!actual && roles.includes(actual);
   }
 
+  /** Permisos de edición por módulo (fuente única para guards y botones). */
+  puedeEditarVentas(): boolean {
+    return this.tieneRol('admin', 'ventas');
+  }
+
+  puedeEditarInventario(): boolean {
+    return this.tieneRol('admin', 'produccion', 'inventario');
+  }
+
+  puedeEditarClientes(): boolean {
+    return this.tieneRol('admin', 'ventas');
+  }
+
+  puedeEditarProduccion(): boolean {
+    return this.tieneRol('admin', 'produccion');
+  }
+
   tienePermiso(clave: string): boolean {
     return this.permisos().includes(clave);
   }

@@ -264,6 +264,9 @@ class FlujosApiTest(unittest.TestCase):
             200,
         )
         self.assertEqual(
+            self.client.get("/api/solicitudes", headers=self._auth(ventas)).status_code, 200
+        )
+        self.assertEqual(
             self.client.post(
                 "/api/materias-primas",
                 headers=self._auth(ventas),
@@ -289,6 +292,9 @@ class FlujosApiTest(unittest.TestCase):
 
         produccion = self._token_rol("produccion")
         self.assertEqual(
+            self.client.get("/api/solicitudes", headers=self._auth(produccion)).status_code, 200
+        )
+        self.assertEqual(
             self.client.get("/api/clientes", headers=self._auth(produccion)).status_code, 403
         )
         self.assertEqual(
@@ -305,11 +311,23 @@ class FlujosApiTest(unittest.TestCase):
             ).status_code,
             404,
         )
+        self.assertEqual(
+            self.client.post(
+                "/api/cotizaciones", headers=self._auth(produccion), json={"items": []}
+            ).status_code,
+            403,
+        )
 
         inventario = self._token_rol("inventario")
         self.assertEqual(
             self.client.get("/api/produccion/tablero", headers=self._auth(inventario)).status_code,
             200,
+        )
+        self.assertEqual(
+            self.client.get("/api/solicitudes", headers=self._auth(inventario)).status_code, 403
+        )
+        self.assertEqual(
+            self.client.get("/api/pedidos", headers=self._auth(inventario)).status_code, 403
         )
         self.assertEqual(
             self.client.get(
@@ -337,18 +355,20 @@ class FlujosApiTest(unittest.TestCase):
             200,
         )
         self.assertEqual(
-            self.client.get("/api/clientes", headers=self._auth(marketing)).status_code, 200
+            self.client.get("/api/clientes", headers=self._auth(marketing)).status_code, 403
         )
         self.assertEqual(
             self.client.get("/api/materias-primas", headers=self._auth(marketing)).status_code,
             403,
         )
-        creado = self.client.post(
-            "/api/clientes",
-            headers=self._auth(marketing),
-            json={"nombre": "Cliente Marketing QA", "correo": "marketing-cliente@example.com"},
+        self.assertEqual(
+            self.client.post(
+                "/api/clientes",
+                headers=self._auth(marketing),
+                json={"nombre": "Cliente Marketing QA", "correo": "marketing-cliente@example.com"},
+            ).status_code,
+            403,
         )
-        self.assertEqual(creado.status_code, 201, creado.get_data(as_text=True))
 
     def test_03_rate_limit_login(self) -> None:
         for intento in range(5):

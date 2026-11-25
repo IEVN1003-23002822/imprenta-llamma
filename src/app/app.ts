@@ -36,12 +36,6 @@ export class App implements OnDestroy {
   readonly menuAbierto = signal(false);
   readonly modulosAbiertos = signal(false);
 
-  /**
-   * Visibilidad de módulos en la navegación. Marketing se muestra solo a admin y
-   * marketing (ver `app.html`); el resto de roles no ve el acceso. Cambia el
-   * valor a `false` para ocultarlo también a esos dos roles.
-   */
-  readonly modulosVisibles: Readonly<Record<'marketing', boolean>> = { marketing: true };
   private readonly router = inject(Router);
   private readonly seo = inject(SeoService);
   private refresco: ReturnType<typeof setInterval> | null = null;
@@ -57,7 +51,7 @@ export class App implements OnDestroy {
 
   constructor() {
     effect(() => {
-      if (this.auth.autenticado()) {
+      if (this.auth.autenticado() && this.auth.tieneRol('admin', 'ventas', 'produccion')) {
         this.store.cargarResumen();
         this.iniciarRefresco();
       } else {
