@@ -219,7 +219,8 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - La previsualización de mockups de `/cotizar` vive en `cotizar.component.*`: catálogo
   `MOCKUPS_CATALOGO` indexado por nombre de producto, imágenes en
   `src/assets/images/mockups/*.webp` y área de impresión en
-  porcentajes. El calibrador interno solo se habilita con `/cotizar?calibrar=1`.
+  porcentajes. El calibrador interno solo se habilita con `/cotizar?calibrar=1`. Si un producto
+  no tiene entrada en `MOCKUPS_CATALOGO`, el modal 2D muestra «Previsualización no disponible».
 - El visor 3D usa `CotizarMockup3dComponent` con `three` y modelos GLB en
   `src/assets/models/`; las imágenes del cliente se optimizan en
   `POST /api/public/mockups/preparar-imagen` (Pillow en `requirements.txt`). Mientras carga

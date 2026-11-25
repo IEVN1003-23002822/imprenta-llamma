@@ -385,13 +385,14 @@ export class CotizarComponent implements OnInit {
   readonly calCopiado = signal(false);
 
   readonly currentMockups = computed<MockupVista[]>(() => {
-    const nombre = this.productoActual()?.nombre ?? 'Lona Frontlit impresa';
-    return MOCKUPS_CATALOGO[nombre] ?? MOCKUPS_CATALOGO['Lona Frontlit impresa'];
+    const nombre = this.productoActual()?.nombre;
+    if (!nombre) return MOCKUPS_CATALOGO['Lona Frontlit impresa'];
+    return MOCKUPS_CATALOGO[nombre] ?? [];
   });
 
-  readonly activeMockup = computed<MockupVista>(() => {
+  readonly activeMockup = computed<MockupVista | null>(() => {
     const vistas = this.currentMockups();
-    return vistas[this.selectedMockupIndex()] ?? vistas[0];
+    return vistas[this.selectedMockupIndex()] ?? vistas[0] ?? null;
   });
 
   readonly designTransform = computed(
@@ -420,6 +421,9 @@ export class CotizarComponent implements OnInit {
       };
     }
     const vista = this.activeMockup();
+    if (!vista) {
+      return { top: '20%', left: '20%', width: '40%', height: '30%', transform: 'none' };
+    }
     return {
       top: vista.top,
       left: vista.left,
@@ -1015,6 +1019,7 @@ export class CotizarComponent implements OnInit {
 
   private cargarCalibradorDesdeMockup(): void {
     const vista = this.activeMockup();
+    if (!vista) return;
     this.calTop.set(Number.parseFloat(vista.top) || 0);
     this.calLeft.set(Number.parseFloat(vista.left) || 0);
     this.calWidth.set(Number.parseFloat(vista.width) || 30);

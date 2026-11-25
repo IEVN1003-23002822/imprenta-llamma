@@ -9,9 +9,9 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **21 archivos de spec, 53 pruebas, 4 proyectos → 212 ejecuciones por corrida**.
+- Suite creada: **22 archivos de spec, 57 pruebas, 4 proyectos → 228 ejecuciones por corrida**.
 - Corridas completas: **3 por proyecto (420 ejecuciones)**; todas verdes.
-- `53 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- `57 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, catálogo, edición de productos,
   solicitud pública con adjunto, seguimiento, cotización (desde solicitud y manual), totales,
   pedido, pago, producción, inventario, **alta de usuarios por UI** y smoke.
@@ -116,12 +116,15 @@ por API.
 | Visor 3D sin GLB | `cotizaciones/cotizador-3d.spec.ts` | PASS (modelo aproximado) | ✅ FUNCIONA |
 | Playera 3D con GLB | `cotizaciones/cotizador-3d.spec.ts` | PASS (sin 404) | ✅ FUNCIONA |
 | Logo PNG sobre modelo | `cotizaciones/cotizador-3d.spec.ts` | PASS (alfa + píxeles) | ✅ FUNCIONA |
+| Mockup 2D reactivo | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS (playera/lona) | ✅ FUNCIONA |
+| Mockup 2D sin vista | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS (aviso) | ✅ FUNCIONA |
+| 3D Tote + fallback Taza | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS | ✅ FUNCIONA |
 | Descuento por receta | `inventario/descuento-por-pedido.spec.ts` | PASS | ✅ FUNCIONA |
 | Insumos por producto | `inventario/insumos-productos.spec.ts` | PASS (5 pruebas) | ✅ FUNCIONA |
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **53/53 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
+Matriz de proyectos: **57/57 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
 corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 
 ## 5. Bugs reales
@@ -206,7 +209,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 212 pruebas (53 × 4)
+npx playwright test --list               # 228 pruebas (57 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -311,10 +314,10 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: parcial
-tests_totales: 53
+tests_totales: 57
 proyectos: [chromium, firefox, webkit, mobile-chrome]
 corridas_por_proyecto: 3
-tests_pass: 53
+tests_pass: 57
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing, login_fallido, rate_limit, logout,

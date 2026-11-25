@@ -598,40 +598,44 @@
         </div>
       </div>
 
-      <div class="mockup-stage">
-        <div class="mockup-canvas">
-          <img
-            class="mockup-base"
-            [src]="activeMockup().imagenBase"
-            [alt]="activeMockup().nombre"
-          />
-          <div
-            class="mockup-print-area"
-            [class.is-calibrating]="modoCalibracion()"
-            [style.top]="areaStyle().top"
-            [style.left]="areaStyle().left"
-            [style.width]="areaStyle().width"
-            [style.height]="areaStyle().height"
-            [style.transform]="areaStyle().transform"
-          >
-            @if (previewImage(); as imagen) {
-              <img
-                class="mockup-user-design"
-                [class.fit-cover]="designFit() === 'cover'"
-                [src]="imagen"
-                alt="Tu diseño"
-                [style.transform]="designTransform()"
-              />
-            }
+      @if (activeMockup(); as vista) {
+        <div class="mockup-stage">
+          <div class="mockup-canvas">
+            <img class="mockup-base" [src]="vista.imagenBase" [alt]="vista.nombre" />
+            <div
+              class="mockup-print-area"
+              [class.is-calibrating]="modoCalibracion()"
+              [style.top]="areaStyle().top"
+              [style.left]="areaStyle().left"
+              [style.width]="areaStyle().width"
+              [style.height]="areaStyle().height"
+              [style.transform]="areaStyle().transform"
+            >
+              @if (previewImage(); as imagen) {
+                <img
+                  class="mockup-user-design"
+                  [class.fit-cover]="designFit() === 'cover'"
+                  [src]="imagen"
+                  alt="Tu diseño"
+                  [style.transform]="designTransform()"
+                />
+              }
+            </div>
           </div>
-        </div>
 
-        @if (!previewImage()) {
-          <p class="mockup-empty-hint">
-            <i class="bi bi-image"></i> Sube una imagen arriba para verla aplicada aquí
+          @if (!previewImage()) {
+            <p class="mockup-empty-hint">
+              <i class="bi bi-image"></i> Sube una imagen arriba para verla aplicada aquí
+            </p>
+          }
+        </div>
+      } @else {
+        <div class="mockup-stage">
+          <p class="mockup-empty-hint" role="status">
+            <i class="bi bi-image"></i> Previsualización no disponible para este producto.
           </p>
-        }
-      </div>
+        </div>
+      }
 
       @if (previewImage()) {
         <div class="mockup-controls">
@@ -708,7 +712,7 @@
       @if (mostrarCalibrador && modoCalibracion()) {
         <div class="mockup-calibrator">
           <div class="mockup-calibrator-head">
-            <strong>Calibrador de área ({{ activeMockup().id }})</strong>
+            <strong>Calibrador de área ({{ activeMockup()?.id }})</strong>
             <button type="button" class="btn btn-sm btn-ink" (click)="copiarCalibracion()">
               <i
                 class="bi"
