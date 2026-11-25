@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import base64
+import json
 from datetime import date, datetime
 from io import BytesIO
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -58,6 +59,37 @@ def _solicitud_por_credenciales(folio: str, correo: str) -> SolicitudCotizacion 
     if not solicitud or solicitud.correo.lower() != correo.strip().lower():
         return None
     return solicitud
+
+
+def _mockups_por_archivo(data: dict) -> dict[str, dict]:
+    """Mapea el nombre original del archivo con los metadatos del mockup enviados.
+
+    El formulario público envía `mockups` como JSON con la forma
+    `[{"nombre": "diseno-x.jpg", "datos": {...}}]`. Si el campo no existe o es
+    inválido se ignora y los adjuntos se guardan como archivos normales.
+    """
+    bruto = campo(data, "mockups", "mockupData", "mockup_data")
+    if bruto is None:
+        return {}
+    if isinstance(bruto, str):
+        try:
+            bruto = json.loads(bruto)
+        except json.JSONDecodeError:
+            return {}
+    if isinstance(bruto, dict):
+        bruto = [{"nombre": nombre, "datos": datos} for nombre, datos in bruto.items()]
+    if not isinstance(bruto, list):
+        return {}
+
+    mapa: dict[str, dict] = {}
+    for entrada in bruto:
+        if not isinstance(entrada, dict):
+            continue
+        nombre = str(entrada.get("nombre") or "").strip()
+        datos = entrada.get("datos")
+        if nombre and isinstance(datos, dict):
+            mapa[nombre] = datos
+    return mapa
 
 
 def _limitar_consultas(folio: str):
@@ -226,6 +258,7 @@ def crear_solicitud():
         )
 
     # Guarda adjuntos (multipart). En JSON solo se aceptan nombres referenciales.
+    mockups = _mockups_por_archivo(data)
     archivos = list(request.files.getlist("archivos")) + list(request.files.getlist("archivo"))
     for storage in archivos:
         guardado = guardar_archivo(storage)
@@ -243,6 +276,7 @@ def crear_solicitud():
                 ruta_relativa=nombre_guardado,
                 mime_type=storage.mimetype,
                 tamano_bytes=tamano,
+                mockup_data=mockups.get(original),
             )
         )
 
@@ -304,7 +338,11 @@ def consultar_solicitud(folio: str):
             "mensaje": solicitud.mensaje,
             "items": [item.to_dict() for item in solicitud.items],
             "archivos": [
-                {"nombre": a.nombre_original, "tamanoBytes": a.tamano_bytes}
+                {
+                    "nombre": a.nombre_original,
+                    "tamanoBytes": a.tamano_bytes,
+                    "esMockup": bool(a.mockup_data),
+                }
                 for a in solicitud.archivos
             ],
             "mensajes": [mensaje.to_dict(publico=True) for mensaje in solicitud.mensajes],

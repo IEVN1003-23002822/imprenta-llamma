@@ -221,6 +221,11 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `src/assets/images/mockups/*.webp` y área de impresión en
   porcentajes. El calibrador interno solo se habilita con `/cotizar?calibrar=1`. Si un producto
   no tiene entrada en `MOCKUPS_CATALOGO`, el modal 2D muestra «Previsualización no disponible».
+- «Adjuntar diseño 2D» y «Adjuntar vista 3D» exportan la escena a JPEG (`canvas.toBlob`) y la suman
+  a `archivos()`; `mockups()` guarda la metadata por nombre de archivo y `crearSolicitud` la envía en
+  el campo `mockups`. El backend la persiste en `solicitud_archivos.mockup_data` (JSON). El panel
+  `/solicitudes` muestra la tarjeta «Previsualización del diseño» descargando el blob con token y
+  ofrece la descarga de la captura; aplica `migrations/mockup_data_archivos.py` en bases existentes.
 - El visor 3D usa `CotizarMockup3dComponent` con `three` y modelos GLB en
   `src/assets/models/`; las imágenes del cliente se optimizan en
   `POST /api/public/mockups/preparar-imagen` (Pillow en `requirements.txt`). Mientras carga

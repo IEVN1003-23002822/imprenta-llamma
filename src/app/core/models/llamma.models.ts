@@ -262,12 +262,34 @@ export interface ItemSolicitud {
   precioEstimado?: number | null;
 }
 
+export interface CapaMockup {
+  nombre: string;
+  x: number;
+  y: number;
+  escala: number;
+  rotacion: number;
+}
+
+/** Metadatos técnicos del diseño personalizado que acompañan a la captura. */
+export interface MockupDisenoData {
+  productoId: number | null;
+  productoNombre: string;
+  vista: '2d' | '3d';
+  color: string;
+  material?: string | null;
+  medidas?: { ancho: number; alto: number } | null;
+  capas: CapaMockup[];
+  capturadoEn: string;
+}
+
 export interface ArchivoAdjunto {
   id: number;
   nombreOriginal: string;
   nombreGuardado?: string;
   mimeType?: string;
   tamanoBytes: number;
+  mockupData?: MockupDisenoData | null;
+  esMockup?: boolean;
   url: string;
 }
 
@@ -426,6 +448,8 @@ export interface NuevaSolicitudPayload {
   metodoEntrega: MetodoEntrega;
   items: ItemSolicitud[];
   archivos?: File[];
+  /** Metadatos de los archivos que son capturas de mockup, indexados por nombre. */
+  mockups?: Array<{ nombre: string; datos: MockupDisenoData }>;
 }
 
 /* ---------------------------------------------------------------------------

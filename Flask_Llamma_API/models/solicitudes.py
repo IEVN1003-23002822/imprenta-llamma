@@ -111,6 +111,8 @@ class SolicitudArchivo(db.Model):
     ruta_relativa = db.Column(db.String(300), nullable=False)
     mime_type = db.Column(db.String(120))
     tamano_bytes = db.Column(db.Integer, default=0, nullable=False)
+    # Posición, escala y material del diseño cuando el archivo es una captura de mockup.
+    mockup_data = db.Column(db.JSON)
     creado_en = db.Column(db.DateTime, default=utcnow, nullable=False)
 
     solicitud = db.relationship("SolicitudCotizacion", back_populates="archivos")
@@ -122,6 +124,8 @@ class SolicitudArchivo(db.Model):
             "nombreGuardado": self.nombre_guardado,
             "mimeType": self.mime_type,
             "tamanoBytes": self.tamano_bytes,
+            "mockupData": self.mockup_data,
+            "esMockup": bool(self.mockup_data),
             "url": f"/api/archivos/{self.id}",
         }
 

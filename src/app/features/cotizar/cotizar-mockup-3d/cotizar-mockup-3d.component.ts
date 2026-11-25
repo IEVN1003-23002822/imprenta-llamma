@@ -17,6 +17,7 @@ import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import { ImagenMockupPreparada, LlammaService } from '../../../core/services/llamma.service';
+import type { MockupDisenoData } from '../../../core/models/llamma.models';
 import { ModalAccesibleDirective } from '../../../shared/modal-accesible.directive';
 
 export interface CapaDiseño3D {
@@ -160,8 +161,11 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
   private readonly viewportRef = viewChild.required<ElementRef<HTMLDivElement>>('viewport3d');
 
   readonly productoNombre = input<string>('Taza cerámica sublimada');
+  readonly productoId = input<number | null>(null);
+  readonly material = input<string | null>(null);
+  readonly medidas = input<{ ancho: number; alto: number } | null>(null);
   readonly cerrar = output<void>();
-  readonly adjuntarCaptura = output<File>();
+  readonly adjuntarCaptura = output<{ archivo: File; datos: MockupDisenoData }>();
 
   readonly configActual = computed<ConfigProducto3D>(
     () => CONFIG_PRODUCTOS[this.productoNombre()] ?? CONFIG_PRODUCTOS['Taza cerámica sublimada'],
@@ -890,13 +894,59 @@ export class CotizarMockup3dComponent implements AfterViewInit, OnDestroy {
 
   guardarCapturaEnSolicitud(): void {
     if (!this.renderer || !this.scene || !this.camera) return;
+    if (!this.capas().length) {
+      this.error.set('Sube una imagen y colócala en el producto antes de adjuntar la vista 3D.');
+      return;
+    }
+
+    // Render explícito para que el buffer tenga el último cuadro aunque el modal esté quieto.
     this.renderer.render(this.scene, this.camera);
-    this.renderer.domElement.toBlob((blob) => {
-      if (!blob) return;
-      const archivo = new File([blob], `vista-3d-${Date.now()}.png`, { type: 'image/png' });
-      this.adjuntarCaptura.emit(archivo);
-      this.capturaGuardada.set(true);
-      setTimeout(() => this.capturaGuardada.set(false), 2500);
-    }, 'image/png');
+    const nombre = `diseno-${this.slugProducto()}-3d.jpg`;
+
+    this.renderer.domElement.toBlob(
+      (blob) => {
+        if (!blob) {
+          this.error.set('No pudimos exportar la vista 3D. Intenta de nuevo.');
+          return;
+        }
+        const archivo = new File([blob], nombre, { type: 'image/jpeg' });
+        this.adjuntarCaptura.emit({ archivo, datos: this.datosMockup() });
+        this.capturaGuardada.set(true);
+        setTimeout(() => this.capturaGuardada.set(false), 2500);
+      },
+      'image/jpeg',
+      0.9,
+    );
+  }
+
+  private datosMockup(): MockupDisenoData {
+    return {
+      productoId: this.productoId(),
+      productoNombre: this.productoNombre(),
+      vista: '3d',
+      color: this.colorBase(),
+      material: this.material(),
+      medidas: this.medidas(),
+      capas: this.capas().map((capa) => ({
+        nombre: capa.nombre,
+        x: capa.x,
+        y: capa.y,
+        escala: capa.escala,
+        rotacion: capa.rotacion,
+      })),
+      capturadoEn: new Date().toISOString(),
+    };
+  }
+
+  private slugProducto(): string {
+    return (
+      this.productoNombre()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40) || 'producto'
+    );
   }
 }

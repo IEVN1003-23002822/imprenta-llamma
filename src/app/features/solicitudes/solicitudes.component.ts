@@ -88,6 +88,12 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   readonly enviandoChat = signal(false);
   readonly errorChat = signal<string | null>(null);
   readonly descargandoAdjunto = signal<number | null>(null);
+  readonly mockupUrls = signal<Record<number, string>>({});
+  readonly mockupsAdjuntos = computed<ArchivoAdjunto[]>(() =>
+    (this.seleccionada()?.archivosAdjuntos ?? []).filter(
+      (archivo) => archivo.esMockup || !!archivo.mockupData,
+    ),
+  );
   private readonly hiloChat = viewChild<ElementRef<HTMLDivElement>>('hiloChat');
 
   readonly hayFiltros = computed(() => this.estadoFiltro() !== '' || this.texto().trim() !== '');
@@ -175,6 +181,7 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
         next: (solicitud) => {
           this.seleccionada.set(solicitud);
           this.mensajes.set(solicitud.mensajes ?? []);
+          this.cargarMockups(solicitud.archivosAdjuntos ?? []);
           this.desplazarHilo();
         },
         error: () => {
@@ -194,6 +201,7 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
     this.borradorChat.set('');
     this.adjuntoChat.set(null);
     this.errorChat.set(null);
+    this.liberarMockupUrls();
     this.liberarScroll();
 
     if (this.route.snapshot.queryParamMap.has('solicitud')) {
@@ -203,6 +211,7 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.alRedimensionar);
+    this.liberarMockupUrls();
     this.liberarScroll();
   }
 
@@ -310,6 +319,36 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   abrirCotizacion(cotizacion: { id: number | null | undefined }): void {
     if (!cotizacion.id) return;
     this.router.navigate(['/captura'], { queryParams: { cotizacion: cotizacion.id } });
+  }
+
+  /** Carga como blob las capturas de mockup porque el endpoint exige token. */
+  private cargarMockups(archivos: ArchivoAdjunto[]): void {
+    this.liberarMockupUrls();
+    for (const archivo of archivos) {
+      if (!archivo.esMockup && !archivo.mockupData) continue;
+      this.service.descargarArchivo(archivo.id).subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          this.mockupUrls.update((actual) => ({ ...actual, [archivo.id]: url }));
+        },
+        error: () => undefined,
+      });
+    }
+  }
+
+  private liberarMockupUrls(): void {
+    Object.values(this.mockupUrls()).forEach((url) => URL.revokeObjectURL(url));
+    this.mockupUrls.set({});
+  }
+
+  resumenMockup(archivo: ArchivoAdjunto): string {
+    const datos = archivo.mockupData;
+    if (!datos) return 'Previsualización del diseño';
+    const partes = [datos.vista === '3d' ? 'Vista 3D' : 'Vista 2D'];
+    if (datos.material) partes.push(datos.material === 'vinil' ? 'Vinil' : 'Lona');
+    if (datos.medidas) partes.push(`${datos.medidas.ancho} × ${datos.medidas.alto} m`);
+    if (datos.capas?.length) partes.push(`${datos.capas.length} elemento(s)`);
+    return partes.join(' · ');
   }
 
   descargar(archivo: ArchivoAdjunto): void {

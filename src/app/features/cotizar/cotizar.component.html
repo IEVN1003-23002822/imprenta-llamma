@@ -834,7 +834,35 @@
         </div>
       }
 
-      <div class="mockup-footer">
+      <div class="mockup-footer gap-3">
+        <p class="mr-auto mb-0 text-[0.78rem] text-[var(--llamma-muted)]" role="status">
+          @if (diseno2dAdjuntado()) {
+            <i class="bi bi-check-circle"></i> Captura del diseño adjuntada a tu solicitud.
+          } @else if (previewImage()) {
+            Adjunta la vista tal como la dejaste; producción la recibirá.
+          } @else {
+            Sube tu diseño para poder adjuntarlo a la solicitud.
+          }
+        </p>
+        <button
+          type="button"
+          class="btn btn-outline-ink"
+          [disabled]="!previewImage() || capturando2d() || !activeMockup()"
+          (click)="adjuntarDiseno2d()"
+        >
+          <i
+            class="bi"
+            [class.bi-image]="!diseno2dAdjuntado()"
+            [class.bi-check-lg]="diseno2dAdjuntado()"
+          ></i>
+          {{
+            capturando2d()
+              ? 'Generando captura…'
+              : diseno2dAdjuntado()
+                ? 'Diseño adjuntado'
+                : 'Adjuntar diseño 2D a mi solicitud'
+          }}
+        </button>
         <button type="button" class="btn btn-ink" (click)="closePreview()">Listo</button>
       </div>
     </div>
@@ -844,6 +872,9 @@
 @if (showPreview3dModal()) {
   <app-cotizar-mockup-3d
     [productoNombre]="productoActual()?.nombre || 'Taza cerámica sublimada'"
+    [productoId]="productoActual()?.id ?? null"
+    [material]="esLonaFrontlit() ? material() : null"
+    [medidas]="esPorM2() ? { ancho: anchoMetros(), alto: altoMetros() } : null"
     (cerrar)="closePreview3d()"
     (adjuntarCaptura)="adjuntarCaptura3d($event)"
   />

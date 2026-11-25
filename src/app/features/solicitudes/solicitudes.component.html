@@ -400,6 +400,56 @@
               }
             </div>
 
+            @if (mockupsAdjuntos().length) {
+              <div class="detail-files" data-testid="disenos-mockup">
+                <span
+                  class="mb-1 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                  ><i class="bi bi-palette"></i> Previsualización del diseño</span
+                >
+                @for (archivo of mockupsAdjuntos(); track archivo.id) {
+                  <figure class="mockup-admin-card">
+                    @if (mockupUrls()[archivo.id]; as url) {
+                      <a
+                        class="mockup-admin-preview"
+                        [href]="url"
+                        target="_blank"
+                        rel="noopener"
+                        [attr.aria-label]="'Abrir ' + archivo.nombreOriginal"
+                      >
+                        <img
+                          [src]="url"
+                          [alt]="
+                            'Diseño del cliente para ' +
+                            (archivo.mockupData?.productoNombre || 'el producto')
+                          "
+                        />
+                      </a>
+                    } @else {
+                      <div class="mockup-admin-placeholder">
+                        <i class="bi bi-hourglass-split"></i> Cargando vista…
+                      </div>
+                    }
+                    <figcaption>
+                      <strong>{{
+                        archivo.mockupData?.productoNombre || 'Diseño del cliente'
+                      }}</strong>
+                      <small>{{ resumenMockup(archivo) }}</small>
+                      <div class="mockup-admin-actions">
+                        <button
+                          type="button"
+                          class="file-row mockup-admin-download"
+                          (click)="descargar(archivo)"
+                        >
+                          <i class="bi bi-download"></i>
+                          <span class="file-row-name">Descargar captura</span>
+                        </button>
+                      </div>
+                    </figcaption>
+                  </figure>
+                }
+              </div>
+            }
+
             @if (solicitud.archivosAdjuntos?.length) {
               <div class="detail-files">
                 <span
@@ -408,7 +458,11 @@
                 >
                 @for (archivo of solicitud.archivosAdjuntos; track archivo.id) {
                   <button class="file-row" type="button" (click)="descargar(archivo)">
-                    <i class="bi bi-paperclip"></i>
+                    <i
+                      class="bi"
+                      [class.bi-palette]="archivo.esMockup"
+                      [class.bi-paperclip]="!archivo.esMockup"
+                    ></i>
                     <span class="file-row-name">{{ archivo.nombreOriginal }}</span>
                     <small>{{ tamano(archivo.tamanoBytes) }}</small>
                     <i class="bi bi-download"></i>

@@ -303,6 +303,45 @@ class FlujosApiTest(unittest.TestCase):
         self.assertEqual(descarga.status_code, 200)
         self.assertEqual(descarga.data, b"%PDF-1.4\n")
 
+    def test_05b_adjunto_guarda_metadatos_de_mockup(self) -> None:
+        metadatos = {
+            "productoId": 1,
+            "productoNombre": "Playera DTF 29 × 29 cm",
+            "vista": "2d",
+            "color": "",
+            "material": None,
+            "medidas": None,
+            "capas": [{"nombre": "logo.png", "x": 20, "y": 0, "escala": 1, "rotacion": 0}],
+            "capturadoEn": "2026-11-25T00:00:00.000Z",
+        }
+        respuesta = self.client.post(
+            "/api/public/solicitudes",
+            data={
+                "nombre": "Cliente Mockup",
+                "correo": "mockup@example.com",
+                "mensaje": "Adjunto la vista del diseño",
+                "archivos": (io.BytesIO(b"imagen"), "diseno-playera-2d.jpg"),
+                "mockups": json.dumps(
+                    [{"nombre": "diseno-playera-2d.jpg", "datos": metadatos}]
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(respuesta.status_code, 201, respuesta.get_data(as_text=True))
+
+        archivo = SolicitudArchivo.query.order_by(SolicitudArchivo.id.desc()).first()
+        self.assertIsNotNone(archivo)
+        self.assertEqual(archivo.mockup_data["vista"], "2d")
+        self.assertEqual(archivo.mockup_data["capas"][0]["x"], 20)
+        self.assertTrue(archivo.to_dict()["esMockup"])
+
+        solicitud = respuesta.get_json()["solicitud"]
+        self.assertTrue(solicitud["archivosAdjuntos"][0]["esMockup"])
+        self.assertEqual(
+            solicitud["archivosAdjuntos"][0]["mockupData"]["productoNombre"],
+            "Playera DTF 29 × 29 cm",
+        )
+
     def test_06_cotizacion_calcula_iva_y_anticipo(self) -> None:
         solicitud = self._solicitud("cotizacion@example.com")
         respuesta = self.client.post(

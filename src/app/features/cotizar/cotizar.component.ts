@@ -26,6 +26,7 @@ import { CotizarResumenComponent } from './cotizar-resumen/cotizar-resumen.compo
 import {
   ItemSolicitud,
   MetodoEntrega,
+  MockupDisenoData,
   ProductoPublico,
   SegmentoCliente,
   SolicitudCotizacion,
@@ -259,6 +260,10 @@ export class CotizarComponent implements OnInit {
   readonly productos = signal<ProductoPublico[]>([]);
   readonly carrito = signal<ItemSolicitud[]>([]);
   readonly archivos = signal<File[]>([]);
+  /** Metadatos de las capturas de mockup, emparejados por nombre de archivo. */
+  readonly mockups = signal<Array<{ nombre: string; datos: MockupDisenoData }>>([]);
+  readonly capturando2d = signal(false);
+  readonly diseno2dAdjuntado = signal(false);
 
   readonly productoId = signal<number | null>(null);
   readonly cantidad = signal(1);
@@ -361,11 +366,157 @@ export class CotizarComponent implements OnInit {
     this.showPreview3dModal.set(false);
   }
 
-  adjuntarCaptura3d(archivo: File): void {
-    this.archivos.update((actuales) => [...actuales, archivo]);
+  adjuntarCaptura3d(evento: { archivo: File; datos: MockupDisenoData }): void {
+    this.archivos.update((actuales) => [...actuales, evento.archivo]);
+    this.mockups.update((actuales) => [
+      ...actuales.filter((mockup) => mockup.nombre !== evento.archivo.name),
+      { nombre: evento.archivo.name, datos: evento.datos },
+    ]);
+    this.error.set(null);
+  }
+
+  /**
+   * Compone la foto del producto con el diseño del cliente en un canvas y la
+   * adjunta a la solicitud. Así producción recibe la misma vista del modal 2D.
+   */
+  async adjuntarDiseno2d(): Promise<void> {
+    const vista = this.activeMockup();
+    const diseno = this.previewImage();
+    if (!vista) {
+      this.error.set('Este producto no tiene previsualización disponible.');
+      return;
+    }
+    if (!diseno) {
+      this.error.set('Sube una imagen y colócala en el producto antes de adjuntar el diseño.');
+      return;
+    }
+    if (this.capturando2d()) return;
+
+    this.capturando2d.set(true);
+    this.error.set(null);
+    try {
+      const [base, capa] = await Promise.all([
+        this.cargarImagen(vista.imagenBase),
+        this.cargarImagen(diseno),
+      ]);
+      const canvas = document.createElement('canvas');
+      const anchoBase = base.naturalWidth || 1200;
+      const altoBase = base.naturalHeight || 900;
+      const escalaSalida = Math.min(1600 / anchoBase, 1.6);
+      canvas.width = Math.round(anchoBase * escalaSalida);
+      canvas.height = Math.round(altoBase * escalaSalida);
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('canvas_no_disponible');
+      ctx.drawImage(base, 0, 0, canvas.width, canvas.height);
+
+      const area = this.areaStyle();
+      const proporcion = (valor: string) => (Number.parseFloat(valor) || 0) / 100;
+      const x = proporcion(area.left) * canvas.width;
+      const y = proporcion(area.top) * canvas.height;
+      const w = proporcion(area.width) * canvas.width;
+      const h = proporcion(area.height) * canvas.height;
+
+      const ratio = (capa.naturalWidth || 1) / (capa.naturalHeight || 1);
+      let dibujoW = w;
+      let dibujoH = w / ratio;
+      if (this.designFit() === 'cover' || dibujoH > h) {
+        dibujoH = h;
+        dibujoW = h * ratio;
+      }
+      if (dibujoW > w) {
+        dibujoW = w;
+        dibujoH = w / ratio;
+      }
+      const factor = this.designScale() / 100;
+      dibujoW *= factor;
+      dibujoH *= factor;
+      const desplazamientoX = (this.designOffsetX() / 100) * w;
+      const desplazamientoY = (this.designOffsetY() / 100) * h;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      ctx.drawImage(
+        capa,
+        x + (w - dibujoW) / 2 + desplazamientoX,
+        y + (h - dibujoH) / 2 + desplazamientoY,
+        dibujoW,
+        dibujoH,
+      );
+      ctx.restore();
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, 'image/jpeg', 0.9),
+      );
+      if (!blob) throw new Error('sin_blob');
+
+      const archivo = new File([blob], `diseno-${this.slugProducto()}-2d.jpg`, {
+        type: 'image/jpeg',
+      });
+      this.adjuntarCaptura3d({ archivo, datos: this.datosMockup2d() });
+      this.diseno2dAdjuntado.set(true);
+      setTimeout(() => this.diseno2dAdjuntado.set(false), 2500);
+    } catch {
+      this.error.set('No pudimos generar la captura del diseño. Intenta de nuevo.');
+    } finally {
+      this.capturando2d.set(false);
+    }
+  }
+
+  private datosMockup2d(): MockupDisenoData {
+    const producto = this.productoActual();
+    return {
+      productoId: producto?.id ?? null,
+      productoNombre: producto?.nombre ?? '',
+      vista: '2d',
+      color: '',
+      material: this.esLonaFrontlit() ? this.material() : null,
+      medidas: this.esPorM2() ? { ancho: this.anchoMetros(), alto: this.altoMetros() } : null,
+      capas: this.previewImage()
+        ? [
+            {
+              nombre: this.nombreDiseno(),
+              x: this.designOffsetX(),
+              y: this.designOffsetY(),
+              escala: this.designScale() / 100,
+              rotacion: 0,
+            },
+          ]
+        : [],
+      capturadoEn: new Date().toISOString(),
+    };
+  }
+
+  private nombreDiseno(): string {
+    return this.disenoNombre();
+  }
+
+  private cargarImagen(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const imagen = new Image();
+      imagen.decoding = 'async';
+      imagen.onload = () => resolve(imagen);
+      imagen.onerror = () => reject(new Error(`No pudimos cargar ${src}`));
+      imagen.src = src;
+    });
+  }
+
+  private slugProducto(): string {
+    return (
+      (this.productoActual()?.nombre ?? 'producto')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40) || 'producto'
+    );
   }
 
   readonly previewImage = signal<string | null>(null);
+  readonly disenoNombre = signal('diseno');
   readonly selectedMockupIndex = signal(0);
 
   readonly designFit = signal<'contain' | 'cover'>('contain');
@@ -493,6 +644,7 @@ export class CotizarComponent implements OnInit {
     this.archivosPendientes.set([]);
     this.carrito.set([]);
     this.archivos.set([]);
+    this.mockups.set([]);
     this.paso.set(1);
     this.reiniciarFormulario();
   }
@@ -773,7 +925,13 @@ export class CotizarComponent implements OnInit {
   }
 
   quitarArchivo(indice: number): void {
+    const eliminado = this.archivos()[indice];
     this.archivos.update((archivos) => archivos.filter((_, posicion) => posicion !== indice));
+    if (eliminado) {
+      this.mockups.update((mockups) =>
+        mockups.filter((mockup) => mockup.nombre !== eliminado.name),
+      );
+    }
     this.guardarBorrador();
   }
 
@@ -816,6 +974,7 @@ export class CotizarComponent implements OnInit {
         metodoEntrega: valores.metodoEntrega,
         items: this.carrito(),
         archivos: this.archivos(),
+        mockups: this.mockups(),
       })
       .pipe(finalize(() => this.enviando.set(false)))
       .subscribe({
@@ -840,6 +999,7 @@ export class CotizarComponent implements OnInit {
     this.solicitudCreada.set(null);
     this.carrito.set([]);
     this.archivos.set([]);
+    this.mockups.set([]);
     this.copiado.set(false);
     this.paso.set(1);
     this.borradorRecuperado.set(false);
@@ -947,6 +1107,7 @@ export class CotizarComponent implements OnInit {
     const lector = new FileReader();
     lector.onload = () => {
       this.previewImage.set(typeof lector.result === 'string' ? lector.result : null);
+      this.disenoNombre.set(archivo.name);
       this.resetDesignControls();
     };
     lector.readAsDataURL(archivo);

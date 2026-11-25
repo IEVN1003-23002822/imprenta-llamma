@@ -108,6 +108,9 @@ export class LlammaService {
     for (const archivo of payload.archivos ?? []) {
       form.append('archivos', archivo, archivo.name);
     }
+    if (payload.mockups?.length) {
+      form.append('mockups', JSON.stringify(payload.mockups));
+    }
     return this.http.post<{ mensaje: string; folio: string; solicitud: SolicitudCotizacion }>(
       `${this.apiUrl}/public/solicitudes`,
       form,
