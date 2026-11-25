@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 from auth import role_required
 from extensions import db
 from models import Permiso, Rol, Usuario
-from routes.helpers import campo, correo_valido, error, payload
+from routes.helpers import campo, correo_valido, error, no_encontrado, payload
 
 usuarios_bp = Blueprint("usuarios", __name__)
 
@@ -48,6 +49,49 @@ def crear_usuario():
     db.session.add(usuario)
     db.session.commit()
     return jsonify(usuario.to_dict()), 201
+
+
+@usuarios_bp.put("/usuarios/<int:usuario_id>")
+@role_required("admin")
+def actualizar_usuario(usuario_id: int):
+    usuario = db.session.get(Usuario, usuario_id)
+    if not usuario:
+        return no_encontrado("Usuario")
+
+    data = payload()
+    correo = str(campo(data, "correo", "email", default="")).strip().lower()
+    nombre = str(campo(data, "nombre", default="")).strip()
+    password = str(campo(data, "password", "contrasena", default=""))
+    rol_nombre = str(campo(data, "rol", default="")).strip()
+
+    if not nombre or not correo_valido(correo):
+        return error("Nombre y correo válido son obligatorios")
+    if password and len(password) < 8:
+        return error("La contraseña debe tener al menos 8 caracteres")
+
+    rol = Rol.query.filter_by(nombre=rol_nombre).first()
+    if not rol:
+        return error("Rol inválido")
+
+    duplicado = Usuario.query.filter(
+        func.lower(Usuario.correo) == correo, Usuario.id != usuario.id
+    ).first()
+    if duplicado:
+        return error("Ya existe un usuario con ese correo", 409, "correo_duplicado")
+
+    usuario.nombre = nombre[:120]
+    usuario.correo = correo[:160]
+    usuario.rol_id = rol.id
+    # Solo cambia la contraseña si se envía una nueva; vacío = conservar la actual.
+    if password:
+        usuario.set_password(password)
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return error("Ya existe un usuario con ese correo", 409, "correo_duplicado")
+    return jsonify(usuario.to_dict())
 
 
 @usuarios_bp.get("/roles")

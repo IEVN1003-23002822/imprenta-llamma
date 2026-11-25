@@ -9,10 +9,10 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **26 archivos de spec, 72 pruebas, 4 proyectos → 288 ejecuciones por corrida**.
+- Suite creada: **26 archivos de spec, 74 pruebas, 4 proyectos → 296 ejecuciones por corrida**.
 - Corridas de cierre: Chromium 1 (66/66), Firefox 1 (66/66), WebKit 3 (1 fallo transitorio y dos
   corridas verdes consecutivas), Mobile Chrome 1 (66/66).
-- `72 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- `74 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, alta y primer acceso de usuarios,
   auditoría de las 10 rutas internas, catálogo, edición de productos, solicitud pública con adjunto,
   seguimiento, cotización (desde solicitud y manual), totales, pedido, pago, producción, inventario
@@ -127,6 +127,7 @@ por API.
 | Auditoría de 10 rutas internas | `smoke/auditoria-panel.spec.ts` | PASS (consola + red) | ✅ FUNCIONA |
 | Precio negativo en API | `productos/productos.spec.ts` | PASS (400) | ✅ FUNCIONA |
 | Matriz RBAC por rol | `auth/matriz-estricta.spec.ts` | PASS (7 pruebas) | ✅ FUNCIONA |
+| Edición de usuarios | `usuarios/usuarios.spec.ts` | PASS (2 pruebas) | ✅ FUNCIONA |
 | Adjuntar sin diseño | `cotizaciones/mockup-guardado.spec.ts` | PASS (botón deshabilitado) | ✅ FUNCIONA |
 | Mockup 2D sin vista | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS (aviso) | ✅ FUNCIONA |
 | 3D Tote + fallback Taza | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS | ✅ FUNCIONA |
@@ -135,7 +136,7 @@ por API.
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **72/72 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
+Matriz de proyectos: **74/74 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
 corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 
 ## 5. Bugs reales
@@ -221,7 +222,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 288 pruebas (72 × 4)
+npx playwright test --list               # 296 pruebas (74 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -326,16 +327,16 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: completado
-tests_totales: 72
+tests_totales: 74
 proyectos: [chromium, firefox, webkit, mobile-chrome]
 corridas_por_proyecto: "chromium 1, firefox 1, webkit 1, mobile-chrome 1"
-tests_pass: 72
+tests_pass: 74
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing_sin_modulos, login_fallido,
   rate_limit, logout,
   alta_login_logout, alta_usuarios_ui, auditoria_rutas_internas, precio_negativo_api,
-  rbac_roles, login_sin_marketing, solo_lectura_ventas, marketing_retirado,
+  rbac_roles, login_sin_marketing, solo_lectura_ventas, marketing_retirado, edicion_usuarios,
   catalogo, editar_precio, editar_descripcion, editar_imagen, publicar,
   solicitud_publica, adjuntos, seguimiento, cotizacion_desde_solicitud, cotizacion_manual, totales,
   flujo_compra, pago, produccion, inventario_estricto, anticipo_pagado, insumos_por_producto,
@@ -379,24 +380,26 @@ pendiente_usuario: "decidir H-16; aprobar job CI e2e; evaluar axe-core y Lightho
 
 ## 13. Cierre de matriz E2E (auditoría final)
 
-Fecha de cierre: **25 de noviembre de 2026**. Total: **72 pruebas por navegador**.
-Commit de cierre: `fix(rbac): enforce strict 4-role matrix in UI and API`.
+Fecha de cierre: **25 de noviembre de 2026**. Total: **74 pruebas por navegador**.
+Commit de cierre: `feat(usuarios): permitir editar usuarios sin exigir contraseña`.
 
 | Navegador | Totales | Pass | Fail | Tiempo | Estado |
 |---|---:|---:|---:|---:|---|
-| Chromium | 72 | 72 | 0 | 2.6 min | ✅ VERDE |
-| Firefox | 72 | 72 | 0 | 6.7 min | ✅ VERDE |
-| WebKit | 72 | 72 | 0 | 4.7 min | ✅ VERDE |
-| Mobile Chrome | 72 | 72 | 0 | 3.2 min | ✅ VERDE |
+| Chromium | 74 | 74 | 0 | 2.7 min | ✅ VERDE |
+| Firefox | 74 | 74 | 0 | 6.8 min | ✅ VERDE |
+| WebKit | 74 | 74 | 0 | 4.9 min | ✅ VERDE |
+| Mobile Chrome | 74 | 74 | 0 | 3.3 min | ✅ VERDE |
 
-Tiempo secuencial aproximado: **17.2 min** por matriz completa, más el arranque de los dos
+Tiempo secuencial aproximado: **17.7 min** por matriz completa, más el arranque de los dos
 servidores (Flask en `:5001` y `ng serve` en `:4300`).
 
 ### Correcciones cross-browser aplicadas
 
-- **Mobile Chrome:** `abrirNavegacionSiHaceFalta()` ahora revisa `aria-expanded` antes de pulsar el
-  hamburguesa. Antes, llamarlo dos veces seguidas cerraba el menú y los tests de Producción/
-  Inventario no encontraban el enlace «Módulos».
+- **Mobile Chrome:** `abrirNavegacionSiHaceFalta()` revisa `aria-expanded` antes de pulsar la
+  hamburguesa para no cerrar el menú al llamarlo dos veces.
+- **Firefox:** el mensaje de contraseña inválida ahora ocupa un espacio reservado
+  (`min-h-[1.05rem]`). Sin él, al hacer clic en «Crear usuario» el `blur` mostraba el error, el botón
+  se desplazaba y el clic caía fuera; solo ocurría en Firefox.
 - No se usó `test.skip()` ni `test.fixme()`. WebGL, descargas PDF, `localStorage`, `sessionStorage`
   y los menús móviles funcionan en los cuatro proyectos.
 - Los cambios de esta iteración fueron de seguridad funcional: matriz RBAC en backend/frontend,
@@ -463,3 +466,25 @@ o mejoras de rendimiento, no fallos de la suite.
 ✓ API por rol: 403 en escrituras y lecturas fuera de la matriz
 7 passed
 ```
+
+## 15. Edición de usuarios (25 de noviembre de 2026)
+
+- **Backend:** `PUT /api/usuarios/<id>` (solo `admin`). Valida nombre/correo, rol existente y
+  correo duplicado excluyendo al usuario actual. La contraseña es opcional: si llega vacía o
+  ausente conserva el hash; si llega con texto exige 8 caracteres y llama `set_password`.
+  `Usuario.to_dict()` sigue sin exponer `password_hash`.
+- **Frontend:** el panel lateral se reutiliza en modo alta/edición con `usuarioEditandoId` y
+  `modoEdicion`. La tabla tiene una columna «Acciones» con el botón `bi-pencil-square`; el título,
+  el texto de ayuda de la contraseña y el botón cambian entre «Nuevo usuario»/«Crear usuario» y
+  «Editar usuario»/«Guardar cambios». En edición, el campo se deja vacío y muestra «Deja en blanco
+  para mantener la contraseña actual»; hay un botón «Cancelar edición».
+- **Servicio:** `LlammaService.actualizarUsuario(id, body)` con `ActualizarUsuarioPayload`.
+- **Pruebas:**
+  - `tests/test_flujos.py::test_02c_editar_usuario` valida edición sin contraseña, hash intacto,
+    login con la clave original, 409 por correo duplicado, 400 por rol/clave inválidos, cambio de
+    contraseña y 403 para ventas.
+  - `e2e/tests/usuarios/usuarios.spec.ts` → «edita un usuario existente y conserva la contraseña…»
+    y «rechaza el correo de otro usuario al editar» **PASS**.
+- **E2E del flujo:** alta por API → editar nombre/rol sin contraseña → fila actualizada → login con
+  la contraseña original → editar con nueva contraseña → login viejo `401` y nuevo `200` → login
+  por UI con la nueva clave en un contexto limpio.

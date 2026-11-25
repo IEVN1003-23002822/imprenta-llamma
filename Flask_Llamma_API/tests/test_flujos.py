@@ -370,6 +370,124 @@ class FlujosApiTest(unittest.TestCase):
             403,
         )
 
+    def test_02c_editar_usuario(self) -> None:
+        """PUT /api/usuarios/<id>: edita sin exigir contraseña y valida duplicados/rol."""
+        admin = self._token()
+        creado = self.client.post(
+            "/api/usuarios",
+            headers=self._auth(admin),
+            json={
+                "nombre": "QA Editable",
+                "correo": "qa-editable@llamma.mx",
+                "password": "ClaveOriginal123!",
+                "rol": "ventas",
+            },
+        )
+        self.assertEqual(creado.status_code, 201, creado.get_data(as_text=True))
+        usuario_id = self._json(creado)["id"]
+        hash_original = Usuario.query.get(usuario_id).password_hash
+
+        editado = self.client.put(
+            f"/api/usuarios/{usuario_id}",
+            headers=self._auth(admin),
+            json={
+                "nombre": "QA Editado",
+                "correo": "qa-editado@llamma.mx",
+                "rol": "produccion",
+                "password": "",
+            },
+        )
+        self.assertEqual(editado.status_code, 200, editado.get_data(as_text=True))
+        datos = self._json(editado)
+        self.assertEqual(datos["nombre"], "QA Editado")
+        self.assertEqual(datos["correo"], "qa-editado@llamma.mx")
+        self.assertEqual(datos["rol"], "produccion")
+        self.assertEqual(Usuario.query.get(usuario_id).password_hash, hash_original)
+
+        login_original = self.client.post(
+            "/api/auth/login",
+            json={"correo": "qa-editado@llamma.mx", "password": "ClaveOriginal123!"},
+        )
+        self.assertEqual(login_original.status_code, 200)
+
+        duplicado = self.client.put(
+            f"/api/usuarios/{usuario_id}",
+            headers=self._auth(admin),
+            json={
+                "nombre": "QA Editado",
+                "correo": "qa-admin@llamma.mx",
+                "rol": "produccion",
+            },
+        )
+        self.assertEqual(duplicado.status_code, 409)
+
+        rol_invalido = self.client.put(
+            f"/api/usuarios/{usuario_id}",
+            headers=self._auth(admin),
+            json={
+                "nombre": "QA Editado",
+                "correo": "qa-editado@llamma.mx",
+                "rol": "superadmin",
+            },
+        )
+        self.assertEqual(rol_invalido.status_code, 400)
+
+        clave_corta = self.client.put(
+            f"/api/usuarios/{usuario_id}",
+            headers=self._auth(admin),
+            json={
+                "nombre": "QA Editado",
+                "correo": "qa-editado@llamma.mx",
+                "rol": "produccion",
+                "password": "1234",
+            },
+        )
+        self.assertEqual(clave_corta.status_code, 400)
+
+        nueva = self.client.put(
+            f"/api/usuarios/{usuario_id}",
+            headers=self._auth(admin),
+            json={
+                "nombre": "QA Editado",
+                "correo": "qa-editado@llamma.mx",
+                "rol": "produccion",
+                "password": "ClaveNueva456!",
+            },
+        )
+        self.assertEqual(nueva.status_code, 200, nueva.get_data(as_text=True))
+        self.assertNotEqual(Usuario.query.get(usuario_id).password_hash, hash_original)
+        self.assertEqual(
+            self.client.post(
+                "/api/auth/login",
+                json={"correo": "qa-editado@llamma.mx", "password": "ClaveOriginal123!"},
+            ).status_code,
+            401,
+        )
+        self.assertEqual(
+            self.client.post(
+                "/api/auth/login",
+                json={"correo": "qa-editado@llamma.mx", "password": "ClaveNueva456!"},
+            ).status_code,
+            200,
+        )
+
+        ventas = self._token_rol("ventas")
+        self.assertEqual(
+            self.client.put(
+                f"/api/usuarios/{usuario_id}",
+                headers=self._auth(ventas),
+                json={
+                    "nombre": "Intruso",
+                    "correo": "intruso@llamma.mx",
+                    "rol": "admin",
+                },
+            ).status_code,
+            403,
+        )
+        lista = self._json(self.client.get("/api/usuarios", headers=self._auth(admin)))
+        self.assertNotIn("password", lista["items"][0])
+        self.assertNotIn("password_hash", lista["items"][0])
+
     def test_03_rate_limit_login(self) -> None:
         for intento in range(5):
             respuesta = self.client.post(

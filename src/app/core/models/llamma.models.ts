@@ -213,6 +213,13 @@ export interface NuevoUsuarioPayload {
   telefono?: string;
 }
 
+export interface ActualizarUsuarioPayload {
+  nombre: string;
+  correo: string;
+  rol: RolUsuario;
+  password?: string;
+}
+
 export interface ActividadMarketing {
   id: Identificador;
   nombre: string;

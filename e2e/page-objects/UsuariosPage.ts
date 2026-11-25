@@ -38,6 +38,28 @@ export class UsuariosPage {
     return respuesta.json();
   }
 
+  async editar(correo: string): Promise<void> {
+    await this.fila(correo)
+      .getByRole('button', { name: /Editar/i })
+      .click();
+    await expect(this.page.getByRole('heading', { name: /Editar usuario/i })).toBeVisible();
+  }
+
+  async guardarCambios(estado = 200): Promise<Record<string, any>> {
+    const [respuesta] = await Promise.all([
+      this.page.waitForResponse((respuesta) => {
+        const url = new URL(respuesta.url());
+        return (
+          respuesta.request().method() === 'PUT' &&
+          /^\/api\/usuarios\/\d+$/.test(url.pathname) &&
+          respuesta.status() === estado
+        );
+      }),
+      this.page.getByRole('button', { name: /Guardar cambios/i }).click(),
+    ]);
+    return respuesta.json();
+  }
+
   /** Para casos inválidos: no se espera una petición, solo el mensaje. */
   async intentarCrearSinPeticion(): Promise<void> {
     await this.page.getByRole('button', { name: /Crear usuario/i }).click();

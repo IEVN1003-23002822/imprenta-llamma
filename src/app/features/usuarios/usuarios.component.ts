@@ -32,6 +32,8 @@ export class UsuariosComponent implements OnInit {
   readonly cargando = signal(true);
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly usuarioEditandoId = signal<Usuario['id'] | null>(null);
+  readonly modoEdicion = computed(() => this.usuarioEditandoId() !== null);
 
   readonly resumen = computed(() => {
     const lista = this.usuarios();
@@ -74,12 +76,37 @@ export class UsuariosComponent implements OnInit {
       });
   }
 
+  editarUsuario(usuario: Usuario): void {
+    if (this.guardando()) return;
+    this.usuarioEditandoId.set(usuario.id);
+    this.error.set(null);
+    this.formulario.setValue({
+      nombre: usuario.nombre,
+      correo: usuario.correo,
+      password: '',
+      rol: usuario.rol,
+    });
+    this.configurarPassword(false);
+    setTimeout(() => this.desplazarAlFormulario());
+  }
+
+  cancelarEdicion(): void {
+    this.usuarioEditandoId.set(null);
+    this.error.set(null);
+    this.formulario.reset({ nombre: '', correo: '', password: '', rol: 'ventas' });
+    this.configurarPassword(true);
+  }
+
   guardar(): void {
     if (this.guardando()) return;
 
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
-      this.error.set('Revisa los campos marcados: nombre, correo y contraseña de 8 caracteres.');
+      this.error.set(
+        this.modoEdicion()
+          ? 'Revisa los campos marcados: nombre, correo y, si la cambias, una contraseña de 8 caracteres.'
+          : 'Revisa los campos marcados: nombre, correo y contraseña de 8 caracteres.',
+      );
       this.enfocarPrimerError();
       return;
     }
@@ -87,30 +114,47 @@ export class UsuariosComponent implements OnInit {
     this.guardando.set(true);
     this.error.set(null);
     const valores = this.formulario.getRawValue();
+    const editandoId = this.usuarioEditandoId();
 
-    this.service
-      .crearUsuario({
-        nombre: valores.nombre.trim(),
-        correo: valores.correo.trim().toLowerCase(),
-        password: valores.password,
-        rol: valores.rol,
-      })
-      .pipe(finalize(() => this.guardando.set(false)))
-      .subscribe({
-        next: (usuario) => {
-          this.ui.exito(`Usuario ${usuario.nombre} creado.`);
-          this.formulario.reset({ nombre: '', correo: '', password: '', rol: 'ventas' });
-          this.cargar();
-        },
-        error: (respuesta: HttpErrorResponse) => {
-          const mensaje =
-            respuesta.status === 409
-              ? 'Ya existe un usuario con ese correo.'
-              : this.ui.mensajeDeError(respuesta, 'No pudimos crear el usuario.');
-          this.error.set(mensaje);
-          this.ui.error(mensaje);
-        },
-      });
+    const peticion =
+      editandoId !== null
+        ? this.service.actualizarUsuario(editandoId, {
+            nombre: valores.nombre.trim(),
+            correo: valores.correo.trim().toLowerCase(),
+            rol: valores.rol,
+            password: valores.password || undefined,
+          })
+        : this.service.crearUsuario({
+            nombre: valores.nombre.trim(),
+            correo: valores.correo.trim().toLowerCase(),
+            password: valores.password,
+            rol: valores.rol,
+          });
+
+    peticion.pipe(finalize(() => this.guardando.set(false))).subscribe({
+      next: (usuario) => {
+        this.ui.exito(
+          editandoId !== null
+            ? `Usuario ${usuario.nombre} actualizado.`
+            : `Usuario ${usuario.nombre} creado.`,
+        );
+        this.cancelarEdicion();
+        this.cargar();
+      },
+      error: (respuesta: HttpErrorResponse) => {
+        const mensaje =
+          respuesta.status === 409
+            ? 'Ya existe un usuario con ese correo.'
+            : this.ui.mensajeDeError(
+                respuesta,
+                editandoId !== null
+                  ? 'No pudimos actualizar el usuario.'
+                  : 'No pudimos crear el usuario.',
+              );
+        this.error.set(mensaje);
+        this.ui.error(mensaje);
+      },
+    });
   }
 
   etiquetaRol(valor: string | null | undefined): string {
@@ -160,6 +204,22 @@ export class UsuariosComponent implements OnInit {
     const etiquetas = ['Muy débil', 'Débil', 'Media', 'Fuerte', 'Muy fuerte'];
     const clases = ['bg-[#b42318]', 'bg-[#d97706]', 'bg-[#eab308]', 'bg-[#15803d]', 'bg-[#166534]'];
     return { nivel, etiqueta: etiquetas[nivel], clase: clases[nivel] };
+  }
+
+  private configurarPassword(obligatoria: boolean): void {
+    const control = this.formulario.controls.password;
+    control.setValidators(
+      obligatoria ? [Validators.required, Validators.minLength(8)] : [Validators.minLength(8)],
+    );
+    control.updateValueAndValidity();
+  }
+
+  private desplazarAlFormulario(): void {
+    const raiz = this.host.nativeElement as HTMLElement;
+    raiz
+      .querySelector<HTMLElement>('#formularioUsuario')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    raiz.querySelector<HTMLInputElement>('#usuarioNombre')?.focus({ preventScroll: true });
   }
 
   private enfocarPrimerError(): void {

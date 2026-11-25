@@ -162,6 +162,12 @@
                   >
                     Último acceso
                   </th>
+                  <th
+                    scope="col"
+                    class="px-4 py-3 text-right text-[0.64rem] font-bold uppercase tracking-[0.1em] text-[#7b7c80]"
+                  >
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -204,6 +210,17 @@
                     <td class="px-4 py-3 text-[0.75rem] text-[var(--llamma-muted)]">
                       {{ fecha(usuario.ultimoAcceso) }}
                     </td>
+                    <td class="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        class="inline-grid h-9 w-9 cursor-pointer select-none place-items-center rounded-[0.65rem] border border-[var(--llamma-line)] bg-white p-0 text-[var(--llamma-muted)] transition-colors duration-150 hover:border-[rgba(26,26,26,0.22)] hover:bg-[var(--llamma-paper)] hover:text-[var(--llamma-carbon)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)]"
+                        [attr.aria-label]="'Editar ' + usuario.nombre"
+                        title="Editar usuario"
+                        (click)="editarUsuario(usuario)"
+                      >
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -214,16 +231,23 @@
 
       <aside class="col-span-12 xl:col-span-4">
         <section
+          id="formularioUsuario"
           class="rounded-[var(--llamma-radius)] border border-[var(--llamma-line)] bg-[var(--llamma-surface)] p-6 shadow-[var(--llamma-shadow-sm)] md:p-7 xl:sticky xl:top-24"
         >
           <div class="mb-4">
             <span
               class="mb-1 block text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[var(--llamma-muted)]"
-              >Alta de acceso</span
+              >{{ modoEdicion() ? 'Edición de acceso' : 'Alta de acceso' }}</span
             >
-            <h2 class="m-0 text-[1.15rem] leading-[1.2] tracking-[-0.025em]">Nuevo usuario</h2>
+            <h2 class="m-0 text-[1.15rem] leading-[1.2] tracking-[-0.025em]">
+              {{ modoEdicion() ? 'Editar usuario' : 'Nuevo usuario' }}
+            </h2>
             <p class="mt-1 text-[0.78rem] text-[var(--llamma-muted)]">
-              La contraseña debe tener al menos 8 caracteres. El correo no puede repetirse.
+              @if (modoEdicion()) {
+                Actualiza los datos del usuario. La contraseña es opcional.
+              } @else {
+                La contraseña debe tener al menos 8 caracteres. El correo no puede repetirse.
+              }
             </p>
           </div>
 
@@ -303,13 +327,20 @@
               <small
                 id="usuarioPasswordAyuda"
                 class="mt-1 block text-[0.68rem] text-[var(--llamma-muted)]"
-                >Mínimo 8 caracteres.</small
               >
-              @if (formulario.controls.password.touched && formulario.controls.password.invalid) {
-                <small class="mt-1 block text-[0.68rem] font-medium text-[#b42318]"
-                  >La contraseña debe tener al menos 8 caracteres.</small
-                >
-              }
+                @if (modoEdicion()) {
+                  Deja en blanco para mantener la contraseña actual.
+                } @else {
+                  Mínimo 8 caracteres.
+                }
+              </small>
+              <div class="min-h-[1.05rem]">
+                @if (formulario.controls.password.touched && formulario.controls.password.invalid) {
+                  <small class="mt-1 block text-[0.68rem] font-medium text-[#b42318]"
+                    >La contraseña debe tener al menos 8 caracteres.</small
+                  >
+                }
+              </div>
               @if (formulario.controls.password.value) {
                 @let fuerza = fuerzaPassword();
                 <div class="mt-2" aria-live="polite">
@@ -350,9 +381,36 @@
               type="submit"
               [disabled]="guardando()"
             >
-              <i class="bi" [class]="guardando() ? 'bi-arrow-repeat spin' : 'bi-person-plus'"></i>
-              {{ guardando() ? 'Creando usuario…' : 'Crear usuario' }}
+              <i
+                class="bi"
+                [class]="
+                  guardando()
+                    ? 'bi-arrow-repeat spin'
+                    : modoEdicion()
+                      ? 'bi-check2-circle'
+                      : 'bi-person-plus'
+                "
+              ></i>
+              {{
+                guardando()
+                  ? modoEdicion()
+                    ? 'Guardando cambios…'
+                    : 'Creando usuario…'
+                  : modoEdicion()
+                    ? 'Guardar cambios'
+                    : 'Crear usuario'
+              }}
             </button>
+            @if (modoEdicion()) {
+              <button
+                class="inline-flex w-full items-center justify-center gap-2 rounded-[0.72rem] border border-[rgba(26,26,26,0.22)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--llamma-carbon)] transition hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                [disabled]="guardando()"
+                (click)="cancelarEdicion()"
+              >
+                <i class="bi bi-x-lg"></i> Cancelar edición
+              </button>
+            }
           </form>
         </section>
       </aside>

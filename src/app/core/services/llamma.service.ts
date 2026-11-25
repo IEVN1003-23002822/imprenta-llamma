@@ -29,7 +29,9 @@ import {
   TableroProduccion,
   OrdenProduccionApi,
   ControlCalidadApi,
+  Identificador,
   NuevoUsuarioPayload,
+  ActualizarUsuarioPayload,
   Usuario,
 } from '../models/llamma.models';
 
@@ -559,6 +561,10 @@ export class LlammaService {
 
   crearUsuario(body: NuevoUsuarioPayload): Observable<Usuario> {
     return this.http.post<Usuario>(`${this.apiUrl}/usuarios`, body);
+  }
+
+  actualizarUsuario(id: Identificador, body: ActualizarUsuarioPayload): Observable<Usuario> {
+    return this.http.put<Usuario>(`${this.apiUrl}/usuarios/${id}`, body);
   }
 
   /* ------------------------------- Marketing --------------------------- */
