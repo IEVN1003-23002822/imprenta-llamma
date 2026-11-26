@@ -162,7 +162,7 @@ CREATE TABLE `cotizacion_items` (
 
 LOCK TABLES `cotizacion_items` WRITE;
 /*!40000 ALTER TABLE `cotizacion_items` DISABLE KEYS */;
-INSERT INTO `cotizacion_items` VALUES (1,1,NULL,'Roll-up premium 85 × 200 cm','Mate premium',1.00,3850.00,3850.00),(2,1,NULL,'Tote bag de manta','DTF full color',25.00,110.00,2750.00),(3,2,NULL,'Lona Frontlit impresa','20 m² brillante',20.00,320.00,6400.00),(4,2,NULL,'Roll-up premium 85 × 200 cm','Estructura',1.00,3850.00,3850.00),(5,3,NULL,'Tote bag de manta','Una cara',25.00,110.00,2750.00),(6,3,NULL,'Sticker troquelado','8 × 8 cm',100.00,35.00,3500.00);
+INSERT INTO `cotizacion_items` VALUES (1,1,NULL,'Roll-up premium 85 × 200 cm','Mate premium',1.00,3850.00,3850.00),(2,1,NULL,'Tote bag de manta','DTF full color',25.00,110.00,2750.00),(3,2,NULL,'Lona/Vinil','20 m² brillante',20.00,320.00,6400.00),(4,2,NULL,'Roll-up premium 85 × 200 cm','Estructura',1.00,3850.00,3850.00),(5,3,NULL,'Tote bag de manta','Una cara',25.00,110.00,2750.00),(6,3,NULL,'Sticker troquelado','8 × 8 cm',100.00,35.00,3500.00);
 /*!40000 ALTER TABLE `cotizacion_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -510,7 +510,7 @@ CREATE TABLE `pedido_items` (
 
 LOCK TABLES `pedido_items` WRITE;
 /*!40000 ALTER TABLE `pedido_items` DISABLE KEYS */;
-INSERT INTO `pedido_items` VALUES (1,1,NULL,'Lona Frontlit impresa','20 m² brillante',20.00,320.00,6400.00,NULL),(2,1,NULL,'Roll-up premium 85 × 200 cm','Estructura',1.00,3850.00,3850.00,NULL),(3,2,NULL,'Tote bag de manta','Una cara',25.00,110.00,2750.00,NULL),(4,2,NULL,'Sticker troquelado','8 × 8 cm',100.00,35.00,3500.00,NULL),(5,3,NULL,'Taza cerámica sublimada','Logo a dos tintas',60.00,95.00,5700.00,NULL);
+INSERT INTO `pedido_items` VALUES (1,1,NULL,'Lona/Vinil','20 m² brillante',20.00,320.00,6400.00,NULL),(2,1,NULL,'Roll-up premium 85 × 200 cm','Estructura',1.00,3850.00,3850.00,NULL),(3,2,NULL,'Tote bag de manta','Una cara',25.00,110.00,2750.00,NULL),(4,2,NULL,'Sticker troquelado','8 × 8 cm',100.00,35.00,3500.00,NULL),(5,3,NULL,'Taza cerámica sublimada','Logo a dos tintas',60.00,95.00,5700.00,NULL);
 /*!40000 ALTER TABLE `pedido_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -661,7 +661,7 @@ CREATE TABLE `productos` (
 
 LOCK TABLES `productos` WRITE;
 /*!40000 ALTER TABLE `productos` DISABLE KEYS */;
-INSERT INTO `productos` VALUES (1,'Roll-up premium 85 × 200 cm','Display enrollable con lona Frontlit, estructura de aluminio y estuche.','display','gran-formato',3850.00,'pieza','bi-easel2',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(2,'Lona Frontlit impresa','Impresión gran formato CMYK con acabado mate o brillante por m².','display','gran-formato',320.00,'m2','bi-bounding-box',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(3,'Playera DTF unisex','Camiseta de algodón con estampado DTF a todo color, frente y espalda.','textil','textil',210.00,'pieza','bi-person-standing-dress',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(4,'Tote bag de manta','Bolsa de manta 35 × 40 cm con asa reforzada y estampado DTF.','promocional','promocionales',110.00,'pieza','bi-bag-heart',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(5,'Taza cerámica sublimada','Taza de 11 oz con sublimación full color y caja individual.','promocional','promocionales',95.00,'pieza','bi-cup-hot',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(6,'Sticker troquelado','Vinil adhesivo brillante con corte de precisión, 8 × 8 cm.','promocional','promocionales',35.00,'pieza','bi-stickies',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(7,'Tarjetas Couché 300g','Paquete de 100 tarjetas de presentación en Couché 300g con laminado mate.','papeleria','papeleria',850.00,'pieza','bi-postcard',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23');
+INSERT INTO `productos` VALUES (1,'Roll-up premium 85 × 200 cm','Display enrollable con lona Frontlit, estructura de aluminio y estuche.','display','gran-formato',3850.00,'pieza','bi-easel2',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(2,'Lona/Vinil','Impresión gran formato CMYK con acabado mate o brillante por m².','display','gran-formato',320.00,'m2','bi-bounding-box',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(3,'Playera DTF unisex','Camiseta de algodón con estampado DTF a todo color, frente y espalda.','textil','textil',210.00,'pieza','bi-person-standing-dress',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(4,'Tote bag de manta','Bolsa de manta 35 × 40 cm con asa reforzada y estampado DTF.','promocional','promocionales',110.00,'pieza','bi-bag-heart',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(5,'Taza cerámica sublimada','Taza de 11 oz con sublimación full color y caja individual.','promocional','promocionales',95.00,'pieza','bi-cup-hot',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(6,'Sticker troquelado','Vinil adhesivo brillante con corte de precisión, 8 × 8 cm.','promocional','promocionales',35.00,'pieza','bi-stickies',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(7,'Tarjetas Couché 300g','Paquete de 100 tarjetas de presentación en Couché 300g con laminado mate.','papeleria','papeleria',850.00,'pieza','bi-postcard',NULL,1,1,'2026-11-17 05:52:23','2026-11-17 05:52:23');
 /*!40000 ALTER TABLE `productos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -758,7 +758,7 @@ CREATE TABLE `recetas` (
 
 LOCK TABLES `recetas` WRITE;
 /*!40000 ALTER TABLE `recetas` DISABLE KEYS */;
-INSERT INTO `recetas` VALUES (1,1,'Receta Roll-up premium 85 × 200 cm',1.0000,'pieza',1750.00,90,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(2,2,'Receta Lona Frontlit impresa',1.0000,'m2',140.00,25,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(3,3,'Receta Playera DTF unisex',1.0000,'pieza',95.00,12,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(4,4,'Receta Tote bag de manta',1.0000,'pieza',48.00,10,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(5,5,'Receta Taza cerámica sublimada',1.0000,'pieza',42.00,6,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(6,6,'Receta Sticker troquelado',1.0000,'pieza',12.00,3,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(7,7,'Receta Tarjetas Couché 300g',1.0000,'pieza',320.00,45,'2026-11-17 05:52:23','2026-11-17 05:52:23');
+INSERT INTO `recetas` VALUES (1,1,'Receta Roll-up premium 85 × 200 cm',1.0000,'pieza',1750.00,90,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(2,2,'Receta Lona/Vinil',1.0000,'m2',140.00,25,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(3,3,'Receta Playera DTF unisex',1.0000,'pieza',95.00,12,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(4,4,'Receta Tote bag de manta',1.0000,'pieza',48.00,10,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(5,5,'Receta Taza cerámica sublimada',1.0000,'pieza',42.00,6,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(6,6,'Receta Sticker troquelado',1.0000,'pieza',12.00,3,'2026-11-17 05:52:23','2026-11-17 05:52:23'),(7,7,'Receta Tarjetas Couché 300g',1.0000,'pieza',320.00,45,'2026-11-17 05:52:23','2026-11-17 05:52:23');
 /*!40000 ALTER TABLE `recetas` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -911,7 +911,7 @@ CREATE TABLE `solicitud_items` (
 
 LOCK TABLES `solicitud_items` WRITE;
 /*!40000 ALTER TABLE `solicitud_items` DISABLE KEYS */;
-INSERT INTO `solicitud_items` VALUES (1,1,3,'Playera DTF unisex','Talla M y G · estampado frente y espalda',40.00,8400.00),(2,2,5,'Taza cerámica sublimada','Logo a dos tintas · caja individual',60.00,5700.00),(3,3,7,'Tarjetas Couché 300g','100 piezas por paquete · laminado mate',10.00,8500.00),(4,4,1,'Roll-up premium 85 × 200 cm','Acabado mate premium · estuche rígido',1.00,3850.00),(5,4,4,'Tote bag de manta','DTF full color · asa reforzada',25.00,2750.00),(6,5,2,'Lona Frontlit impresa','20 m² · acabado brillante',20.00,6400.00),(7,5,1,'Roll-up premium 85 × 200 cm','Estructura y estuche',1.00,3850.00),(8,6,4,'Tote bag de manta','Una cara · tinta magenta',25.00,2750.00),(9,6,6,'Sticker troquelado','8 × 8 cm · vinil brillante',100.00,3500.00);
+INSERT INTO `solicitud_items` VALUES (1,1,3,'Playera DTF unisex','Talla M y G · estampado frente y espalda',40.00,8400.00),(2,2,5,'Taza cerámica sublimada','Logo a dos tintas · caja individual',60.00,5700.00),(3,3,7,'Tarjetas Couché 300g','100 piezas por paquete · laminado mate',10.00,8500.00),(4,4,1,'Roll-up premium 85 × 200 cm','Acabado mate premium · estuche rígido',1.00,3850.00),(5,4,4,'Tote bag de manta','DTF full color · asa reforzada',25.00,2750.00),(6,5,2,'Lona/Vinil','20 m² · acabado brillante',20.00,6400.00),(7,5,1,'Roll-up premium 85 × 200 cm','Estructura y estuche',1.00,3850.00),(8,6,4,'Tote bag de manta','Una cara · tinta magenta',25.00,2750.00),(9,6,6,'Sticker troquelado','8 × 8 cm · vinil brillante',100.00,3500.00);
 /*!40000 ALTER TABLE `solicitud_items` ENABLE KEYS */;
 UNLOCK TABLES;
 

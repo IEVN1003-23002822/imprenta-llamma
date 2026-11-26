@@ -81,9 +81,18 @@ export class ProduccionComponent implements OnInit {
     const tablero = this.tablero();
     const porEtapa = new Map<EtapaProduccion, OrdenProduccionApi[]>();
     for (const columna of tablero?.columnas ?? []) porEtapa.set(columna.etapa, columna.ordenes);
-    return ETAPAS_PRODUCCION.map((etapa) => ({
-      ...etapa,
-      ordenes: porEtapa.get(etapa.valor) ?? [],
+    const catalogo = new Map(ETAPAS_PRODUCCION.map((etapa) => [etapa.valor, etapa]));
+    const valores = tablero?.etapas?.length
+      ? tablero.etapas
+      : ETAPAS_PRODUCCION.map((etapa) => etapa.valor);
+    return valores.map((valor) => ({
+      ...(catalogo.get(valor) ?? {
+        valor,
+        etiqueta: valor,
+        icono: 'bi-circle',
+        dot: 'dot-ink',
+      }),
+      ordenes: porEtapa.get(valor) ?? [],
     }));
   });
 
@@ -139,6 +148,12 @@ export class ProduccionComponent implements OnInit {
         porcentaje: total === 0 ? 0 : Math.max(6, Math.round((total / maximo) * 100)),
       };
     });
+  });
+
+  readonly etapasDisponibles = computed(() => {
+    const orden = this.seleccionada();
+    const valores = orden ? this.pasosDe(orden) : ETAPAS_PRODUCCION.map((etapa) => etapa.valor);
+    return ETAPAS_PRODUCCION.filter((etapa) => valores.includes(etapa.valor));
   });
 
   readonly calidadReciente = computed(() => {
@@ -263,12 +278,14 @@ export class ProduccionComponent implements OnInit {
   }
 
   progreso(orden: OrdenProduccionApi): number {
-    const indice = ETAPAS_PRODUCCION.findIndex((etapa) => etapa.valor === orden.etapa);
-    return Math.round(((indice + 1) / ETAPAS_PRODUCCION.length) * 100);
+    const pasos = this.pasosDe(orden);
+    const indice = pasos.indexOf(orden.etapa);
+    return Math.round(((Math.max(indice, 0) + 1) / pasos.length) * 100);
   }
 
-  indiceEtapa(etapa: string): number {
-    return ETAPAS_PRODUCCION.findIndex((fila) => fila.valor === etapa);
+  indiceEtapa(etapa: string, orden?: OrdenProduccionApi): number {
+    const pasos = orden ? this.pasosDe(orden) : ETAPAS_PRODUCCION.map((fila) => fila.valor);
+    return pasos.indexOf(etapa as EtapaProduccion);
   }
 
   etiquetaEtapa(etapa: string): string {
@@ -292,21 +309,28 @@ export class ProduccionComponent implements OnInit {
   }
 
   puedeAvanzar(orden: OrdenProduccionApi): boolean {
-    return this.indiceEtapa(orden.etapa) < ETAPAS_PRODUCCION.length - 1;
+    return this.indiceEtapa(orden.etapa, orden) < this.pasosDe(orden).length - 1;
   }
 
   puedeRetroceder(orden: OrdenProduccionApi): boolean {
-    return this.indiceEtapa(orden.etapa) > 0;
+    return this.indiceEtapa(orden.etapa, orden) > 0;
+  }
+
+  private pasosDe(orden: OrdenProduccionApi): EtapaProduccion[] {
+    const historial = (orden.historialEtapas ?? []).map((etapa) => etapa.etapa);
+    const dinamica = historial.some((etapa) => etapa === 'plasmado' || etapa === 'empaquetado');
+    return dinamica ? historial : ETAPAS_PRODUCCION.map((etapa) => etapa.valor);
   }
 
   mover(orden: OrdenProduccionApi, delta: number): void {
-    const indice = this.indiceEtapa(orden.etapa);
-    const destino = ETAPAS_PRODUCCION[indice + delta];
+    const pasos = this.pasosDe(orden);
+    const indice = pasos.indexOf(orden.etapa);
+    const destino = pasos[indice + delta];
     if (!destino) return;
     this.moviendoId.set(orden.id);
     this.service
       .actualizarOrdenProduccion(orden.id, {
-        etapa: destino.valor,
+        etapa: destino,
         estado: orden.estado === 'pendiente' ? 'en-proceso' : orden.estado,
       })
       .pipe(finalize(() => this.moviendoId.set(null)))

@@ -96,9 +96,16 @@ export const ETAPAS_PRODUCCION: readonly Opcion<EtapaProduccion>[] = [
   { valor: 'impresion', etiqueta: 'Impresión', icono: 'bi-printer', dot: 'dot-magenta' },
   { valor: 'laminado', etiqueta: 'Laminado', icono: 'bi-layers', dot: 'dot-cyan' },
   { valor: 'corte', etiqueta: 'Corte', icono: 'bi-scissors', dot: 'dot-yellow' },
+  { valor: 'plasmado', etiqueta: 'Plasmado', icono: 'bi-brush', dot: 'dot-magenta' },
   { valor: 'confeccion', etiqueta: 'Confección', icono: 'bi-bag', dot: 'dot-magenta' },
   { valor: 'armado', etiqueta: 'Armado', icono: 'bi-tools', dot: 'dot-yellow' },
   { valor: 'acabado', etiqueta: 'Acabado', icono: 'bi-stars', dot: 'dot-ink' },
+  {
+    valor: 'empaquetado',
+    etiqueta: 'Empaquetado',
+    icono: 'bi-box2',
+    dot: 'dot-ink',
+  },
   { valor: 'entrega', etiqueta: 'Entrega', icono: 'bi-box-seam', dot: 'dot-ink' },
 ];
 

@@ -488,6 +488,99 @@ class FlujosApiTest(unittest.TestCase):
         self.assertNotIn("password", lista["items"][0])
         self.assertNotIn("password_hash", lista["items"][0])
 
+    def test_02d_pasos_produccion_dinamicos(self) -> None:
+        """Los pedidos nuevos reciben pasos según la línea del producto."""
+        admin = self._token()
+
+        def crear_pedido(nombre: str, linea: str, categoria: str) -> list[str]:
+            producto = self.client.post(
+                "/api/productos",
+                headers=self._auth(admin),
+                json={
+                    "nombre": nombre,
+                    "lineaProduccion": linea,
+                    "categoria": categoria,
+                    "precioBase": 100,
+                    "unidadVenta": "pieza",
+                },
+            )
+            self.assertEqual(producto.status_code, 201, producto.get_data(as_text=True))
+            pedido = self.client.post(
+                "/api/pedidos",
+                headers=self._auth(admin),
+                json={
+                    "clienteId": self.cliente.id,
+                    "items": [{"productoId": self._json(producto)["id"], "cantidad": 1}],
+                },
+            )
+            self.assertEqual(pedido.status_code, 201, pedido.get_data(as_text=True))
+            orden = self._json(pedido)["ordenProduccion"]
+            return [etapa["etapa"] for etapa in orden["historialEtapas"]]
+
+        self.assertEqual(
+            crear_pedido("Lona dinámica QA", "gran-formato", "display"),
+            ["diseno", "impresion", "corte", "empaquetado"],
+        )
+        self.assertEqual(
+            crear_pedido("Playera dinámica QA", "textil", "textil"),
+            ["diseno", "impresion", "plasmado", "empaquetado"],
+        )
+        self.assertEqual(
+            crear_pedido("Roll-up dinámico QA", "gran-formato", "display"),
+            ["diseno", "impresion", "empaquetado"],
+        )
+
+    def test_02e_consultas_encuentra_entregados(self) -> None:
+        """El filtro de consultas devuelve pedidos entregados y respeta fechas."""
+        admin = self._token()
+        producto = self.client.post(
+            "/api/productos",
+            headers=self._auth(admin),
+            json={
+                "nombre": "Producto consulta QA",
+                "lineaProduccion": "gran-formato",
+                "categoria": "display",
+                "precioBase": 100,
+                "unidadVenta": "pieza",
+            },
+        )
+        self.assertEqual(producto.status_code, 201, producto.get_data(as_text=True))
+        creado = self.client.post(
+            "/api/pedidos",
+            headers=self._auth(admin),
+            json={
+                "clienteId": self.cliente.id,
+                "items": [{"productoId": self._json(producto)["id"], "cantidad": 1}],
+            },
+        )
+        self.assertEqual(creado.status_code, 201, creado.get_data(as_text=True))
+        folio = self._json(creado)["folio"]
+
+        entregado = self.client.patch(
+            f"/api/pedidos/{self._json(creado)['id']}/estado",
+            headers=self._auth(admin),
+            json={"estado": "entregado"},
+        )
+        self.assertEqual(entregado.status_code, 200, entregado.get_data(as_text=True))
+
+        consulta = self.client.get(
+            f"/api/consultas/pedidos?estado=entregado&q={folio}",
+            headers=self._auth(admin),
+        )
+        self.assertEqual(consulta.status_code, 200, consulta.get_data(as_text=True))
+        items = self._json(consulta)["items"]
+        self.assertTrue(any(item["folio"] == folio for item in items))
+
+        hoy = date.today().isoformat()
+        por_fecha = self.client.get(
+            f"/api/consultas/pedidos?estado=entregado&desde={hoy}&hasta={hoy}",
+            headers=self._auth(admin),
+        )
+        self.assertEqual(por_fecha.status_code, 200)
+        self.assertTrue(
+            any(item["folio"] == folio for item in self._json(por_fecha)["items"])
+        )
+
     def test_03_rate_limit_login(self) -> None:
         for intento in range(5):
             respuesta = self.client.post(

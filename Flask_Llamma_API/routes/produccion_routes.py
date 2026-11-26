@@ -31,14 +31,30 @@ def tablero_produccion():
         .order_by(OrdenProduccion.creado_en.asc())
         .all()
     )
-    columnas: dict[str, list] = {etapa: [] for etapa in ETAPAS}
+    etapas_vistas: set[str] = set()
+    for orden in ordenes:
+        pasos = [registro.etapa for registro in orden.etapas]
+        # Los pedidos nuevos guardan todos sus pasos; los antiguos conservan
+        # las etapas globales para no romper su tablero.
+        if any(paso in ("plasmado", "empaquetado") for paso in pasos):
+            etapas_vistas.update(pasos)
+        else:
+            etapas_vistas.update(ETAPAS)
+        etapas_vistas.add(orden.etapa)
+    etapas_ordenadas = [etapa for etapa in ETAPAS if etapa in etapas_vistas]
+    if not etapas_ordenadas:
+        etapas_ordenadas = list(ETAPAS)
+
+    columnas: dict[str, list] = {etapa: [] for etapa in etapas_ordenadas}
     for orden in ordenes:
         columnas.setdefault(orden.etapa, []).append(orden.to_dict(incluir_detalle=True))
     return jsonify(
         {
             "columnas": [
-                {"etapa": etapa, "ordenes": columnas.get(etapa, [])} for etapa in ETAPAS
+                {"etapa": etapa, "ordenes": columnas.get(etapa, [])}
+                for etapa in etapas_ordenadas
             ],
+            "etapas": etapas_ordenadas,
             "total": sum(len(v) for v in columnas.values()),
         }
     )
@@ -61,6 +77,11 @@ def actualizar_orden_produccion(orden_id: int):
     if estado and estado not in ESTADOS_PRODUCCION:
         return error("Estado de producción inválido")
 
+    etapas_orden = [registro.etapa for registro in orden.etapas]
+    tiene_pendientes = any(registro.estado == "pendiente" for registro in orden.etapas)
+    if etapa and tiene_pendientes and etapa not in etapas_orden:
+        return error("La etapa no corresponde a los pasos del producto")
+
     etapa_anterior = orden.etapa
     if etapa:
         orden.etapa = etapa
@@ -74,20 +95,51 @@ def actualizar_orden_produccion(orden_id: int):
 
     if orden.fecha_inicio is None and orden.estado == "en-proceso":
         orden.fecha_inicio = utcnow()
+
     if orden.estado == "completada":
         orden.fecha_fin = utcnow()
         orden.pedido.estado = "listo"
+        for registro in orden.etapas:
+            registro.estado = "completada"
+            registro.fin = registro.fin or utcnow()
 
-    if etapa and etapa != etapa_anterior:
-        orden.etapas.append(
-            ProduccionEtapa(
-                etapa=etapa,
-                estado="en-proceso" if orden.estado != "completada" else "completada",
-                responsable_id=orden.responsable_id,
-                inicio=utcnow(),
-                notas=str(observaciones or "") or None,
-            )
+    if etapa and etapa != etapa_anterior and orden.estado != "completada":
+        previo = next(
+            (registro for registro in orden.etapas if registro.etapa == etapa_anterior),
+            None,
         )
+        actual = next(
+            (registro for registro in orden.etapas if registro.etapa == etapa), None
+        )
+        avanza = True
+        if etapa_anterior in etapas_orden and etapa in etapas_orden:
+            avanza = etapas_orden.index(etapa) > etapas_orden.index(etapa_anterior)
+
+        if previo:
+            if avanza:
+                previo.estado = "completada"
+                previo.fin = previo.fin or utcnow()
+            else:
+                previo.estado = "pendiente"
+                previo.fin = None
+
+        if actual:
+            actual.estado = (
+                "completada" if orden.estado == "completada" else "en-proceso"
+            )
+            actual.inicio = actual.inicio or utcnow()
+            actual.responsable_id = orden.responsable_id
+            actual.fin = None
+        else:
+            orden.etapas.append(
+                ProduccionEtapa(
+                    etapa=etapa,
+                    estado="completada" if orden.estado == "completada" else "en-proceso",
+                    responsable_id=orden.responsable_id,
+                    inicio=utcnow(),
+                    notas=str(observaciones or "") or None,
+                )
+            )
 
     db.session.commit()
     return jsonify(orden.to_dict())

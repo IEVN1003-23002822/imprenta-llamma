@@ -20,7 +20,7 @@ test.describe('Inventario — insumos por producto', () => {
     await inventario.goto();
     await inventario.verTarjetas();
 
-    const tarjeta = inventario.tarjeta('Lona Frontlit impresa');
+    const tarjeta = inventario.tarjeta('Lona/Vinil');
     await expect(tarjeta).toBeVisible();
     await expect(tarjeta).toContainText('Lona Frontlit 510g');
     await expect(tarjeta).toContainText('Tinta Eco-solvente CMYK');
@@ -47,7 +47,7 @@ test.describe('Inventario — insumos por producto', () => {
     await inventario.goto();
     await inventario.verTarjetas();
 
-    const { insumo } = await inventario.reponerEn('Lona Frontlit impresa');
+    const { insumo } = await inventario.reponerEn('Lona/Vinil');
     await expect(page.getByRole('heading', { name: 'Registrar movimiento' })).toBeVisible();
     await expect(page.locator('#movInsumo option:checked')).toHaveText(insumo);
     await expect(page.locator('#movTipo')).toHaveValue('entrada');

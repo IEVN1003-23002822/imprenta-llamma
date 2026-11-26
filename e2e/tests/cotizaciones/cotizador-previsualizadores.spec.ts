@@ -27,7 +27,7 @@ test.describe('Previsualizadores del cotizador', () => {
     await expect(page.locator('.mockup-base')).toHaveAttribute('src', /playera-1\.webp/);
     await page.getByRole('button', { name: 'Listo' }).click();
 
-    await seleccionar(page, 'Lona Frontlit impresa');
+    await seleccionar(page, 'Lona/Vinil');
     await page.getByRole('button', { name: /Previsualizar diseño/i }).click();
     await expect(page.locator('.mockup-base')).toHaveAttribute('src', /lona-1\.webp/);
   });

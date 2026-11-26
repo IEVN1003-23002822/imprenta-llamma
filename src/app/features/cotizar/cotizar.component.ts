@@ -87,7 +87,7 @@ export interface MockupVista {
  * Las coordenadas son porcentajes, así que no dependen de la resolución.
  */
 const MOCKUPS_CATALOGO: Record<string, MockupVista[]> = {
-  'Lona Frontlit impresa': [
+  'Lona/Vinil': [
     {
       id: 'lona-1',
       nombre: 'Estructura',
@@ -236,6 +236,8 @@ const MOCKUPS_CATALOGO: Record<string, MockupVista[]> = {
 };
 
 MOCKUPS_CATALOGO['Playera DTF menor a 29 × 29 cm'] = MOCKUPS_CATALOGO['Playera DTF 29 × 29 cm'];
+// Compatibilidad con solicitudes creadas antes del renombre del producto.
+MOCKUPS_CATALOGO['Lona Frontlit impresa'] = MOCKUPS_CATALOGO['Lona/Vinil'];
 
 @Component({
   selector: 'app-cotizar',
@@ -308,9 +310,10 @@ export class CotizarComponent implements OnInit {
   );
 
   readonly esPorM2 = computed(() => this.productoActual()?.unidadVenta === 'm2');
-  readonly esLonaFrontlit = computed(() =>
-    (this.productoActual()?.nombre ?? '').toLowerCase().includes('lona frontlit'),
-  );
+  readonly esLonaFrontlit = computed(() => {
+    const nombre = (this.productoActual()?.nombre ?? '').toLowerCase();
+    return nombre.includes('lona/vinil') || nombre.includes('lona frontlit');
+  });
 
   readonly areaTotalM2 = computed(() => {
     const area = this.anchoMetros() * this.altoMetros() * this.cantidad();
@@ -537,7 +540,7 @@ export class CotizarComponent implements OnInit {
 
   readonly currentMockups = computed<MockupVista[]>(() => {
     const nombre = this.productoActual()?.nombre;
-    if (!nombre) return MOCKUPS_CATALOGO['Lona Frontlit impresa'];
+    if (!nombre) return MOCKUPS_CATALOGO['Lona/Vinil'];
     return MOCKUPS_CATALOGO[nombre] ?? [];
   });
 

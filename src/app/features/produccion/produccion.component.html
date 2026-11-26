@@ -89,7 +89,7 @@
           ></span>
         }
         <span class="kanban-hint hidden xl:inline-flex">
-          <i class="bi bi-arrows-expand"></i> Desplázate para ver las 8 etapas
+          <i class="bi bi-arrows-expand"></i> Desplázate para ver todas las etapas
         </span>
         <span
           class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em] bg-[rgba(26,26,26,0.06)] text-[var(--llamma-muted)]"
@@ -464,7 +464,7 @@
                         class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
                         formControlName="etapa"
                       >
-                        @for (etapa of etapas; track etapa.valor) {
+                        @for (etapa of etapasDisponibles(); track etapa.valor) {
                           <option [value]="etapa.valor">{{ etapa.etiqueta }}</option>
                         }
                       </select>

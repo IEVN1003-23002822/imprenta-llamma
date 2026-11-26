@@ -31,7 +31,7 @@ test.describe('Cotizaciones', () => {
     const consola = vigilarConsola(page);
     const catalogo = await api.get('/api/productos');
     const productos = (await catalogo.json()).items as Array<Record<string, any>>;
-    const lona = productos.find((producto) => producto.nombre === 'Lona Frontlit impresa');
+    const lona = productos.find((producto) => producto.nombre === 'Lona/Vinil');
     expect(lona).toBeTruthy();
 
     const solicitud = await crearSolicitud(
@@ -100,7 +100,7 @@ test.describe('Cotizaciones', () => {
     });
     const productos = await api.get('/api/productos');
     const catalogo = (await productos.json()).items as Array<Record<string, any>>;
-    const lona = catalogo.find((producto) => producto.nombre === 'Lona Frontlit impresa');
+    const lona = catalogo.find((producto) => producto.nombre === 'Lona/Vinil');
     expect(lona).toBeTruthy();
 
     const casos = [

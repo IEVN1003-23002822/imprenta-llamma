@@ -126,7 +126,7 @@ PRODUCTOS = [
         "receta": {"rendimiento": 1, "unidad": "pieza", "costo": 1750, "tiempo": 90, "componentes": [("Lona Frontlit 510g", 2.2, "m2", 5), ("Perfil de aluminio", 2, "pieza", 0)]},
     },
     {
-        "nombre": "Lona Frontlit impresa",
+        "nombre": "Lona/Vinil",
         "descripcion": "Impresión gran formato CMYK. Precio base 1 m × 1 m = $220; cada m² adicional $120.",
         "categoria": "display",
         "linea": "gran-formato",
@@ -396,7 +396,7 @@ def seed_database() -> None:
             "mensaje": "Lona Frontlit para fachada de 20 m² y un roll-up para el stand. Entrega en instalación.",
             "fecha": hoy + timedelta(days=12),
             "items": [
-                ("Lona Frontlit impresa", "20 m² · acabado brillante", 20, 320),
+                ("Lona/Vinil", "20 m² · acabado brillante", 20, 320),
                 ("Roll-up premium 85 × 200 cm", "Estructura y estuche", 1, 3850),
             ],
         },
@@ -514,7 +514,7 @@ def seed_database() -> None:
             "solicitud": "SOL-2026-005",
             "cliente": "Grupo Altura",
             "estado": "convertida",
-            "items": [("Lona Frontlit impresa", "20 m² brillante", 20, 320), ("Roll-up premium 85 × 200 cm", "Estructura", 1, 3850)],
+            "items": [("Lona/Vinil", "20 m² brillante", 20, 320), ("Roll-up premium 85 × 200 cm", "Estructura", 1, 3850)],
         },
         {
             "folio": "COT-2026-003",
@@ -564,7 +564,7 @@ def seed_database() -> None:
             "entrega": hoy + timedelta(days=7),
             "etapa": "impresion",
             "estado_produccion": "en-proceso",
-            "items": [("Lona Frontlit impresa", "20 m² brillante", 20, 320), ("Roll-up premium 85 × 200 cm", "Estructura", 1, 3850)],
+            "items": [("Lona/Vinil", "20 m² brillante", 20, 320), ("Roll-up premium 85 × 200 cm", "Estructura", 1, 3850)],
         },
         {
             "folio": "LLM-1047",

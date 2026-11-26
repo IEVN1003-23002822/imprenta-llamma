@@ -30,7 +30,7 @@ test.describe('Solicitudes públicas', () => {
       empresa: 'Empresa E2E',
     });
     await cotizar.continuar();
-    await cotizar.agregarProducto('Lona Frontlit impresa', 2);
+    await cotizar.agregarProducto('Lona/Vinil', 2);
     await cotizar.continuar();
     const respuesta = await cotizar.enviar('Necesito dos lonas impresas');
 
@@ -40,7 +40,7 @@ test.describe('Solicitudes públicas', () => {
     const api = await apiConToken(tokenDe('admin'));
     const solicitud = await obtenerSolicitud(api, respuesta.solicitud.id);
     expect(solicitud.correo).toBe(correo);
-    expect(solicitud.itemsSolicitados[0].nombreProducto).toBe('Lona Frontlit impresa');
+    expect(solicitud.itemsSolicitados[0].nombreProducto).toBe('Lona/Vinil');
     await api.dispose();
     consola.assertLimpia();
   });
@@ -68,7 +68,7 @@ test.describe('Solicitudes públicas', () => {
     });
     await cotizar.fechaDeseada(invalida);
     await cotizar.continuar();
-    await cotizar.agregarProducto('Lona Frontlit impresa', 1);
+    await cotizar.agregarProducto('Lona/Vinil', 1);
     await cotizar.continuar();
     await page.locator('#cotMensaje').fill('Quiero una entrega urgente para mi proyecto');
     await page.getByRole('button', { name: /Enviar solicitud de cotización/i }).click();
@@ -104,7 +104,7 @@ test.describe('Solicitudes públicas', () => {
     });
     await cotizar.fechaDeseada(minima);
     await cotizar.continuar();
-    await cotizar.agregarProducto('Lona Frontlit impresa', 1);
+    await cotizar.agregarProducto('Lona/Vinil', 1);
     await cotizar.continuar();
     const respuesta = await cotizar.enviar('Quiero entrega en la fecha mínima permitida');
 
@@ -126,7 +126,7 @@ test.describe('Solicitudes públicas', () => {
       telefono: '5551234567',
     });
     await cotizar.continuar();
-    await cotizar.agregarProducto('Lona Frontlit impresa', 1);
+    await cotizar.agregarProducto('Lona/Vinil', 1);
     await cotizar.continuar();
     await cotizar.adjuntar('brief.pdf', '%PDF-1.4\nprueba e2e\n', 'application/pdf');
     const respuesta = await cotizar.enviar('Adjunto mi brief para revisar medidas');

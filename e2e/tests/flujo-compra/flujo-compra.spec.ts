@@ -124,7 +124,7 @@ test.describe('Flujo de compra', () => {
 
     // 6. Producción termina y el pedido queda listo.
     await actualizarProduccion(api, detalle.ordenProduccion.id, {
-      etapa: 'entrega',
+      etapa: 'empaquetado',
       estado: 'completada',
     });
     expect((await obtenerPedido(api, pedido.id)).estado).toBe('listo');

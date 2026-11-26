@@ -25,7 +25,10 @@ class OrdenProduccion(TimestampMixin, db.Model):
     pedido = db.relationship("Pedido", back_populates="orden_produccion")
     responsable = db.relationship("Usuario", back_populates="ordenes_produccion")
     etapas = db.relationship(
-        "ProduccionEtapa", back_populates="orden", cascade="all, delete-orphan"
+        "ProduccionEtapa",
+        back_populates="orden",
+        cascade="all, delete-orphan",
+        order_by="ProduccionEtapa.id",
     )
     controles = db.relationship(
         "ControlCalidad", back_populates="orden", cascade="all, delete-orphan"

@@ -9,10 +9,10 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **26 archivos de spec, 74 pruebas, 4 proyectos → 296 ejecuciones por corrida**.
+- Suite creada: **28 archivos de spec, 76 pruebas, 4 proyectos → 304 ejecuciones por corrida**.
 - Corridas de cierre: Chromium 1 (66/66), Firefox 1 (66/66), WebKit 3 (1 fallo transitorio y dos
   corridas verdes consecutivas), Mobile Chrome 1 (66/66).
-- `74 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- `76 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, alta y primer acceso de usuarios,
   auditoría de las 10 rutas internas, catálogo, edición de productos, solicitud pública con adjunto,
   seguimiento, cotización (desde solicitud y manual), totales, pedido, pago, producción, inventario
@@ -128,6 +128,8 @@ por API.
 | Precio negativo en API | `productos/productos.spec.ts` | PASS (400) | ✅ FUNCIONA |
 | Matriz RBAC por rol | `auth/matriz-estricta.spec.ts` | PASS (7 pruebas) | ✅ FUNCIONA |
 | Edición de usuarios | `usuarios/usuarios.spec.ts` | PASS (2 pruebas) | ✅ FUNCIONA |
+| Pasos de producción dinámicos | `produccion/pasos-dinamicos.spec.ts` | PASS (Lona/Playera/Roll-up) | ✅ FUNCIONA |
+| Consultas con entregados | `consultas/consultas.spec.ts` | PASS (filtro estado) | ✅ FUNCIONA |
 | Adjuntar sin diseño | `cotizaciones/mockup-guardado.spec.ts` | PASS (botón deshabilitado) | ✅ FUNCIONA |
 | Mockup 2D sin vista | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS (aviso) | ✅ FUNCIONA |
 | 3D Tote + fallback Taza | `cotizaciones/cotizador-previsualizadores.spec.ts` | PASS | ✅ FUNCIONA |
@@ -136,7 +138,7 @@ por API.
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **74/74 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
+Matriz de proyectos: **76/76 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
 corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 
 ## 5. Bugs reales
@@ -222,7 +224,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 296 pruebas (74 × 4)
+npx playwright test --list               # 304 pruebas (76 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -327,16 +329,17 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: completado
-tests_totales: 74
+tests_totales: 76
 proyectos: [chromium, firefox, webkit, mobile-chrome]
 corridas_por_proyecto: "chromium 1, firefox 1, webkit 1, mobile-chrome 1"
-tests_pass: 74
+tests_pass: 76
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing_sin_modulos, login_fallido,
   rate_limit, logout,
   alta_login_logout, alta_usuarios_ui, auditoria_rutas_internas, precio_negativo_api,
   rbac_roles, login_sin_marketing, solo_lectura_ventas, marketing_retirado, edicion_usuarios,
+  pasos_produccion_dinamicos, consultas_entregados, renombre_lona_vinil,
   catalogo, editar_precio, editar_descripcion, editar_imagen, publicar,
   solicitud_publica, adjuntos, seguimiento, cotizacion_desde_solicitud, cotizacion_manual, totales,
   flujo_compra, pago, produccion, inventario_estricto, anticipo_pagado, insumos_por_producto,
@@ -380,17 +383,17 @@ pendiente_usuario: "decidir H-16; aprobar job CI e2e; evaluar axe-core y Lightho
 
 ## 13. Cierre de matriz E2E (auditoría final)
 
-Fecha de cierre: **25 de noviembre de 2026**. Total: **74 pruebas por navegador**.
-Commit de cierre: `feat(usuarios): permitir editar usuarios sin exigir contraseña`.
+Fecha de cierre: **25 de noviembre de 2026**. Total: **76 pruebas por navegador**.
+Commit de cierre: `feat(produccion): pasos dinámicos, Lona/Vinil y consultas entregadas`.
 
 | Navegador | Totales | Pass | Fail | Tiempo | Estado |
 |---|---:|---:|---:|---:|---|
-| Chromium | 74 | 74 | 0 | 2.7 min | ✅ VERDE |
-| Firefox | 74 | 74 | 0 | 6.8 min | ✅ VERDE |
-| WebKit | 74 | 74 | 0 | 4.9 min | ✅ VERDE |
-| Mobile Chrome | 74 | 74 | 0 | 3.3 min | ✅ VERDE |
+| Chromium | 76 | 76 | 0 | 2.7 min | ✅ VERDE |
+| Firefox | 76 | 76 | 0 | 7.0 min | ✅ VERDE |
+| WebKit | 76 | 76 | 0 | 4.8 min | ✅ VERDE |
+| Mobile Chrome | 76 | 76 | 0 | 3.3 min | ✅ VERDE |
 
-Tiempo secuencial aproximado: **17.7 min** por matriz completa, más el arranque de los dos
+Tiempo secuencial aproximado: **17.8 min** por matriz completa, más el arranque de los dos
 servidores (Flask en `:5001` y `ng serve` en `:4300`).
 
 ### Correcciones cross-browser aplicadas
@@ -400,6 +403,8 @@ servidores (Flask en `:5001` y `ng serve` en `:4300`).
 - **Firefox:** el mensaje de contraseña inválida ahora ocupa un espacio reservado
   (`min-h-[1.05rem]`). Sin él, al hacer clic en «Crear usuario» el `blur` mostraba el error, el botón
   se desplazaba y el clic caía fuera; solo ocurría en Firefox.
+- **WebKit:** una corrida completa falló de forma transitoria en `auth/logout` (login UI); la
+  prueba aislada y la siguiente corrida completa pasaron 76/76. No se cambió código por ello.
 - No se usó `test.skip()` ni `test.fixme()`. WebGL, descargas PDF, `localStorage`, `sessionStorage`
   y los menús móviles funcionan en los cuatro proyectos.
 - Los cambios de esta iteración fueron de seguridad funcional: matriz RBAC en backend/frontend,
@@ -414,11 +419,15 @@ servidores (Flask en `:5001` y `ng serve` en `:4300`).
 - `e2e/tests/smoke/auditoria-panel.spec.ts` — 10 rutas internas sin `console.error`, `pageerror`
   ni respuestas `4xx/5xx`.
 - `e2e/tests/productos/productos.spec.ts` — la API rechaza `precioBase < 0` al crear y editar.
+- `e2e/tests/produccion/pasos-dinamicos.spec.ts` — Lona/Vinil, playera y roll-up reciben pasos
+  distintos en API y en el timeline de la orden.
+- `e2e/tests/consultas/consultas.spec.ts` — un pedido `entregado` aparece al filtrar por estado y
+  folio, con el rango de fechas por defecto.
 
 ### Conclusión
 
-**Suite estable en los 4 navegadores**: 72/72 en Chromium, Firefox, WebKit y Mobile Chrome, con
-288 ejecuciones verdes por matriz. Los bugs abiertos (H-16, H-15, H-14) son decisiones de producto
+**Suite estable en los 4 navegadores**: 76/76 en Chromium, Firefox, WebKit y Mobile Chrome, con
+304 ejecuciones verdes por matriz. Los bugs abiertos (H-16, H-15, H-14) son decisiones de producto
 o mejoras de rendimiento, no fallos de la suite.
 
 ## 14. Auditoría RBAC (25 de noviembre de 2026)
@@ -508,3 +517,39 @@ o mejoras de rendimiento, no fallos de la suite.
 - **Pruebas:** `tests/test_flujos.py::test_02c_editar_usuario` cubre PUT y PATCH; la suite de
   usuarios (8 pruebas) sigue en verde.
 - **Lección:** tras agregar rutas nuevas, reiniciar el proceso `app.py` si no está en modo debug.
+
+## 17. Requerimientos Eltoni (25 de noviembre de 2026)
+
+### Catálogo: Lona/Vinil
+
+- El producto `Lona Frontlit impresa` se renombró a **`Lona/Vinil`** en `seed.py`, el dump
+  `llamma_laragon.sql` y las migraciones de precios/imágenes/recetas.
+- `migrations/renombrar_lona_vinil.py` actualiza la base existente de forma idempotente: producto,
+  partidas históricas exactas y receta. No fusiona si ya existe `Lona/Vinil`.
+- El cotizador conserva el selector de material Lona/Vinil y sus fórmulas; los mockups 2D/3D tienen
+  alias para el nombre anterior.
+
+### Mockups en la solicitud
+
+- La tarjeta «Previsualización del diseño» de `/solicitudes` ya muestra la captura 2D/3D y sus
+  metadatos; no se modificó el flujo de archivos.
+
+### Producción dinámica
+
+- `produccion_config.py` define los pasos por línea y excepciones por nombre:
+  - Lona/Vinil, stickers y tarjetas: `diseno → impresion → corte → empaquetado`.
+  - Playera, taza y tote bag: `diseno → impresion → plasmado → empaquetado`.
+  - Roll-up: `diseno → impresion → empaquetado`.
+- Al crear un pedido (manual o desde cotización) se generan todas las `ProduccionEtapa` del paso;
+  los pedidos anteriores no se tocan.
+- El backend expone `etapas` en el tablero y valida que el avance use una etapa del producto. El
+  frontend usa esas etapas, cae a `ETAPAS_PRODUCCION` para pedidos viejos y muestra el timeline
+  completo.
+- E2E: `pasos-dinamicos.spec.ts` valida API y UI para los tres grupos.
+
+### Consultas
+
+- Se corrigió la fecha de negocio: `Pedido.fecha_pedido` y `Cotizacion.fecha_emision` usan
+  `date.today()` local, no `utcnow().date()`. Así `hasta=hoy` incluye pedidos creados durante el día.
+- El filtro `estado=entregado`, la búsqueda por folio y el rango de fechas se cubren en
+  `consultas/consultas.spec.ts` y en `test_02e_consultas_encuentra_entregados`.

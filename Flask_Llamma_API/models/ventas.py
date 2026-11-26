@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from extensions import db
 from models.base import TimestampMixin, iso, utcnow
 
@@ -16,7 +18,7 @@ class Cotizacion(TimestampMixin, db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
     estado = db.Column(db.String(30), default="borrador", nullable=False, index=True)
     fecha_emision = db.Column(
-        db.Date, default=lambda: utcnow().date(), nullable=False, index=True
+        db.Date, default=date.today, nullable=False, index=True
     )
     vigencia_dias = db.Column(db.Integer, default=15, nullable=False)
     subtotal = db.Column(db.Numeric(12, 2), default=0, nullable=False)
@@ -101,7 +103,7 @@ class Pedido(TimestampMixin, db.Model):
     estado = db.Column(db.String(30), default="confirmado", nullable=False, index=True)
     prioridad = db.Column(db.String(20), default="media", nullable=False)
     fecha_pedido = db.Column(
-        db.Date, default=lambda: utcnow().date(), nullable=False, index=True
+        db.Date, default=date.today, nullable=False, index=True
     )
     fecha_entrega = db.Column(db.Date)
     subtotal = db.Column(db.Numeric(12, 2), default=0, nullable=False)

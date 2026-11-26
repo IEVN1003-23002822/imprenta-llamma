@@ -18,7 +18,7 @@ from models import Producto, Receta, RecetaComponente  # noqa: E402
 
 PLAYERA = "Playera DTF 29 × 29 cm"
 PLAYERA_MENOR = "Playera DTF menor a 29 × 29 cm"
-LONA = "Lona Frontlit impresa"
+LONA = "Lona/Vinil"
 TAZA = "Taza cerámica sublimada"
 
 

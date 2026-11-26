@@ -118,6 +118,9 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `.venv\Scripts\python.exe migrations\imagenes_catalogo.py` (idempotente); `seed.py` ya incluye
   `imagen` para cada producto. Si renombras una playera, actualiza también el alias de
   `MOCKUPS_CATALOGO` en `cotizar.component.ts`.
+- El producto «Lona/Vinil» se actualiza en bases existentes con
+  `.venv\Scripts\python.exe migrations\renombrar_lona_vinil.py` (idempotente). Renombra el catálogo,
+  las partidas históricas exactas y la receta; si ya existe el nombre nuevo no fusiona registros.
 - El dump `llamma_laragon.sql` **no** se regenera automáticamente tras cambios de datos
   (precios/fotos): aplica las migraciones sobre `llamma_db` o vuelve a generarlo antes de usarlo como
   fuente de verdad.
@@ -210,6 +213,12 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   rol de diálogo, `aria-labelledby` al `[data-modal-title]` (o `.modal-title` de módulos antiguos),
   foco inicial dentro de `[data-modal-body]` (o `.modal-body`), trampa de Tab, `Esc` mediante
   `(cerrar)` y bloqueo de scroll. No dupliques esa lógica a mano.
+- Los pasos de producción se configuran en `Flask_Llamma_API/produccion_config.py` según la línea
+  y el nombre del producto. Los pedidos nuevos crean una `ProduccionEtapa` por paso; los pedidos
+  anteriores conservan su historial. El tablero expone `etapas` y el frontend cae a
+  `ETAPAS_PRODUCCION` para los pedidos viejos.
+- `Pedido.fecha_pedido` y `Cotizacion.fecha_emision` usan `date.today()` (fecha local) para que
+  los filtros de `/consultas` con `hasta=hoy` incluyan los pedidos creados durante el día.
 - La vista `/detalle` usa divulgación progresiva: los paneles secundarios (`produccion`, `calidad`,
   `pagos`, `entrega`, `archivos`) se pliegan con `estaAbierta()`/`alternarSeccion()` sobre un
   `signal` y recuerdan su estado por dispositivo en `llamma.detalle.secciones.v1`. `imprimir()` los
@@ -232,7 +241,7 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `vistaActual`. El botón «Reponer» reutiliza `abrirAjuste(materia, 'entrada')`; no crees un
   segundo modal de entradas.
 - El cotizador público muestra Ancho × Largo (m) para productos vendidos en m² y envía el área
-  como `cantidad`; «Lona Frontlit impresa» añade selector Lona/Vinil y oculta «Lonas». Los
+  como `cantidad`; «Lona/Vinil» añade selector Lona/Vinil y oculta «Lonas». Los
   productos por pieza conservan la cantidad capturada. Fórmulas: lona `$220 + $120/m² adicional`;
   vinil `$180 + $90/m² adicional`. La aprobación bloquea si falta stock y devuelve `descuento`.
 - La previsualización de mockups de `/cotizar` vive en `cotizar.component.*`: catálogo

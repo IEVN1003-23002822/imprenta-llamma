@@ -44,7 +44,16 @@ export type PrioridadPedido = 'baja' | 'media' | 'alta' | 'urgente';
 export type TipoMovimiento = 'entrada' | 'salida' | 'ajuste' | 'merma' | 'devolucion';
 
 export type EtapaProduccion =
-  'diseno' | 'impresion' | 'laminado' | 'corte' | 'confeccion' | 'armado' | 'acabado' | 'entrega';
+  | 'diseno'
+  | 'impresion'
+  | 'laminado'
+  | 'corte'
+  | 'plasmado'
+  | 'confeccion'
+  | 'armado'
+  | 'acabado'
+  | 'empaquetado'
+  | 'entrega';
 
 export type EstadoProduccion = 'pendiente' | 'en-proceso' | 'pausada' | 'completada' | 'rechazada';
 
@@ -683,6 +692,7 @@ export interface PedidoApi {
 
 export interface TableroProduccion {
   columnas: Array<{ etapa: EtapaProduccion; ordenes: OrdenProduccionApi[] }>;
+  etapas?: EtapaProduccion[];
   total: number;
 }
 

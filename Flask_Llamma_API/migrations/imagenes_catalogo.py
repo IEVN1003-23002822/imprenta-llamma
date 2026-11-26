@@ -13,7 +13,7 @@ from extensions import db  # noqa: E402
 from models import Producto  # noqa: E402
 
 IMAGENES = {
-    "Lona Frontlit impresa": "assets/images/catalogo/gran-formato/lona-frontlit-impresa.webp",
+    "Lona/Vinil": "assets/images/catalogo/gran-formato/lona-frontlit-impresa.webp",
     "Roll-up premium 85 × 200 cm": "assets/images/catalogo/gran-formato/roll-up-premium.webp",
     "Playera DTF 29 × 29 cm": "assets/images/catalogo/textil/playera-dtf-29x29.webp",
     "Playera DTF menor a 29 × 29 cm": "assets/images/catalogo/textil/playera-dtf-menor-29x29.webp",

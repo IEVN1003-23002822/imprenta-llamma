@@ -64,7 +64,7 @@ const CONFIG_PRODUCTOS: Record<string, ConfigProducto3D> = {
       { nombre: 'Amarilla', hex: '#f5df18' },
     ],
   },
-  'Lona Frontlit impresa': {
+  'Lona/Vinil': {
     tipo: 'lona',
     texW: 1800,
     texH: 1000,
@@ -148,6 +148,8 @@ const CONFIG_PRODUCTOS: Record<string, ConfigProducto3D> = {
 // El catálogo público usa estos nombres; ambos comparten el modelo DTF.
 CONFIG_PRODUCTOS['Playera DTF 29 × 29 cm'] = CONFIG_PRODUCTOS['Playera DTF unisex'];
 CONFIG_PRODUCTOS['Playera DTF menor a 29 × 29 cm'] = CONFIG_PRODUCTOS['Playera DTF unisex'];
+// Compatibilidad con pedidos/solicitudes previos al renombre.
+CONFIG_PRODUCTOS['Lona Frontlit impresa'] = CONFIG_PRODUCTOS['Lona/Vinil'];
 
 @Component({
   selector: 'app-cotizar-mockup-3d',

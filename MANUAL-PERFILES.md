@@ -390,8 +390,11 @@ Buscador avanzado de pedidos para admin, ventas y producción:
 
 ### 8.8 Producción
 
-- Tablero kanban con 8 etapas: **Diseño, Impresión, Laminado, Corte, Confección, Armado,
-  Acabado y Entrega**.
+- Tablero kanban con **etapas dinámicas según el producto**:
+  - **Lona/Vinil, stickers y tarjetas:** Diseño → Impresión → Corte → Empaquetado.
+  - **Playera, taza y tote bag:** Diseño → Impresión → Plasmado → Empaquetado.
+  - **Roll-up:** Diseño → Impresión → Empaquetado.
+- Los pedidos anteriores conservan su historial de 8 etapas; los nuevos usan su secuencia.
 - Avanzar o regresar etapa; abrir la orden.
 - Detalle con historial, etapa actual, estado, prioridad, checklist de calidad y botón
   **Guardar cambios**.

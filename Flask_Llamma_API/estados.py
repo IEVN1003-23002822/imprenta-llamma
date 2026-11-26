@@ -16,9 +16,11 @@ ETAPAS = (
     "impresion",
     "laminado",
     "corte",
+    "plasmado",
     "confeccion",
     "armado",
     "acabado",
+    "empaquetado",
     "entrega",
 )
 ESTADOS_PRODUCCION = {"pendiente", "en-proceso", "pausada", "completada", "rechazada"}

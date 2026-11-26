@@ -22,6 +22,7 @@ from models import (
     Producto,
     utcnow,
 )
+from produccion_config import pasos_para_items
 from routes.comun import (
     DescuentoInventarioError,
     InventarioInsuficiente,
@@ -271,8 +272,16 @@ def crear_pedido():
         for item in items
     ]
 
-    orden = OrdenProduccion(etapa="diseno", estado="pendiente", pedido=pedido)
-    orden.etapas.append(ProduccionEtapa(etapa="diseno", estado="en-proceso", inicio=utcnow()))
+    pasos = pasos_para_items(items)
+    orden = OrdenProduccion(etapa=pasos[0], estado="pendiente", pedido=pedido)
+    for indice, paso in enumerate(pasos):
+        orden.etapas.append(
+            ProduccionEtapa(
+                etapa=paso,
+                estado="en-proceso" if indice == 0 else "pendiente",
+                inicio=utcnow() if indice == 0 else None,
+            )
+        )
 
     db.session.add(pedido)
     try:

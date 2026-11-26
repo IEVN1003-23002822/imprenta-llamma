@@ -24,7 +24,7 @@ PRODUCTOS_RECETA = (
     "Playera DTF menor a 29 × 29 cm",
     "Taza cerámica sublimada",
     "Tote bag de manta",
-    "Lona Frontlit impresa",
+    "Lona/Vinil",
     "Sticker troquelado",
 )
 

@@ -23,6 +23,7 @@ from models import (
     SolicitudCotizacion,
     utcnow,
 )
+from produccion_config import pasos_para_items
 from routes.comun import (
     DescuentoInventarioError,
     InventarioInsuficiente,
@@ -232,21 +233,23 @@ def convertir_cotizacion(cotizacion_id: int):
         if pedido.saldo <= 0 and pedido.estado == "confirmado":
             pedido.estado = "en-produccion"
 
+    pasos = pasos_para_items(cotizacion.items)
     orden = OrdenProduccion(
-        etapa="diseno",
+        etapa=pasos[0],
         estado="pendiente",
         responsable_id=parse_int(campo(data, "responsableId")),
         pedido=pedido,
     )
-    orden.etapas.append(
-        ProduccionEtapa(
-            etapa="diseno",
-            estado="en-proceso",
-            responsable_id=orden.responsable_id,
-            inicio=utcnow(),
-            notas="Orden creada desde cotización aprobada",
+    for indice, paso in enumerate(pasos):
+        orden.etapas.append(
+            ProduccionEtapa(
+                etapa=paso,
+                estado="en-proceso" if indice == 0 else "pendiente",
+                responsable_id=orden.responsable_id if indice == 0 else None,
+                inicio=utcnow() if indice == 0 else None,
+                notas="Orden creada desde cotización aprobada" if indice == 0 else None,
+            )
         )
-    )
 
     cotizacion.estado = "convertida"
     if cotizacion.solicitud:

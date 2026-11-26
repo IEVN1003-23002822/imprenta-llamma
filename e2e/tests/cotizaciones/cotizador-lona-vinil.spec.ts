@@ -11,7 +11,7 @@ async function abrirPaso2(page: Page): Promise<CotizarPage> {
     telefono: '5551234567',
   });
   await cotizar.continuar();
-  await page.locator('#cotProducto').selectOption({ label: 'Lona Frontlit impresa' });
+  await page.locator('#cotProducto').selectOption({ label: 'Lona/Vinil' });
   return cotizar;
 }
 
@@ -31,7 +31,7 @@ test.describe('Cotizador de lona y vinil', () => {
     await expect(page.locator('main#contenido')).toContainText('$340');
 
     await page.getByRole('button', { name: /Agregar a mi solicitud/i }).click();
-    await expect(page.locator('main#contenido')).toContainText('Lona Frontlit impresa · 2');
+    await expect(page.locator('main#contenido')).toContainText('Lona/Vinil · 2');
 
     await cotizar.continuar();
     const respuesta = await cotizar.enviar('Necesito dos metros cuadrados de lona impresa');
@@ -49,7 +49,7 @@ test.describe('Cotizador de lona y vinil', () => {
     await expect(page.locator('main#contenido')).not.toContainText('$340');
 
     await page.getByRole('button', { name: /Agregar a mi solicitud/i }).click();
-    await expect(page.locator('main#contenido')).toContainText('Lona Frontlit impresa (Vinil) · 2');
+    await expect(page.locator('main#contenido')).toContainText('Lona/Vinil (Vinil) · 2');
   });
 
   test('bloquea medidas en cero', async ({ page }) => {
