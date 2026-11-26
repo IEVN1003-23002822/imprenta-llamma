@@ -33,7 +33,7 @@ def crear_usuario():
     if not nombre or not correo_valido(correo) or len(password) < 8:
         return error("Nombre, correo válido y contraseña de al menos 8 caracteres son obligatorios")
     if Usuario.query.filter(func.lower(Usuario.correo) == correo).first():
-        return error("Ya existe un usuario con ese correo", 409, "correo_duplicado")
+        return error("El correo ya está en uso.", 409, "correo_duplicado")
 
     rol = Rol.query.filter_by(nombre=rol_nombre).first()
     if not rol:
@@ -51,7 +51,7 @@ def crear_usuario():
     return jsonify(usuario.to_dict()), 201
 
 
-@usuarios_bp.put("/usuarios/<int:usuario_id>")
+@usuarios_bp.route("/usuarios/<int:usuario_id>", methods=["PUT", "PATCH"])
 @role_required("admin")
 def actualizar_usuario(usuario_id: int):
     usuario = db.session.get(Usuario, usuario_id)
@@ -77,7 +77,7 @@ def actualizar_usuario(usuario_id: int):
         func.lower(Usuario.correo) == correo, Usuario.id != usuario.id
     ).first()
     if duplicado:
-        return error("Ya existe un usuario con ese correo", 409, "correo_duplicado")
+        return error("El correo ya está en uso.", 409, "correo_duplicado")
 
     usuario.nombre = nombre[:120]
     usuario.correo = correo[:160]
@@ -90,7 +90,7 @@ def actualizar_usuario(usuario_id: int):
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return error("Ya existe un usuario con ese correo", 409, "correo_duplicado")
+        return error("El correo ya está en uso.", 409, "correo_duplicado")
     return jsonify(usuario.to_dict())
 
 

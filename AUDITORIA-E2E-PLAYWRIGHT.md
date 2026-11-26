@@ -469,7 +469,7 @@ o mejoras de rendimiento, no fallos de la suite.
 
 ## 15. Edición de usuarios (25 de noviembre de 2026)
 
-- **Backend:** `PUT /api/usuarios/<id>` (solo `admin`). Valida nombre/correo, rol existente y
+- **Backend:** `PUT/PATCH /api/usuarios/<id>` (solo `admin`). Valida nombre/correo, rol existente y
   correo duplicado excluyendo al usuario actual. La contraseña es opcional: si llega vacía o
   ausente conserva el hash; si llega con texto exige 8 caracteres y llama `set_password`.
   `Usuario.to_dict()` sigue sin exponer `password_hash`.
@@ -488,3 +488,23 @@ o mejoras de rendimiento, no fallos de la suite.
 - **E2E del flujo:** alta por API → editar nombre/rol sin contraseña → fila actualizada → login con
   la contraseña original → editar con nueva contraseña → login viejo `401` y nuevo `200` → login
   por UI con la nueva clave en un contexto limpio.
+
+## 16. Fix 404 al editar usuarios (25 de noviembre de 2026)
+
+- **Síntoma:** el panel `/usuarios` mostraba el texto crudo de Flask
+  («The requested URL was not found on the server…») y un toast al guardar una edición.
+- **Causa raíz:** el proceso Flask de desarrollo en `:5000` llevaba desde el **24-nov 15:50**, antes
+  de que existiera `PUT /api/usuarios/<id>`. El código ya tenía la ruta (`app.url_map` la mostraba),
+  pero el proceso no la había cargado. No era un error de URL en Angular ni un Blueprint sin
+  registrar.
+- **Corrección de entorno:** se reinició la API local (`.venv\Scripts\python.exe app.py`). Después:
+  - `PUT /api/usuarios/2` → **200**.
+  - `PATCH /api/usuarios/2` → **200**.
+  - Edición real desde `http://localhost:4200/usuarios` → `PUT 200`, **0 respuestas 404** y toast
+    «Usuario Diego Salas actualizado.».
+- **Corrección de código:** el endpoint acepta `PUT` y `PATCH`; el mensaje de correo duplicado es
+  **«El correo ya está en uso.»**; `UiService.mensajeDeError` ya no muestra el texto crudo inglés
+  de un 404 de Flask y usa el mensaje de respaldo del módulo.
+- **Pruebas:** `tests/test_flujos.py::test_02c_editar_usuario` cubre PUT y PATCH; la suite de
+  usuarios (8 pruebas) sigue en verde.
+- **Lección:** tras agregar rutas nuevas, reiniciar el proceso `app.py` si no está en modo debug.

@@ -70,6 +70,10 @@ export class UiService {
     if ((respuesta?.status ?? 0) >= 500) {
       return 'Tuvimos un problema temporal. Intenta de nuevo en unos minutos.';
     }
-    return respuesta?.error?.error || respaldo;
+    const mensaje = respuesta?.error?.error;
+    if (respuesta?.status === 404 && mensaje && /requested url was not found/i.test(mensaje)) {
+      return respaldo;
+    }
+    return mensaje || respaldo;
   }
 }

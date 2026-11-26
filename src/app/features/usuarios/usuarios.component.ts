@@ -144,7 +144,7 @@ export class UsuariosComponent implements OnInit {
       error: (respuesta: HttpErrorResponse) => {
         const mensaje =
           respuesta.status === 409
-            ? 'Ya existe un usuario con ese correo.'
+            ? 'El correo ya está en uso.'
             : this.ui.mensajeDeError(
                 respuesta,
                 editandoId !== null

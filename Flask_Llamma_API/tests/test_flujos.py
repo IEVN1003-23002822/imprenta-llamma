@@ -444,7 +444,7 @@ class FlujosApiTest(unittest.TestCase):
         )
         self.assertEqual(clave_corta.status_code, 400)
 
-        nueva = self.client.put(
+        nueva = self.client.patch(
             f"/api/usuarios/{usuario_id}",
             headers=self._auth(admin),
             json={

@@ -9,6 +9,8 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   Los imports son planos (`from config import Config`, `from models import ...`), así que **debe**
   ejecutarse desde esa carpeta. Dependencias en `Flask_Llamma_API/requirements.txt`; el venv del repo
   es `.venv` (no versionado).
+- Si agregas rutas nuevas y la API local sigue devolviendo 404, reinicia el proceso `app.py`: el
+  `url_map` se carga al arrancar y no se actualiza si el servidor no está en modo debug.
 - Frontend: `npm start` → abre `http://localhost:4200`. Usa `localhost`, no `127.0.0.1`
   (el dev server escucha en `::1` y `127.0.0.1:4200` puede no responder).
 - `ng serve` ya aplica `proxy.conf.json` (`/api` → `127.0.0.1:5000`, configurado en `angular.json`).
@@ -215,7 +217,7 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - El menú «Módulos» se arma con `auth.tieneRol(...)` en `app.html`; ya no existe la bandera
   `modulosVisibles`. Marketing no se muestra a ningún rol y `/marketing` queda como legado solo
   para admin.
-- `PUT /api/usuarios/<id>` (solo `admin`) actualiza nombre, correo y rol. Si `password` viene vacío
+- `PUT/PATCH /api/usuarios/<id>` (solo `admin`) actualiza nombre, correo y rol. Si `password` viene vacío
   o ausente conserva el hash actual; si viene con texto exige 8 caracteres y llama `set_password`.
   Correo de otro usuario → `409`, rol inexistente → `400`. `Usuario.to_dict()` nunca expone el hash.
 - `/usuarios` es solo para `admin` (`authGuard` + `roleGuard`), con tabla y alta en la misma

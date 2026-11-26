@@ -138,7 +138,7 @@ test.describe('Usuarios — alta desde la UI', () => {
     await page.locator('#usuarioCorreo').fill(segundo.correo);
     await usuarios.guardarCambios(409);
 
-    await expect(page.getByRole('alert')).toContainText(/Ya existe un usuario con ese correo/i);
+    await expect(page.getByRole('alert')).toContainText(/El correo ya está en uso/i);
     await expect(page.getByRole('heading', { name: /Editar usuario/i })).toBeVisible();
   });
 
@@ -160,7 +160,7 @@ test.describe('Usuarios — alta desde la UI', () => {
     });
     await usuarios.crear(409);
 
-    await usuarios.expectError(/Ya existe un usuario con ese correo/i);
+    await usuarios.expectError(/El correo ya está en uso/i);
     await expect(usuarios.fila(usuario.correo)).toHaveCount(1);
   });
 
