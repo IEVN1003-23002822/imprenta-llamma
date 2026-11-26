@@ -19,6 +19,9 @@ test.describe('Catálogo público', () => {
     const imagenes = page.locator('article img');
     expect(await imagenes.count()).toBeGreaterThan(0);
     await expect(imagenes.first()).toBeVisible();
+    // La primera imagen es el LCP: debe cargarse con prioridad, no en lazy.
+    await expect(imagenes.first()).toHaveAttribute('loading', 'eager');
+    await expect(imagenes.first()).toHaveAttribute('fetchpriority', 'high');
 
     // Espera a que las imágenes lazy entren al viewport.
     await page.locator('article').last().scrollIntoViewIfNeeded();

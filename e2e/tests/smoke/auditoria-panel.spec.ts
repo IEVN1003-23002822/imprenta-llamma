@@ -52,4 +52,20 @@ test.describe('Auditoría de rutas internas', () => {
 
     consola.assertLimpia();
   });
+
+  test('una ruta inexistente muestra la página 404 con enlaces de ayuda', async ({ page }) => {
+    await page.goto('/ruta-que-no-existe-llamma');
+
+    const principal = page.locator('main#contenido');
+    await expect(principal.getByRole('heading', { name: 'Esta página no existe.' })).toBeVisible();
+    await expect(principal.getByRole('link', { name: /Ir al inicio/i })).toHaveAttribute(
+      'href',
+      '/',
+    );
+    await expect(principal.getByRole('link', { name: /Ver catálogo/i })).toHaveAttribute(
+      'href',
+      '/productos',
+    );
+    await expect(page.locator('#busqueda404')).toBeVisible();
+  });
 });

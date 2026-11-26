@@ -32,8 +32,15 @@ export class UsuariosComponent implements OnInit {
   readonly cargando = signal(true);
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
+  /** Errores del formulario, junto a los campos (independientes de la carga). */
+  readonly errorFormulario = signal<string | null>(null);
   readonly usuarioEditandoId = signal<Usuario['id'] | null>(null);
   readonly modoEdicion = computed(() => this.usuarioEditandoId() !== null);
+
+  // Límites alineados con las columnas de la API (`usuarios`).
+  readonly maxNombre = 120;
+  readonly maxCorreo = 160;
+  readonly maxPassword = 128;
 
   readonly resumen = computed(() => {
     const lista = this.usuarios();
@@ -45,9 +52,9 @@ export class UsuariosComponent implements OnInit {
   });
 
   readonly formulario = this.fb.nonNullable.group({
-    nombre: ['', [Validators.required, Validators.minLength(2)]],
-    correo: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
+    correo: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
+    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
     rol: ['ventas' as RolUsuario, [Validators.required]],
   });
 
@@ -80,6 +87,7 @@ export class UsuariosComponent implements OnInit {
     if (this.guardando()) return;
     this.usuarioEditandoId.set(usuario.id);
     this.error.set(null);
+    this.errorFormulario.set(null);
     this.formulario.setValue({
       nombre: usuario.nombre,
       correo: usuario.correo,
@@ -93,6 +101,7 @@ export class UsuariosComponent implements OnInit {
   cancelarEdicion(): void {
     this.usuarioEditandoId.set(null);
     this.error.set(null);
+    this.errorFormulario.set(null);
     this.formulario.reset({ nombre: '', correo: '', password: '', rol: 'ventas' });
     this.configurarPassword(true);
   }
@@ -100,33 +109,40 @@ export class UsuariosComponent implements OnInit {
   guardar(): void {
     if (this.guardando()) return;
 
+    // Normaliza antes de validar: un nombre de solo espacios no debe viajar a la API.
+    const valores = this.formulario.getRawValue();
+    const nombre = valores.nombre.trim();
+    const correo = valores.correo.trim().toLowerCase();
+    if (nombre !== valores.nombre || correo !== valores.correo) {
+      this.formulario.patchValue({ nombre, correo });
+    }
+
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
-      this.error.set(
+      this.errorFormulario.set(
         this.modoEdicion()
-          ? 'Revisa los campos marcados: nombre, correo y, si la cambias, una contraseña de 8 caracteres.'
-          : 'Revisa los campos marcados: nombre, correo y contraseña de 8 caracteres.',
+          ? 'Revisa los campos marcados: nombre, correo y, si la cambias, una contraseña válida.'
+          : 'Revisa los campos marcados: nombre, correo y contraseña de 8 caracteres o más.',
       );
       this.enfocarPrimerError();
       return;
     }
 
     this.guardando.set(true);
-    this.error.set(null);
-    const valores = this.formulario.getRawValue();
+    this.errorFormulario.set(null);
     const editandoId = this.usuarioEditandoId();
 
     const peticion =
       editandoId !== null
         ? this.service.actualizarUsuario(editandoId, {
-            nombre: valores.nombre.trim(),
-            correo: valores.correo.trim().toLowerCase(),
+            nombre,
+            correo,
             rol: valores.rol,
             password: valores.password || undefined,
           })
         : this.service.crearUsuario({
-            nombre: valores.nombre.trim(),
-            correo: valores.correo.trim().toLowerCase(),
+            nombre,
+            correo,
             password: valores.password,
             rol: valores.rol,
           });
@@ -151,7 +167,7 @@ export class UsuariosComponent implements OnInit {
                   ? 'No pudimos actualizar el usuario.'
                   : 'No pudimos crear el usuario.',
               );
-        this.error.set(mensaje);
+        this.errorFormulario.set(mensaje);
         this.ui.error(mensaje);
       },
     });
@@ -206,10 +222,33 @@ export class UsuariosComponent implements OnInit {
     return { nivel, etiqueta: etiquetas[nivel], clase: clases[nivel] };
   }
 
+  mensajeNombre(): string {
+    const control = this.formulario.controls.nombre;
+    return control.hasError('maxlength')
+      ? `Máximo ${this.maxNombre} caracteres.`
+      : 'Indica al menos dos caracteres.';
+  }
+
+  mensajeCorreo(): string {
+    const control = this.formulario.controls.correo;
+    return control.hasError('maxlength')
+      ? `Máximo ${this.maxCorreo} caracteres.`
+      : 'Ingresa un correo válido.';
+  }
+
+  mensajePassword(): string {
+    const control = this.formulario.controls.password;
+    return control.hasError('maxlength')
+      ? `Máximo ${this.maxPassword} caracteres.`
+      : 'La contraseña debe tener al menos 8 caracteres.';
+  }
+
   private configurarPassword(obligatoria: boolean): void {
     const control = this.formulario.controls.password;
     control.setValidators(
-      obligatoria ? [Validators.required, Validators.minLength(8)] : [Validators.minLength(8)],
+      obligatoria
+        ? [Validators.required, Validators.minLength(8), Validators.maxLength(128)]
+        : [Validators.minLength(8), Validators.maxLength(128)],
     );
     control.updateValueAndValidity();
   }
@@ -223,9 +262,13 @@ export class UsuariosComponent implements OnInit {
   }
 
   private enfocarPrimerError(): void {
-    const primero = (this.host.nativeElement as HTMLElement).querySelector<HTMLElement>(
-      'input.ng-invalid, select.ng-invalid',
-    );
-    primero?.focus();
+    const controles = [
+      { id: 'usuarioNombre', valido: this.formulario.controls.nombre.valid },
+      { id: 'usuarioCorreo', valido: this.formulario.controls.correo.valid },
+      { id: 'usuarioPassword', valido: this.formulario.controls.password.valid },
+      { id: 'usuarioRol', valido: this.formulario.controls.rol.valid },
+    ];
+    const primero = controles.find((control) => !control.valido) ?? controles[0];
+    (this.host.nativeElement as HTMLElement).querySelector<HTMLElement>(`#${primero.id}`)?.focus();
   }
 }

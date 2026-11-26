@@ -581,6 +581,116 @@ class FlujosApiTest(unittest.TestCase):
             any(item["folio"] == folio for item in self._json(por_fecha)["items"])
         )
 
+    def test_02f_validacion_alta_usuarios(self) -> None:
+        """Rechaza tipos y longitudes inválidas sin truncar datos en silencio."""
+        admin = self._token()
+
+        def crear(datos: dict):
+            return self.client.post("/api/usuarios", headers=self._auth(admin), json=datos)
+
+        base = {
+            "nombre": "Usuario validación QA",
+            "correo": "validacion-qa@example.com",
+            "password": "Password123!",
+            "rol": "ventas",
+        }
+
+        nombre_largo = crear({**base, "nombre": "N" * 121})
+        self.assertEqual(nombre_largo.status_code, 400, nombre_largo.get_data(as_text=True))
+        self.assertEqual(self._json(nombre_largo)["codigo"], "nombre_invalido")
+
+        correo_largo = "a" * 65 + "@" + "b" * 63 + "." + "c" * 27 + ".com"
+        self.assertEqual(len(correo_largo), 161)
+        respuesta = crear({**base, "correo": correo_largo})
+        self.assertEqual(respuesta.status_code, 400, respuesta.get_data(as_text=True))
+        self.assertEqual(self._json(respuesta)["codigo"], "correo_invalido")
+
+        password_larga = crear({**base, "password": "P" * 129})
+        self.assertEqual(password_larga.status_code, 400, password_larga.get_data(as_text=True))
+        self.assertEqual(self._json(password_larga)["codigo"], "password_invalida")
+
+        nombre_no_texto = crear({**base, "nombre": ["A", "B"]})
+        self.assertEqual(nombre_no_texto.status_code, 400, nombre_no_texto.get_data(as_text=True))
+
+        password_numerica = crear({**base, "password": 12345678})
+        self.assertEqual(
+            password_numerica.status_code, 400, password_numerica.get_data(as_text=True)
+        )
+
+        # Los límites exactos sí se aceptan y no se recortan.
+        correo_limite = "a" * 64 + "@" + "b" * 63 + "." + "c" * 27 + ".com"
+        self.assertEqual(len(correo_limite), 160)
+        valido = crear(
+            {
+                **base,
+                "nombre": "N" * 120,
+                "correo": correo_limite,
+            }
+        )
+        self.assertEqual(valido.status_code, 201, valido.get_data(as_text=True))
+        self.assertEqual(self._json(valido)["nombre"], "N" * 120)
+        self.assertEqual(self._json(valido)["correo"], correo_limite)
+
+        actualizado = self.client.put(
+            f"/api/usuarios/{self._json(valido)['id']}",
+            headers=self._auth(admin),
+            json={"nombre": "N" * 121, "correo": correo_limite, "rol": "ventas"},
+        )
+        self.assertEqual(actualizado.status_code, 400, actualizado.get_data(as_text=True))
+
+    def test_02g_cambiar_password_revoca_sesiones(self) -> None:
+        """Al cambiar la contraseña, los tokens abiertos del usuario dejan de servir."""
+        admin = self._token()
+        correo = "revoca-sesion-qa@example.com"
+        creado = self.client.post(
+            "/api/usuarios",
+            headers=self._auth(admin),
+            json={
+                "nombre": "Usuario revocación QA",
+                "correo": correo,
+                "password": "ClaveOriginal123!",
+                "rol": "ventas",
+            },
+        )
+        self.assertEqual(creado.status_code, 201, creado.get_data(as_text=True))
+        usuario_id = self._json(creado)["id"]
+
+        login = self.client.post(
+            "/api/auth/login", json={"correo": correo, "password": "ClaveOriginal123!"}
+        )
+        self.assertEqual(login.status_code, 200, login.get_data(as_text=True))
+        token_usuario = self._json(login)["token"]
+
+        antes = self.client.get("/api/auth/me", headers=self._auth(token_usuario))
+        self.assertEqual(antes.status_code, 200)
+
+        cambio = self.client.put(
+            f"/api/usuarios/{usuario_id}",
+            headers=self._auth(admin),
+            json={
+                "nombre": "Usuario revocación QA",
+                "correo": correo,
+                "rol": "ventas",
+                "password": "ClaveNueva123!",
+            },
+        )
+        self.assertEqual(cambio.status_code, 200, cambio.get_data(as_text=True))
+
+        despues = self.client.get("/api/auth/me", headers=self._auth(token_usuario))
+        self.assertEqual(despues.status_code, 401)
+        self.assertEqual(
+            self.client.post(
+                "/api/auth/login", json={"correo": correo, "password": "ClaveOriginal123!"}
+            ).status_code,
+            401,
+        )
+        self.assertEqual(
+            self.client.post(
+                "/api/auth/login", json={"correo": correo, "password": "ClaveNueva123!"}
+            ).status_code,
+            200,
+        )
+
     def test_03_rate_limit_login(self) -> None:
         for intento in range(5):
             respuesta = self.client.post(

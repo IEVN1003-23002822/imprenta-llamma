@@ -251,7 +251,24 @@
             </p>
           </div>
 
-          <form class="grid gap-4" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+          <form
+            class="grid gap-4"
+            [formGroup]="formulario"
+            (ngSubmit)="guardar()"
+            [attr.aria-busy]="guardando()"
+            novalidate
+          >
+            @if (errorFormulario()) {
+              <div
+                id="usuarioFormError"
+                class="flex items-center gap-[0.6rem] rounded-[var(--llamma-radius-sm)] border border-[rgba(180,35,24,0.2)] bg-[rgba(180,35,24,0.06)] px-4 py-3 text-sm text-[#b42318]"
+                role="alert"
+              >
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ errorFormulario() }}</span>
+              </div>
+            }
+
             <div>
               <label
                 class="mb-1 block text-[0.76rem] font-semibold text-[#47484d]"
@@ -264,6 +281,12 @@
                 type="text"
                 formControlName="nombre"
                 autocomplete="name"
+                aria-required="true"
+                [attr.aria-describedby]="
+                  formulario.controls.nombre.touched && formulario.controls.nombre.invalid
+                    ? 'usuarioNombreError'
+                    : null
+                "
                 [attr.aria-invalid]="
                   formulario.controls.nombre.touched && formulario.controls.nombre.invalid
                 "
@@ -272,8 +295,10 @@
                 "
               />
               @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
-                <small class="mt-1 block text-[0.68rem] font-medium text-[#b42318]"
-                  >Indica al menos dos caracteres.</small
+                <small
+                  id="usuarioNombreError"
+                  class="mt-1 block text-[0.68rem] font-medium text-[#b42318]"
+                  >{{ mensajeNombre() }}</small
                 >
               }
             </div>
@@ -290,6 +315,12 @@
                 type="email"
                 formControlName="correo"
                 autocomplete="email"
+                aria-required="true"
+                [attr.aria-describedby]="
+                  formulario.controls.correo.touched && formulario.controls.correo.invalid
+                    ? 'usuarioCorreoError'
+                    : null
+                "
                 [attr.aria-invalid]="
                   formulario.controls.correo.touched && formulario.controls.correo.invalid
                 "
@@ -298,8 +329,10 @@
                 "
               />
               @if (formulario.controls.correo.touched && formulario.controls.correo.invalid) {
-                <small class="mt-1 block text-[0.68rem] font-medium text-[#b42318]"
-                  >Ingresa un correo válido.</small
+                <small
+                  id="usuarioCorreoError"
+                  class="mt-1 block text-[0.68rem] font-medium text-[#b42318]"
+                  >{{ mensajeCorreo() }}</small
                 >
               }
             </div>
@@ -316,7 +349,12 @@
                 type="password"
                 formControlName="password"
                 autocomplete="new-password"
-                aria-describedby="usuarioPasswordAyuda"
+                [attr.aria-required]="!modoEdicion()"
+                [attr.aria-describedby]="
+                  formulario.controls.password.touched && formulario.controls.password.invalid
+                    ? 'usuarioPasswordAyuda usuarioPasswordError'
+                    : 'usuarioPasswordAyuda'
+                "
                 [attr.aria-invalid]="
                   formulario.controls.password.touched && formulario.controls.password.invalid
                 "
@@ -336,8 +374,10 @@
               </small>
               <div class="min-h-[1.05rem]">
                 @if (formulario.controls.password.touched && formulario.controls.password.invalid) {
-                  <small class="mt-1 block text-[0.68rem] font-medium text-[#b42318]"
-                    >La contraseña debe tener al menos 8 caracteres.</small
+                  <small
+                    id="usuarioPasswordError"
+                    class="mt-1 block text-[0.68rem] font-medium text-[#b42318]"
+                    >{{ mensajePassword() }}</small
                   >
                 }
               </div>
@@ -369,6 +409,7 @@
                 id="usuarioRol"
                 class="w-full cursor-pointer rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-3 py-2.5 text-sm text-[var(--llamma-carbon)] outline-none transition focus:border-[var(--llamma-cyan)] focus:bg-white focus:ring-4 focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)]"
                 formControlName="rol"
+                aria-required="true"
               >
                 @for (rol of roles(); track rol.id) {
                   <option [value]="rol.nombre">{{ rol.descripcion || rol.nombre }}</option>

@@ -416,7 +416,8 @@ Solo admin:
 - Edición: lápiz en la fila, cambios de nombre/correo/rol y contraseña opcional
   («Deja en blanco para mantener la contraseña actual»).
 - Correo duplicado: error y no se guarda.
-- La contraseña debe tener al menos 8 caracteres.
+- Límites: nombre de 2 a 120 caracteres, correo válido de hasta 160 y contraseña de 8 a 128.
+- Al cambiar la contraseña se revocan las sesiones abiertas de ese usuario.
 
 ### 8.11 Catálogo público
 

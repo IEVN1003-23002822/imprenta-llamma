@@ -227,11 +227,15 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `modulosVisibles`. Marketing no se muestra a ningún rol y `/marketing` queda como legado solo
   para admin.
 - `PUT/PATCH /api/usuarios/<id>` (solo `admin`) actualiza nombre, correo y rol. Si `password` viene vacío
-  o ausente conserva el hash actual; si viene con texto exige 8 caracteres y llama `set_password`.
-  Correo de otro usuario → `409`, rol inexistente → `400`. `Usuario.to_dict()` nunca expone el hash.
+  o ausente conserva el hash actual; si viene con texto exige entre 8 y 128 caracteres, llama
+  `set_password` y revoca las sesiones abiertas de ese usuario. Nombre: 2–120 caracteres; correo:
+  válido y de hasta 160. Los campos con tipo distinto a texto se rechazan con `400`; nunca se
+  truncan en silencio. Correo de otro usuario → `409`, rol inexistente → `400`.
+  `Usuario.to_dict()` nunca expone el hash.
 - `/usuarios` es solo para `admin` (`authGuard` + `roleGuard`), con tabla y alta en la misma
   página. El acceso del menú «Módulos» se muestra con `auth.esAdmin()`. El formulario incluye
-  indicador de fuerza de contraseña; el mínimo de 8 se valida también en el backend.
+  indicador de fuerza de contraseña; los mismos límites (nombre, correo y contraseña) se validan
+  en el cliente y en el backend, y los errores se muestran junto al formulario con `role="alert"`.
 - En `captura`, el botón «Aprobar cotización» descuenta inventario y muestra el resumen; después
   «Convertir en pedido» no vuelve a descontar gracias a `inventario_descontado`.
 - Las fechas de entrega usan `src/app/core/utils/fechas.ts` (misma regla que el backend) y

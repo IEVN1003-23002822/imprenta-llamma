@@ -9,10 +9,10 @@ desarrollo del puerto 5000.**
 
 ## 1. Resumen ejecutivo
 
-- Suite creada: **28 archivos de spec, 76 pruebas, 4 proyectos → 304 ejecuciones por corrida**.
+- Suite creada: **29 archivos de spec, 84 pruebas, 4 proyectos → 336 ejecuciones por corrida**.
 - Corridas de cierre: Chromium 1 (66/66), Firefox 1 (66/66), WebKit 3 (1 fallo transitorio y dos
   corridas verdes consecutivas), Mobile Chrome 1 (66/66).
-- `76 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
+- `84 passed` por proyecto, sin `test.fail()` ni `test.skip()`.
 - Flujos que funcionan: login por rol, rate limit, logout, alta y primer acceso de usuarios,
   auditoría de las 10 rutas internas, catálogo, edición de productos, solicitud pública con adjunto,
   seguimiento, cotización (desde solicitud y manual), totales, pedido, pago, producción, inventario
@@ -138,7 +138,7 @@ por API.
 | Portada + LCP | `smoke/home.spec.ts` | PASS | ✅ FUNCIONA |
 | Consola limpia | `smoke/consola-limpia.spec.ts` | PASS | ✅ FUNCIONA |
 
-Matriz de proyectos: **76/76 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
+Matriz de proyectos: **84/84 en Chromium, Firefox, WebKit y Mobile Chrome**; Chromium con 3
 corridas consecutivas y el resto con 1 corrida completa en esta iteración.
 
 ## 5. Bugs reales
@@ -224,7 +224,7 @@ npx playwright test --project=chromium   # un navegador
 npx playwright test e2e/tests/auth       # un directorio
 npx playwright test e2e/tests/flujo-compra/flujo-compra.spec.ts
 npm run test:e2e:report                  # reporte HTML
-npx playwright test --list               # 304 pruebas (76 × 4)
+npx playwright test --list               # 336 pruebas (84 × 4)
 ```
 
 ## 8. `playwright.config.ts` entregado
@@ -329,10 +329,10 @@ El job no se añadió a `.github/workflows/ci.yml`; queda pendiente de aprobaci�
 ```yaml
 decision: suite-e2e-playwright-llamma-2026-11-23
 estado: completado
-tests_totales: 76
+tests_totales: 84
 proyectos: [chromium, firefox, webkit, mobile-chrome]
 corridas_por_proyecto: "chromium 1, firefox 1, webkit 1, mobile-chrome 1"
-tests_pass: 76
+tests_pass: 84
 tests_fail: 0
 fallas_esperadas: []
 flujos_funcionan: [login_admin, login_vendedor, login_marketing_sin_modulos, login_fallido,
@@ -383,17 +383,17 @@ pendiente_usuario: "decidir H-16; aprobar job CI e2e; evaluar axe-core y Lightho
 
 ## 13. Cierre de matriz E2E (auditoría final)
 
-Fecha de cierre: **25 de noviembre de 2026**. Total: **76 pruebas por navegador**.
-Commit de cierre: `feat(produccion): pasos dinámicos, Lona/Vinil y consultas entregadas`.
+Fecha de cierre: **26 de noviembre de 2026**. Total: **84 pruebas por navegador**.
+Commit de cierre: `fix(usuarios): validación de alta y auditoría de registro`.
 
 | Navegador | Totales | Pass | Fail | Tiempo | Estado |
 |---|---:|---:|---:|---:|---|
-| Chromium | 76 | 76 | 0 | 2.7 min | ✅ VERDE |
-| Firefox | 76 | 76 | 0 | 7.0 min | ✅ VERDE |
-| WebKit | 76 | 76 | 0 | 4.8 min | ✅ VERDE |
-| Mobile Chrome | 76 | 76 | 0 | 3.3 min | ✅ VERDE |
+| Chromium | 84 | 84 | 0 | 3.0 min | ✅ VERDE |
+| Firefox | 84 | 84 | 0 | 7.1 min | ✅ VERDE |
+| WebKit | 84 | 84 | 0 | 5.2 min | ✅ VERDE |
+| Mobile Chrome | 84 | 84 | 0 | 3.2 min | ✅ VERDE |
 
-Tiempo secuencial aproximado: **17.8 min** por matriz completa, más el arranque de los dos
+Tiempo secuencial aproximado: **18.5 min** por matriz completa, más el arranque de los dos
 servidores (Flask en `:5001` y `ng serve` en `:4300`).
 
 ### Correcciones cross-browser aplicadas
@@ -404,7 +404,7 @@ servidores (Flask en `:5001` y `ng serve` en `:4300`).
   (`min-h-[1.05rem]`). Sin él, al hacer clic en «Crear usuario» el `blur` mostraba el error, el botón
   se desplazaba y el clic caía fuera; solo ocurría en Firefox.
 - **WebKit:** una corrida completa falló de forma transitoria en `auth/logout` (login UI); la
-  prueba aislada y la siguiente corrida completa pasaron 76/76. No se cambió código por ello.
+  prueba aislada y la siguiente corrida completa pasaron 84/84. No se cambió código por ello.
 - No se usó `test.skip()` ni `test.fixme()`. WebGL, descargas PDF, `localStorage`, `sessionStorage`
   y los menús móviles funcionan en los cuatro proyectos.
 - Los cambios de esta iteración fueron de seguridad funcional: matriz RBAC en backend/frontend,
@@ -426,8 +426,8 @@ servidores (Flask en `:5001` y `ng serve` en `:4300`).
 
 ### Conclusión
 
-**Suite estable en los 4 navegadores**: 76/76 en Chromium, Firefox, WebKit y Mobile Chrome, con
-304 ejecuciones verdes por matriz. Los bugs abiertos (H-16, H-15, H-14) son decisiones de producto
+**Suite estable en los 4 navegadores**: 84/84 en Chromium, Firefox, WebKit y Mobile Chrome, con
+336 ejecuciones verdes por matriz. Los bugs abiertos (H-16, H-15, H-14) son decisiones de producto
 o mejoras de rendimiento, no fallos de la suite.
 
 ## 14. Auditoría RBAC (25 de noviembre de 2026)
@@ -553,3 +553,36 @@ o mejoras de rendimiento, no fallos de la suite.
   `date.today()` local, no `utcnow().date()`. Así `hasta=hoy` incluye pedidos creados durante el día.
 - El filtro `estado=entregado`, la búsqueda por folio y el rango de fechas se cubren en
   `consultas/consultas.spec.ts` y en `test_02e_consultas_encuentra_entregados`.
+
+## 18. Auditoría de registro de usuarios (26 de noviembre de 2026)
+
+### Hallazgos corregidos
+
+| # | Hallazgo | Causa raíz | Corrección |
+|---|---|---|---|
+| 1 | Un nombre de 150 caracteres se guardaba truncado a 120 sin avisar | `nombre[:120]` después de validar | `400 nombre_invalido`; el frontend usa `maxLength(120)` |
+| 2 | Un correo de 186 caracteres se guardaba truncado a 160 (el usuario ya no podía entrar con el correo enviado) | `correo[:160]` después de validar | `400 correo_invalido`; `maxLength(160)` en el formulario |
+| 3 | `nombre: ["A","B"]` o `password: 12345678` se aceptaban | `str(...)` convertía cualquier JSON a texto | helper `_texto()`/`_password()` que exige `str` |
+| 4 | Cambiar la contraseña no cerraba las sesiones del usuario | faltaba revocar `SesionUsuario` | se revocan las sesiones activas al cambiar el hash |
+| 5 | El error del alta aparecía en la columna del listado, lejos del formulario | un solo signal `error` para carga y guardado | `errorFormulario` junto a los campos |
+| 6 | Los mensajes de error no estaban asociados a los inputs | faltaban ids y `aria-describedby` | ids `usuario*Error`, `aria-describedby`, foco al primer control inválido |
+| 7 | La imagen LCP del catálogo se cargaba `loading="lazy"` (NG0913) | atributo fijo en todas las tarjetas | primera tarjeta `eager` + `fetchpriority="high"` |
+| 8 | Un nombre de solo espacios pasaba la validación del cliente y viajaba a la API | `minLength` cuenta espacios | se recorta antes de validar y se enfoca el campo |
+
+También se captura `IntegrityError` al crear (carrera de correo duplicado → `409` en vez de `500`).
+
+### Pruebas añadidas
+
+- Backend: `test_02f_validacion_alta_usuarios` (límites exactos, tipos inválidos, update) y
+  `test_02g_cambiar_password_revoca_sesiones`.
+- `e2e/tests/usuarios/registro-experiencia.spec.ts` (6): doble envío, Enter, recarga/atrás,
+  validación cliente, overflow móvil y fallo 5xx con reintento.
+- `e2e/tests/usuarios/usuarios.spec.ts`: límites de nombre/correo sin llamar a la API.
+- `e2e/tests/smoke/auditoria-panel.spec.ts`: página 404 con enlaces de ayuda.
+- `e2e/tests/smoke/productos-publicos.spec.ts`: la primera imagen del catálogo es `eager`.
+
+### Resultado
+
+- `format:check`, `lint`, `build` y 59 pruebas unitarias en verde.
+- Backend: 34 pruebas de flujo en SQLite, `OK`.
+- Playwright: **84/84 en los cuatro proyectos**, sin `skip` ni `fixme`.

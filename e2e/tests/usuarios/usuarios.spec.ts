@@ -160,8 +160,45 @@ test.describe('Usuarios — alta desde la UI', () => {
     });
     await usuarios.crear(409);
 
-    await usuarios.expectError(/El correo ya está en uso/i);
     await expect(usuarios.fila(usuario.correo)).toHaveCount(1);
+    // El error se muestra junto al formulario, no en el listado.
+    await expect(page.locator('#formularioUsuario').getByRole('alert')).toContainText(
+      /El correo ya está en uso/i,
+    );
+  });
+
+  test('bloquea nombre y correo fuera del límite sin llamar a la API', async ({ page }) => {
+    const usuarios = new UsuariosPage(page);
+    const peticiones: string[] = [];
+    page.on('request', (peticion) => {
+      if (peticion.method() === 'POST' && new URL(peticion.url()).pathname === '/api/usuarios') {
+        peticiones.push(peticion.url());
+      }
+    });
+
+    await usuarios.goto();
+    await usuarios.llenar({
+      nombre: 'N'.repeat(121),
+      correo: correoUnico('limite'),
+      password: 'PasswordSeguro123!',
+    });
+    await usuarios.intentarCrearSinPeticion();
+
+    await expect(page.getByText(/Máximo 120 caracteres/i)).toBeVisible();
+    await expect(page.locator('#usuarioNombre')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#usuarioNombre')).toHaveAttribute(
+      'aria-describedby',
+      'usuarioNombreError',
+    );
+    await expect(page.getByRole('alert')).toContainText(/Revisa los campos/i);
+
+    await page.locator('#usuarioNombre').fill(`Usuario ${unico('e2e')}`);
+    await page.locator('#usuarioCorreo').fill(`${'a'.repeat(150)}@example.com`);
+    await usuarios.intentarCrearSinPeticion();
+
+    await expect(page.getByText(/Máximo 160 caracteres/i)).toBeVisible();
+    await expect(page.locator('#usuarioCorreo')).toHaveAttribute('aria-invalid', 'true');
+    expect(peticiones).toEqual([]);
   });
 
   test('valida la contraseña corta sin llamar a la API', async ({ page }) => {
@@ -185,6 +222,7 @@ test.describe('Usuarios — alta desde la UI', () => {
       page.getByText(/La contraseña debe tener al menos 8 caracteres/i).first(),
     ).toBeVisible();
     await expect(page.getByRole('alert')).toContainText(/Revisa los campos/i);
+    await expect(page.locator('#usuarioPassword')).toBeFocused();
     expect(peticiones).toEqual([]);
   });
 
