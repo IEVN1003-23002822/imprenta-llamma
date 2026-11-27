@@ -14,14 +14,20 @@ import { finalize } from 'rxjs';
 
 import { LlammaService } from '../../core/services/llamma.service';
 import {
+  ESTADOS_PEDIDO,
+  ESTADOS_PRODUCCION,
   ESTADOS_SOLICITUD,
+  ETAPAS_PRODUCCION,
   EXTENSIONES_ARCHIVO,
   MAX_BYTES_ARCHIVO,
   badgeDe,
   etiquetaDe,
 } from '../../core/models/estados';
 import {
+  EstadoPedido,
+  EstadoProduccion,
   EstadoSolicitud,
+  EtapaProduccion,
   MensajeChat,
   SeguimientoSolicitud,
 } from '../../core/models/llamma.models';
@@ -69,7 +75,7 @@ export class SeguimientoComponent implements OnInit {
     }
   }
 
-  consultar(actualizarFoco = true): void {
+  consultar(actualizarFoco = true, forzar = false): void {
     if (this.buscando()) return;
 
     if (this.seguimientoForm.invalid) {
@@ -85,15 +91,17 @@ export class SeguimientoComponent implements OnInit {
     const folioLimpio = folio.trim().toUpperCase();
     const correoLimpio = correo.trim().toLowerCase();
     const clave = `${folioLimpio}|${correoLimpio}`;
-    if (clave === this.ultimaConsulta) return;
+    if (clave === this.ultimaConsulta && !forzar) return;
 
     this.buscando.set(true);
     this.errorSeguimiento.set(null);
-    this.seguimiento.set(null);
-    this.mensajes.set([]);
-    this.borrador.set('');
-    this.adjuntoChat.set(null);
-    this.errorChat.set(null);
+    if (!forzar) {
+      this.seguimiento.set(null);
+      this.mensajes.set([]);
+      this.borrador.set('');
+      this.adjuntoChat.set(null);
+      this.errorChat.set(null);
+    }
 
     this.service
       .consultarSolicitud(folioLimpio, correoLimpio)
@@ -194,6 +202,11 @@ export class SeguimientoComponent implements OnInit {
     });
   }
 
+  refrescarEstado(): void {
+    if (this.buscando()) return;
+    this.consultar(false, true);
+  }
+
   descargarAdjuntoChat(mensaje: MensajeChat): void {
     const solicitud = this.seguimiento();
     if (!solicitud || !mensaje.adjunto) return;
@@ -259,6 +272,26 @@ export class SeguimientoComponent implements OnInit {
 
   claseEstado(estado: EstadoSolicitud): string {
     return badgeDe(ESTADOS_SOLICITUD, estado);
+  }
+
+  etiquetaEstadoPedido(estado: EstadoPedido): string {
+    return etiquetaDe(ESTADOS_PEDIDO, estado);
+  }
+
+  claseEstadoPedido(estado: EstadoPedido): string {
+    return badgeDe(ESTADOS_PEDIDO, estado);
+  }
+
+  etiquetaEtapa(etapa: EtapaProduccion | null | undefined): string {
+    return etapa ? etiquetaDe(ETAPAS_PRODUCCION, etapa) : 'Aún no inicia';
+  }
+
+  etiquetaEstadoProduccion(estado: EstadoProduccion | null | undefined): string {
+    return estado ? etiquetaDe(ESTADOS_PRODUCCION, estado) : 'Sin iniciar';
+  }
+
+  claseEstadoProduccion(estado: EstadoProduccion | null | undefined): string {
+    return badgeDe(ESTADOS_PRODUCCION, estado);
   }
 
   private enfocarPrimerError(): void {

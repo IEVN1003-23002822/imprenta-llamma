@@ -14,20 +14,28 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import {
+  ESTADOS_PEDIDO,
+  ESTADOS_PRODUCCION,
   ESTADOS_SOLICITUD,
+  ETAPAS_PRODUCCION,
   EXTENSIONES_ARCHIVO,
   MAX_BYTES_ARCHIVO,
   badgeDe,
   etiquetaDe,
 } from '../../core/models/estados';
 import { AuthService } from '../../core/services/auth.service';
+import { ConfirmacionService } from '../../core/services/confirmacion.service';
 import { LlammaService } from '../../core/services/llamma.service';
 import { SolicitudesStore } from '../../core/services/solicitudes.store';
 import {
   ArchivoAdjunto,
   Cotizacion,
+  EstadoPedido,
+  EstadoProduccion,
   EstadoSolicitud,
+  EtapaProduccion,
   MensajeChat,
+  PedidoResumenSolicitud,
   SolicitudCotizacion,
 } from '../../core/models/llamma.models';
 
@@ -37,6 +45,9 @@ const OPCIONES_ESTADO = [
     valor: estado.valor,
     etiqueta: estado.plural ?? estado.etiqueta,
   })),
+  { valor: 'produccion-activa', etiqueta: 'En producción' },
+  { valor: 'produccion-completada', etiqueta: 'Producción completada' },
+  { valor: 'entregados', etiqueta: 'Entregados' },
 ];
 
 @Component({
@@ -50,6 +61,7 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   private readonly service = inject(LlammaService);
   private readonly store = inject(SolicitudesStore);
   private readonly auth = inject(AuthService);
+  private readonly confirmacion = inject(ConfirmacionService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private scrollBloqueado = false;
@@ -76,6 +88,7 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   readonly accion = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
   readonly errorAccion = signal<string | null>(null);
+  readonly entregando = signal(false);
   readonly cotizacionCreada = signal<Cotizacion | null>(null);
   readonly correoCopiado = signal(false);
 
@@ -106,7 +119,6 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     window.addEventListener('resize', this.alRedimensionar);
     this.cargar();
-    this.store.cargarResumen();
 
     const solicitud = Number(this.route.snapshot.queryParamMap.get('solicitud'));
     if (Number.isFinite(solicitud) && solicitud > 0) {
@@ -117,10 +129,23 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   cargar(pagina = 1): void {
     this.cargando.set(true);
     this.error.set(null);
+    this.store.cargarResumen();
+
+    const filtro = this.estadoFiltro();
+    const produccion =
+      filtro === 'produccion-activa'
+        ? 'activa'
+        : filtro === 'produccion-completada'
+          ? 'completada'
+          : undefined;
+    const entrega = filtro === 'entregados' ? 'entregado' : undefined;
+    const estado = produccion || entrega ? undefined : filtro || undefined;
 
     this.service
       .listarSolicitudes({
-        estado: this.estadoFiltro() || undefined,
+        estado,
+        produccion,
+        entrega,
         q: this.texto().trim() || undefined,
         page: pagina,
         perPage: 15,
@@ -531,6 +556,84 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
 
   claseEstado(estado: EstadoSolicitud): string {
     return badgeDe(ESTADOS_SOLICITUD, estado);
+  }
+
+  etiquetaEstadoPedido(estado: EstadoPedido): string {
+    return etiquetaDe(ESTADOS_PEDIDO, estado);
+  }
+
+  claseEstadoPedido(estado: EstadoPedido): string {
+    return badgeDe(ESTADOS_PEDIDO, estado);
+  }
+
+  etiquetaEtapa(etapa: EtapaProduccion | null | undefined): string {
+    return etapa ? etiquetaDe(ETAPAS_PRODUCCION, etapa) : 'Sin etapa';
+  }
+
+  etiquetaEstadoProduccion(estado: EstadoProduccion | null | undefined): string {
+    return estado ? etiquetaDe(ESTADOS_PRODUCCION, estado) : 'Sin iniciar';
+  }
+
+  etiquetaBadgePedido(pedido: PedidoResumenSolicitud): string {
+    if (pedido.estado === 'entregado') return 'Entregado';
+    if (pedido.produccion?.estado === 'completada') return 'Producción completada';
+    return this.etiquetaEstadoPedido(pedido.estado);
+  }
+
+  claseBadgePedido(pedido: PedidoResumenSolicitud): string {
+    if (pedido.estado === 'entregado' || pedido.produccion?.estado === 'completada') {
+      return 'badge-soft-success';
+    }
+    return this.claseEstadoPedido(pedido.estado);
+  }
+
+  puedeMarcarEntregado(pedido: PedidoResumenSolicitud): boolean {
+    return pedido.estado === 'listo';
+  }
+
+  async marcarEntregado(pedido: PedidoResumenSolicitud): Promise<void> {
+    if (this.entregando() || pedido.estado === 'entregado') return;
+    if (!this.puedeMarcarEntregado(pedido)) {
+      this.errorAccion.set(
+        'El pedido debe estar listo (producción completada) antes de marcarse como entregado.',
+      );
+      return;
+    }
+
+    const confirmado = await this.confirmacion.confirmar({
+      titulo: 'Marcar pedido como entregado',
+      mensaje: `¿Confirmas que el pedido ${pedido.folio} ya fue entregado al cliente?`,
+      confirmar: 'Marcar entregado',
+    });
+    if (!confirmado) return;
+
+    this.entregando.set(true);
+    this.errorAccion.set(null);
+    this.service
+      .cambiarEstadoPedido(pedido.id, 'entregado')
+      .pipe(finalize(() => this.entregando.set(false)))
+      .subscribe({
+        next: (actualizado) => {
+          const estado = actualizado.estado;
+          this.seleccionada.update((actual) => {
+            if (!actual?.pedido || actual.pedido.id !== pedido.id) return actual;
+            return { ...actual, pedido: { ...actual.pedido, estado } };
+          });
+          this.solicitudes.update((lista) =>
+            lista.map((solicitud) => {
+              if (!solicitud.pedido || solicitud.pedido.id !== pedido.id) return solicitud;
+              return { ...solicitud, pedido: { ...solicitud.pedido, estado } };
+            }),
+          );
+          this.store.cargarResumen();
+          this.aviso.set(`Pedido ${pedido.folio} marcado como entregado.`);
+        },
+        error: (respuesta: HttpErrorResponse) => {
+          this.errorAccion.set(
+            respuesta.error?.error || 'No pudimos marcar el pedido como entregado.',
+          );
+        },
+      });
   }
 
   private recargarLista(): void {

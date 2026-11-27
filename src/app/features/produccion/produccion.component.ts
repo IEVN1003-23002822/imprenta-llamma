@@ -156,6 +156,12 @@ export class ProduccionComponent implements OnInit {
     return ETAPAS_PRODUCCION.filter((etapa) => valores.includes(etapa.valor));
   });
 
+  readonly puedeCompletar = computed(() => {
+    const orden = this.seleccionada();
+    if (!orden || orden.estado === 'completada') return false;
+    return orden.etapa === this.ultimaEtapaDe(orden);
+  });
+
   readonly calidadReciente = computed(() => {
     const filas = this.ordenes().flatMap((orden) =>
       (orden.controlesCalidad ?? []).map((control) => ({
@@ -322,6 +328,11 @@ export class ProduccionComponent implements OnInit {
     return dinamica ? historial : ETAPAS_PRODUCCION.map((etapa) => etapa.valor);
   }
 
+  private ultimaEtapaDe(orden: OrdenProduccionApi): EtapaProduccion {
+    const historial = orden.historialEtapas ?? [];
+    return historial.length ? historial[historial.length - 1].etapa : orden.etapa;
+  }
+
   mover(orden: OrdenProduccionApi, delta: number): void {
     const pasos = this.pasosDe(orden);
     const indice = pasos.indexOf(orden.etapa);
@@ -369,6 +380,11 @@ export class ProduccionComponent implements OnInit {
       return;
     }
     const valores = this.ordenForm.getRawValue();
+    const ultimaEtapa = this.ultimaEtapaDe(orden);
+    if (valores.estado === 'completada' && valores.etapa !== ultimaEtapa) {
+      this.ui.error('Avanza hasta la última etapa antes de completar la orden.');
+      return;
+    }
     this.guardando.set(true);
     this.service
       .actualizarOrdenProduccion(orden.id, {
@@ -388,6 +404,10 @@ export class ProduccionComponent implements OnInit {
   }
 
   async completar(orden: OrdenProduccionApi): Promise<void> {
+    if (!this.puedeCompletar()) {
+      this.ui.error('Avanza hasta la última etapa antes de completar la orden.');
+      return;
+    }
     const confirmado = await this.confirmacion.confirmar({
       titulo: 'Completar producción',
       mensaje: `¿Marcar ${orden.pedidoFolio ?? 'la orden'} como completada? El pedido se moverá a Listo.`,

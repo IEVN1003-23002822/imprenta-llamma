@@ -11,7 +11,13 @@ from sqlalchemy.orm import joinedload, selectinload
 from auth import role_required
 from estados import ESTADOS_SOLICITUD
 from extensions import db
-from models import MensajeChat, SolicitudCotizacion
+from models import (
+    Cotizacion,
+    MensajeChat,
+    OrdenProduccion,
+    Pedido,
+    SolicitudCotizacion,
+)
 from routes.comun import crear_cotizacion
 from routes.helpers import (
     MAX_MENSAJE_CHAT,
@@ -31,12 +37,43 @@ def listar_solicitudes():
     query = SolicitudCotizacion.query.options(
         selectinload(SolicitudCotizacion.items),
         selectinload(SolicitudCotizacion.archivos),
+        selectinload(SolicitudCotizacion.cotizaciones).options(
+            selectinload(Cotizacion.pedidos).selectinload(Pedido.orden_produccion)
+        ),
     )
 
     estado = request.args.get("estado")
     if estado:
         estados = [e.strip() for e in estado.split(",") if e.strip()]
         query = query.filter(SolicitudCotizacion.estado.in_(estados))
+
+    produccion = (request.args.get("produccion") or "").strip()
+    if produccion:
+        subconsulta = (
+            db.session.query(Cotizacion.solicitud_id)
+            .join(Pedido, Pedido.cotizacion_id == Cotizacion.id)
+            .join(OrdenProduccion, OrdenProduccion.pedido_id == Pedido.id)
+        )
+        if produccion == "completada":
+            subconsulta = subconsulta.filter(OrdenProduccion.estado == "completada")
+        elif produccion == "activa":
+            subconsulta = subconsulta.filter(
+                OrdenProduccion.estado.in_(("pendiente", "en-proceso", "pausada"))
+            )
+        else:
+            return error("Filtro de producción inválido", 400, "produccion_invalida")
+        query = query.filter(SolicitudCotizacion.id.in_(subconsulta))
+
+    entrega = (request.args.get("entrega") or "").strip()
+    if entrega:
+        if entrega != "entregado":
+            return error("Filtro de entrega inválido", 400, "entrega_invalida")
+        subconsulta_entrega = (
+            db.session.query(Cotizacion.solicitud_id)
+            .join(Pedido, Pedido.cotizacion_id == Cotizacion.id)
+            .filter(Pedido.estado == "entregado")
+        )
+        query = query.filter(SolicitudCotizacion.id.in_(subconsulta_entrega))
 
     busqueda = (request.args.get("q") or "").strip()
     if busqueda:
@@ -60,6 +97,29 @@ def listar_solicitudes():
     return jsonify(pagina)
 
 
+def _contar_solicitudes_con_produccion(estados: tuple[str, ...]) -> int:
+    return (
+        db.session.query(func.count(func.distinct(SolicitudCotizacion.id)))
+        .join(Cotizacion, Cotizacion.solicitud_id == SolicitudCotizacion.id)
+        .join(Pedido, Pedido.cotizacion_id == Cotizacion.id)
+        .join(OrdenProduccion, OrdenProduccion.pedido_id == Pedido.id)
+        .filter(OrdenProduccion.estado.in_(estados))
+        .scalar()
+        or 0
+    )
+
+
+def _contar_solicitudes_entregadas() -> int:
+    return (
+        db.session.query(func.count(func.distinct(SolicitudCotizacion.id)))
+        .join(Cotizacion, Cotizacion.solicitud_id == SolicitudCotizacion.id)
+        .join(Pedido, Pedido.cotizacion_id == Cotizacion.id)
+        .filter(Pedido.estado == "entregado")
+        .scalar()
+        or 0
+    )
+
+
 @solicitudes_bp.get("/solicitudes/resumen")
 @role_required("admin", "ventas", "produccion")
 def resumen_solicitudes():
@@ -75,6 +135,11 @@ def resumen_solicitudes():
             "porEstado": estados,
             "nuevas": estados.get("nueva", 0),
             "enRevision": estados.get("en-revision", 0),
+            "enProduccion": _contar_solicitudes_con_produccion(
+                ("pendiente", "en-proceso", "pausada")
+            ),
+            "produccionCompletada": _contar_solicitudes_con_produccion(("completada",)),
+            "entregados": _contar_solicitudes_entregadas(),
         }
     )
 
@@ -86,7 +151,9 @@ def detalle_solicitud(solicitud_id: int):
         SolicitudCotizacion.query.options(
             selectinload(SolicitudCotizacion.items),
             selectinload(SolicitudCotizacion.archivos),
-            selectinload(SolicitudCotizacion.cotizaciones),
+            selectinload(SolicitudCotizacion.cotizaciones).options(
+                selectinload(Cotizacion.pedidos).selectinload(Pedido.orden_produccion)
+            ),
             selectinload(SolicitudCotizacion.mensajes).joinedload(MensajeChat.usuario),
         )
         .filter_by(id=solicitud_id)

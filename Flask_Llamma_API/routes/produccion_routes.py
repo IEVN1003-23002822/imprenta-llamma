@@ -97,11 +97,40 @@ def actualizar_orden_produccion(orden_id: int):
         orden.fecha_inicio = utcnow()
 
     if orden.estado == "completada":
+        ultima_etapa = orden.etapas[-1].etapa if orden.etapas else orden.etapa
+        etapa_objetivo = etapa or orden.etapa
+        if etapa_objetivo != ultima_etapa:
+            db.session.rollback()
+            return error(
+                "Completa la última etapa antes de cerrar la orden.",
+                400,
+                "etapa_incompleta",
+            )
+        pendientes = [
+            registro.etapa
+            for registro in orden.etapas
+            if registro.etapa != ultima_etapa and registro.estado != "completada"
+        ]
+        if pendientes:
+            db.session.rollback()
+            return error(
+                f"Aún hay etapas pendientes: {', '.join(pendientes)}.",
+                400,
+                "etapas_pendientes",
+            )
+
+        orden.etapa = ultima_etapa
         orden.fecha_fin = utcnow()
-        orden.pedido.estado = "listo"
+        if orden.pedido.estado not in ("entregado", "cancelado"):
+            orden.pedido.estado = "listo"
         for registro in orden.etapas:
             registro.estado = "completada"
             registro.fin = registro.fin or utcnow()
+
+    # Al iniciar producción el pedido deja de estar solo "confirmado"; el
+    # seguimiento del cliente refleja el avance real del proceso.
+    if orden.estado == "en-proceso" and orden.pedido.estado == "confirmado":
+        orden.pedido.estado = "en-produccion"
 
     if etapa and etapa != etapa_anterior and orden.estado != "completada":
         previo = next(

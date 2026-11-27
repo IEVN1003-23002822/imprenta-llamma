@@ -24,6 +24,21 @@ import { CapturaPage } from '../../page-objects/CapturaPage';
 import { SeguimientoPage } from '../../page-objects/SeguimientoPage';
 import { vigilarConsola } from '../../helpers/assert-consola';
 
+const enDias = (dias: number): string => {
+  const fecha = new Date();
+  fecha.setDate(fecha.getDate() + dias);
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
+};
+
+const fechaVisible = (iso: string): string =>
+  new Date(`${iso}T12:00:00`).toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
 test.describe('Flujo de compra', () => {
   test.use({ rol: 'admin' });
 
@@ -111,6 +126,29 @@ test.describe('Flujo de compra', () => {
     expect(movimientos[0].tipo).toBe('salida');
     expect(Number(movimientos[0].cantidad)).toBeCloseTo(6.6, 4);
 
+    // 4b. Ventas reprograma la entrega desde el detalle del pedido.
+    const nuevaEntrega = enDias(20);
+    const notaEntrega = 'Reprogramado por capacidad de producción.';
+    await page.goto(`/detalle?pedido=${pedido.id}`);
+    await page.getByRole('button', { name: /Datos de entrega/i }).click();
+    await page.locator('#entrega-fecha').fill(nuevaEntrega);
+    await page.locator('#entrega-nota').fill(notaEntrega);
+    const [respuestaEntrega] = await Promise.all([
+      page.waitForResponse(
+        (r) =>
+          r.url().includes(`/api/pedidos/${pedido.id}/entrega`) &&
+          r.request().method() === 'PATCH' &&
+          r.status() === 200,
+      ),
+      page.getByRole('button', { name: /Confirmar entrega/i }).click(),
+    ]);
+    expect((await respuestaEntrega.json()).fechaEntrega).toBe(nuevaEntrega);
+    await expect(page.locator('main#contenido')).toContainText(fechaVisible(nuevaEntrega));
+    const reprogramado = await obtenerPedido(api, pedido.id);
+    expect(reprogramado.fechaEntrega).toBe(nuevaEntrega);
+    expect(reprogramado.notaEntrega).toBe(notaEntrega);
+    expect(reprogramado.entregaConfirmadaPor).toBeTruthy();
+
     // 5. Pago del saldo y paso a producción.
     const detalle = await obtenerPedido(api, pedido.id);
     expect(detalle.ordenProduccion?.etapa).toBe('diseno');
@@ -122,20 +160,63 @@ test.describe('Flujo de compra', () => {
     expect(pagado.saldo).toBe(0);
     expect(pagado.estado).toBe('en-produccion');
 
-    // 6. Producción termina y el pedido queda listo.
-    await actualizarProduccion(api, detalle.ordenProduccion.id, {
-      etapa: 'empaquetado',
-      estado: 'completada',
-    });
+    // 6. Producción avanza etapa por etapa hasta la última y se completa desde la UI.
+    for (const etapa of ['impresion', 'corte', 'empaquetado'] as const) {
+      await actualizarProduccion(api, detalle.ordenProduccion.id, {
+        etapa,
+        estado: 'en-proceso',
+      });
+    }
+    await page.goto('/produccion');
+    const tarjetaProduccion = page.locator('.task-card').filter({ hasText: pedido.folio });
+    await expect(tarjetaProduccion).toBeVisible();
+    await tarjetaProduccion.getByRole('button', { name: /Abrir orden/i }).click();
+    const modalOrden = page.getByRole('dialog', { name: new RegExp(pedido.folio) });
+    await expect(modalOrden).toBeVisible();
+    await modalOrden.getByRole('button', { name: /Completar orden/i }).click();
+    const confirmacion = page.getByRole('dialog', { name: /Completar producción/i });
+    await expect(confirmacion).toBeVisible();
+    await confirmacion.getByRole('button', { name: /Completar orden/i }).click();
+    await expect(confirmacion).toBeHidden();
+    await expect(modalOrden).toBeHidden();
+    await expect(tarjetaProduccion).toHaveCount(0);
     expect((await obtenerPedido(api, pedido.id)).estado).toBe('listo');
 
-    // 7. El cliente consulta su solicitud.
+    // 7. La bandeja de solicitudes refleja la producción completada sin perder
+    // el estado histórico "Convertida".
+    await bandeja.goto();
+    await bandeja.buscar(solicitud.folio);
+    const filaSolicitud = page.getByRole('button').filter({ hasText: solicitud.folio }).first();
+    await expect(filaSolicitud).toContainText(/Producción completada/i);
+    await expect(filaSolicitud).toContainText(pedido.folio);
+    await bandeja.abrir(solicitud.folio);
+    const detalleProduccion = page.locator('[data-testid="detalle-produccion"]');
+    await expect(detalleProduccion).toContainText(pedido.folio);
+    await expect(detalleProduccion).toContainText(/Producción completada/i);
+    await expect(detalleProduccion).toContainText(/Empaquetado/i);
+    const tarjetaCompletada = page
+      .locator('.inbox-stat')
+      .filter({ hasText: 'Producción completada' });
+    await expect(tarjetaCompletada.locator('strong')).not.toHaveText('0');
+    await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+    await expect(detalleProduccion).toBeHidden();
+    await page.getByRole('button', { name: /^Producción completada$/ }).click();
+    await expect(page.getByRole('button').filter({ hasText: solicitud.folio })).toBeVisible();
+
+    // 8. El cliente consulta su solicitud y ve la entrega confirmada y el proceso.
     const seguimiento = new SeguimientoPage(page);
     await seguimiento.goto();
     await seguimiento.consultar(solicitud.folio, correo);
     await seguimiento.expectSolicitud(solicitud.folio);
     await seguimiento.expectEstado(/Convertida/i);
     await expect(page.locator('main#contenido')).toContainText(/COT-/i);
+    const panelPedido = page.locator('[data-testid="pedido-seguimiento"]');
+    await expect(panelPedido).toContainText(/Entrega confirmada por el equipo/i);
+    await expect(panelPedido).toContainText(fechaVisible(nuevaEntrega));
+    await expect(panelPedido).toContainText(pedido.folio);
+    await expect(panelPedido).toContainText(notaEntrega);
+    await expect(panelPedido).toContainText(/Empaquetado/i);
+    await expect(panelPedido).toContainText(/Listo/i);
     consola.assertLimpia();
   });
 
@@ -196,7 +277,7 @@ test.describe('Flujo de compra', () => {
     expect(await movimientosDe(api, materia.id)).toHaveLength(0);
   });
 
-  test('H-12: registrar el anticipo como pagado reduce el saldo', async () => {
+  test('H-12: registrar el anticipo como pagado deja el saldo restante', async () => {
     const sufijo = unico('anticipo');
     const producto = await crearProducto(
       api,
@@ -219,6 +300,9 @@ test.describe('Flujo de compra', () => {
     const cotizacion = await convertirSolicitud(api, solicitud.solicitud.id);
     const pedido = await convertirPedido(api, cotizacion.id, { anticipoPagado: true });
     expect(pedido.pagos).toHaveLength(1);
-    expect(pedido.saldo).toBe(0);
+    // 2 × $1,000 + IVA = $2,320; anticipo del 50% = $1,160 y saldo restante $1,160.
+    expect(pedido.saldo).toBe(1160);
+    expect(pedido.pagado).toBe(1160);
+    expect(pedido.estado).toBe('confirmado');
   });
 });

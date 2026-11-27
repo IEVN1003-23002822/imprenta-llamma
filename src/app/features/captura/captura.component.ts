@@ -60,6 +60,10 @@ export class CapturaComponent implements OnInit {
   readonly fechaMinima = calcularFechaMinimaEntrega();
   readonly fechaEntrega = signal('');
   readonly fechaEntregaInvalida = computed(() => !esFechaEntregaValida(this.fechaEntrega()));
+  readonly fechaDeseada = computed(
+    () => this.solicitud()?.fechaDeseada ?? this.cotizacion()?.fechaDeseada ?? null,
+  );
+  readonly notaEntrega = signal('');
 
   readonly productoId = signal<number | null>(null);
   readonly descripcion = signal('');
@@ -175,6 +179,9 @@ export class CapturaComponent implements OnInit {
           });
 
           this.partidas.set(partidas);
+          if (!this.fechaEntrega() && solicitud.fechaDeseada) {
+            this.fechaEntrega.set(solicitud.fechaDeseada);
+          }
           if (!partidas.length) {
             this.error.set(
               'Esta solicitud llegó solo con mensaje. Agrega las partidas que vas a cotizar.',
@@ -194,6 +201,9 @@ export class CapturaComponent implements OnInit {
         next: (cotizacion) => {
           this.cotizacion.set(cotizacion);
           this.partidas.set(cotizacion.items ?? []);
+          if (!this.fechaEntrega() && cotizacion.fechaDeseada) {
+            this.fechaEntrega.set(cotizacion.fechaDeseada);
+          }
           this.form.patchValue({
             nombreCliente: cotizacion.cliente ?? '',
             notas: cotizacion.notas ?? '',
@@ -419,6 +429,7 @@ export class CapturaComponent implements OnInit {
         metodoPago: 'transferencia',
         prioridad: 'media',
         fechaEntrega: this.fechaEntrega() || undefined,
+        notaEntrega: this.notaEntrega().trim() || undefined,
       })
       .pipe(finalize(() => this.convirtiendo.set(false)))
       .subscribe({
@@ -448,6 +459,7 @@ export class CapturaComponent implements OnInit {
     this.solicitud.set(null);
     this.anticipoPagado.set(false);
     this.fechaEntrega.set('');
+    this.notaEntrega.set('');
     this.descuento.set(null);
     this.form.reset({
       nombreCliente: '',
@@ -469,6 +481,10 @@ export class CapturaComponent implements OnInit {
 
   cambiarFechaEntrega(evento: Event): void {
     this.fechaEntrega.set((evento.target as HTMLInputElement).value);
+  }
+
+  cambiarNotaEntrega(evento: Event): void {
+    this.notaEntrega.set((evento.target as HTMLInputElement).value);
   }
 
   etiquetaEstado(): string {

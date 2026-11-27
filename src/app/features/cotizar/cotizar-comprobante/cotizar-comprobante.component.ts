@@ -1,11 +1,13 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { CellDef, RowInput } from 'jspdf-autotable';
 
 import { SITE_INFO } from '../../../core/config/site-info';
+import { redondearMoneda } from '../../../core/utils/precios';
 import {
   ItemSolicitud,
   MetodoEntrega,
+  MockupDisenoData,
   SegmentoCliente,
   SolicitudCotizacion,
 } from '../../../core/models/llamma.models';
@@ -14,6 +16,17 @@ const MARGEN = 15;
 const ANCHO_A4 = 210;
 const ALTO_A4 = 297;
 const PIE_ALTO = 24;
+/** Ancho máximo de una captura dentro de la caja de contenido (180 mm). */
+const ANCHO_CAPTURA = 168;
+/** Alto máximo para que una captura quepa con etiqueta y pie en A4. */
+const ALTO_CAPTURA = 108;
+const ANCHO_CAPTURA_PX = 1400;
+
+/** Captura del previsualizador con los metadatos que la describen. */
+export interface CapturaDiseno {
+  archivo: File;
+  datos: MockupDisenoData;
+}
 
 const CARBON: [number, number, number] = [26, 26, 26];
 const GRIS: [number, number, number] = [112, 112, 112];
@@ -23,6 +36,7 @@ const PAPEL: [number, number, number] = [250, 249, 245];
 const CIAN: [number, number, number] = [0, 174, 239];
 const MAGENTA: [number, number, number] = [236, 0, 140];
 const AMARILLO: [number, number, number] = [255, 242, 0];
+const VERDE: [number, number, number] = [15, 122, 77];
 
 /** Confirmación posterior al envío de una solicitud de cotización. */
 @Component({
@@ -39,6 +53,7 @@ export class CotizarComprobanteComponent {
   readonly totalPiezas = input(0);
   readonly totalConIva = input(0);
   readonly correo = input('');
+  readonly capturas = input<CapturaDiseno[]>([]);
   readonly copiado = input(false);
 
   readonly copiar = output<void>();
@@ -46,6 +61,12 @@ export class CotizarComprobanteComponent {
 
   readonly generandoPdf = signal(false);
   readonly errorPdf = signal<string | null>(null);
+
+  readonly descuentoMayoreo = computed(() =>
+    redondearMoneda(
+      this.partidas().reduce((total, item) => total + Number(item.descuentoMayoreo ?? 0), 0),
+    ),
+  );
 
   moneda(valor: number): string {
     return new Intl.NumberFormat('es-MX', {
@@ -100,11 +121,12 @@ export class CotizarComprobanteComponent {
 
       const partidas = this.partidas();
       const total = this.totalConIva();
-      const subtotal = partidas.length
-        ? Math.round(partidas.reduce((suma, item) => suma + (item.precioEstimado ?? 0), 0) * 100) /
-          100
-        : Math.round((total / 1.16) * 100) / 100;
-      const iva = Math.round((total - subtotal) * 100) / 100;
+      const subtotalNeto = partidas.length
+        ? redondearMoneda(partidas.reduce((suma, item) => suma + (item.precioEstimado ?? 0), 0))
+        : redondearMoneda((total / 1.16) * 100) / 100;
+      const descuento = this.descuentoMayoreo();
+      const subtotal = redondearMoneda(subtotalNeto + descuento);
+      const iva = redondearMoneda(total - subtotalNeto);
 
       y = this.dibujarTituloSeccion(doc, y + 2, 'Partidas solicitadas');
       autoTable(doc, {
@@ -146,8 +168,21 @@ export class CotizarComprobanteComponent {
       const salida = doc as unknown as { lastAutoTable?: { finalY?: number } };
       y = (salida.lastAutoTable?.finalY ?? y) + 6;
 
-      y = this.dibujarResumen(doc, y, subtotal, iva, total);
+      if (descuento > 0) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.2);
+        doc.setTextColor(...VERDE);
+        doc.text(
+          'Incluye precio de mayoreo: $20 menos por unidad en partidas de 6 o más piezas.',
+          MARGEN,
+          y,
+        );
+        y += 5.5;
+      }
+
+      y = this.dibujarResumen(doc, y, subtotal, descuento, iva, total);
       y = this.dibujarMensaje(doc, y + 6);
+      y = await this.dibujarCapturas(doc, y + 2);
       this.dibujarCondiciones(doc, y + 4);
 
       doc.save(`Comprobante_${folio}_Llamma.pdf`);
@@ -332,10 +367,12 @@ export class CotizarComprobanteComponent {
     doc: import('jspdf').jsPDF,
     y: number,
     subtotal: number,
+    descuento: number,
     iva: number,
     total: number,
   ): number {
-    if (y + 34 > ALTO_A4 - PIE_ALTO) {
+    const alto = descuento > 0 ? 44 : 31;
+    if (y + alto > ALTO_A4 - PIE_ALTO) {
       doc.addPage();
       this.dibujarCabeceraCompacta(doc, this.folio());
       this.dibujarPie(doc);
@@ -344,34 +381,54 @@ export class CotizarComprobanteComponent {
 
     const ancho = 86;
     const x = ANCHO_A4 - MARGEN - ancho;
-    const alto = 31;
     doc.setFillColor(...PAPEL);
     doc.setDrawColor(...LINEA);
     doc.setLineWidth(0.25);
     doc.roundedRect(x, y, ancho, alto, 2, 2, 'DF');
 
+    let fila = y + 7;
+    const salto = 6.4;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.2);
     doc.setTextColor(...GRIS);
-    doc.text('Subtotal', x + 5, y + 7);
-    doc.text('IVA (16%)', x + 5, y + 13.4);
+    doc.text(descuento > 0 ? 'Subtotal sin mayoreo' : 'Subtotal', x + 5, fila);
     doc.setTextColor(...CARBON);
-    doc.text(this.importe(subtotal), x + ancho - 5, y + 7, { align: 'right' });
-    doc.text(this.importe(iva), x + ancho - 5, y + 13.4, { align: 'right' });
+    doc.text(this.importe(subtotal), x + ancho - 5, fila, { align: 'right' });
 
+    if (descuento > 0) {
+      fila += salto;
+      doc.setTextColor(...VERDE);
+      doc.text('Descuento mayoreo (6+)', x + 5, fila);
+      doc.text(`−${this.importe(descuento)}`, x + ancho - 5, fila, { align: 'right' });
+      fila += salto;
+      doc.setTextColor(...GRIS);
+      doc.text('Subtotal con mayoreo', x + 5, fila);
+      doc.setTextColor(...CARBON);
+      doc.text(this.importe(subtotal - descuento), x + ancho - 5, fila, { align: 'right' });
+    }
+
+    fila += salto;
+    doc.setTextColor(...GRIS);
+    doc.text('IVA (16%)', x + 5, fila);
+    doc.setTextColor(...CARBON);
+    doc.text(this.importe(iva), x + ancho - 5, fila, { align: 'right' });
+
+    const totalY = y + alto - 6;
     doc.setDrawColor(...LINEA);
-    doc.line(x + 5, y + 17.4, x + ancho - 5, y + 17.4);
+    doc.line(x + 5, totalY - 7, x + ancho - 5, totalY - 7);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10.6);
-    doc.text('Total estimado', x + 5, y + 25);
+    doc.text('Total estimado', x + 5, totalY);
     doc.setFontSize(11.4);
-    doc.text(this.importe(total), x + ancho - 5, y + 25, { align: 'right' });
+    doc.text(this.importe(total), x + ancho - 5, totalY, { align: 'right' });
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.6);
     doc.setTextColor(...GRIS_CLARO);
-    doc.text('IVA incluido · precios referenciales', x + ancho / 2, y + 29, { align: 'center' });
+    doc.text('IVA incluido · precios referenciales', x + ancho / 2, totalY + 4, {
+      align: 'center',
+    });
 
     return y + alto;
   }
@@ -402,6 +459,198 @@ export class CotizarComprobanteComponent {
     doc.text(lineas, MARGEN + 5, y + 6, { lineHeightFactor: 1.5 });
 
     return y + alto;
+  }
+
+  /**
+   * Incrusta las capturas 2D/3D del previsualizador. Las imágenes viajan como
+   * `File` en memoria, se leen con FileReader y se reescalan en canvas para no
+   * depender de CORS ni inflar el PDF.
+   */
+  private async dibujarCapturas(doc: import('jspdf').jsPDF, y: number): Promise<number> {
+    const capturas = this.capturas();
+    if (!capturas.length) return y;
+
+    const preparadas: Array<{
+      imagen: { dataUrl: string; width: number; height: number; formato: 'JPEG' | 'PNG' };
+      datos: MockupDisenoData;
+      ancho: number;
+      alto: number;
+    }> = [];
+
+    for (const captura of capturas) {
+      const imagen = await this.prepararCaptura(captura.archivo);
+      if (!imagen) continue;
+      const { ancho, alto } = this.medidasCaptura(imagen);
+      preparadas.push({ imagen, datos: captura.datos, ancho, alto });
+    }
+
+    // Si la primera captura no cabe con su título, la sección empieza en otra página.
+    const altoPrimera = preparadas[0]?.alto ?? 8;
+    if (y + 21 + altoPrimera > ALTO_A4 - PIE_ALTO) {
+      doc.addPage();
+      this.dibujarCabeceraCompacta(doc, this.folio());
+      this.dibujarPie(doc);
+      y = 34;
+    }
+
+    y = this.dibujarTituloSeccion(doc, y + 2, 'Diseño del cliente');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.setTextColor(...GRIS_CLARO);
+    doc.text(
+      'Vistas generadas en el previsualizador y adjuntadas por el cliente.',
+      MARGEN + 4,
+      y + 3.4,
+    );
+    y += 9;
+
+    if (!preparadas.length) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      doc.setTextColor(...GRIS);
+      doc.text('No pudimos incluir las imágenes del diseño en este PDF.', MARGEN + 4, y + 2);
+      return y + 6;
+    }
+
+    for (const captura of preparadas) {
+      const bloque = 18 + captura.alto;
+      if (y + bloque > ALTO_A4 - PIE_ALTO) {
+        doc.addPage();
+        this.dibujarCabeceraCompacta(doc, this.folio());
+        this.dibujarPie(doc);
+        y = 34;
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...CARBON);
+      doc.text(
+        this.recortar(doc, this.etiquetaCaptura(captura.datos), ANCHO_A4 - MARGEN * 2 - 2),
+        MARGEN,
+        y + 4,
+      );
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.2);
+      doc.setTextColor(...GRIS);
+      doc.text(this.detalleCaptura(captura.datos), MARGEN, y + 8.4);
+
+      const x = MARGEN + (ANCHO_A4 - MARGEN * 2 - captura.ancho) / 2;
+      const yImagen = y + 11.5;
+      doc.setFillColor(255, 255, 255);
+      doc.rect(x, yImagen, captura.ancho, captura.alto, 'F');
+      doc.addImage(
+        captura.imagen.dataUrl,
+        captura.imagen.formato,
+        x,
+        yImagen,
+        captura.ancho,
+        captura.alto,
+        undefined,
+        'FAST',
+      );
+      doc.setDrawColor(...LINEA);
+      doc.setLineWidth(0.25);
+      doc.rect(x, yImagen, captura.ancho, captura.alto);
+      y += bloque;
+    }
+
+    return y;
+  }
+
+  /** Lee la captura y la reescala a JPEG para mantener el PDF ligero. */
+  private async prepararCaptura(archivo: File): Promise<{
+    dataUrl: string;
+    width: number;
+    height: number;
+    formato: 'JPEG' | 'PNG';
+  } | null> {
+    if (!archivo.type.startsWith('image/')) return null;
+    try {
+      const original = await this.leerBlob(archivo);
+      const imagen = await this.cargarImagen(original);
+      const anchoOriginal = imagen.naturalWidth || 1;
+      const altoOriginal = imagen.naturalHeight || 1;
+      const escala = Math.min(1, ANCHO_CAPTURA_PX / anchoOriginal);
+      const ancho = Math.max(1, Math.round(anchoOriginal * escala));
+      const alto = Math.max(1, Math.round(altoOriginal * escala));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = ancho;
+      canvas.height = alto;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return {
+          dataUrl: original,
+          width: anchoOriginal,
+          height: altoOriginal,
+          formato: archivo.type === 'image/png' ? 'PNG' : 'JPEG',
+        };
+      }
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, ancho, alto);
+      ctx.drawImage(imagen, 0, 0, ancho, alto);
+      return {
+        dataUrl: canvas.toDataURL('image/jpeg', 0.84),
+        width: ancho,
+        height: alto,
+        formato: 'JPEG',
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private medidasCaptura(imagen: { width: number; height: number }): {
+    ancho: number;
+    alto: number;
+  } {
+    const anchoCaja = Math.min(ANCHO_CAPTURA, ANCHO_A4 - MARGEN * 2);
+    let ancho = anchoCaja;
+    let alto = (ancho * imagen.height) / Math.max(1, imagen.width);
+    if (alto > ALTO_CAPTURA) {
+      alto = ALTO_CAPTURA;
+      ancho = (alto * imagen.width) / Math.max(1, imagen.height);
+    }
+    return { ancho, alto };
+  }
+
+  private leerBlob(blob: Blob): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const lector = new FileReader();
+      lector.onload = () => resolve(String(lector.result ?? ''));
+      lector.onerror = () => reject(new Error('archivo_ilegible'));
+      lector.readAsDataURL(blob);
+    });
+  }
+
+  private cargarImagen(src: string): Promise<HTMLImageElement> {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+      const imagen = new Image();
+      imagen.onload = () => resolve(imagen);
+      imagen.onerror = () => reject(new Error('imagen_invalida'));
+      imagen.src = src;
+    });
+  }
+
+  private etiquetaCaptura(datos: MockupDisenoData): string {
+    const vista = datos.vista === '3d' ? 'Vista 3D' : 'Vista 2D';
+    return `${vista} · ${this.limpio(datos.productoNombre || 'Diseño del cliente')}`;
+  }
+
+  private detalleCaptura(datos: MockupDisenoData): string {
+    const partes: string[] = [];
+    if (datos.material) {
+      partes.push(`Material: ${datos.material.charAt(0).toUpperCase() + datos.material.slice(1)}`);
+    }
+    if (datos.medidas) {
+      partes.push(
+        `${this.formatoCantidad(datos.medidas.ancho)} × ${this.formatoCantidad(datos.medidas.alto)} m`,
+      );
+    }
+    const capas = datos.capas?.length ?? 0;
+    if (capas) partes.push(`${capas} ${capas === 1 ? 'capa' : 'capas'}`);
+    return partes.join(' · ') || 'Captura generada en el previsualizador';
   }
 
   private dibujarCondiciones(doc: import('jspdf').jsPDF, y: number): number {

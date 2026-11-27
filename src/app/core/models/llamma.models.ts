@@ -276,6 +276,8 @@ export interface ItemSolicitud {
   especificaciones?: string;
   cantidad: number;
   precioEstimado?: number | null;
+  /** Descuento de mayoreo ya incluido en `precioEstimado` (6+ unidades). */
+  descuentoMayoreo?: number | null;
 }
 
 export interface CapaMockup {
@@ -309,6 +311,20 @@ export interface ArchivoAdjunto {
   url: string;
 }
 
+export interface ProduccionResumenSolicitud {
+  estado: EstadoProduccion;
+  etapa: EtapaProduccion;
+  fechaFin?: string | null;
+}
+
+export interface PedidoResumenSolicitud {
+  id: number;
+  folio: string;
+  estado: EstadoPedido;
+  fechaEntrega?: string | null;
+  produccion?: ProduccionResumenSolicitud | null;
+}
+
 export interface SolicitudCotizacion {
   id: number;
   folio: string;
@@ -329,6 +345,7 @@ export interface SolicitudCotizacion {
   archivosAdjuntos?: ArchivoAdjunto[];
   mensajes?: MensajeChat[];
   cotizacionId?: number | null;
+  pedido?: PedidoResumenSolicitud | null;
 }
 
 export interface ResumenSolicitudes {
@@ -336,6 +353,9 @@ export interface ResumenSolicitudes {
   porEstado: Record<EstadoSolicitud, number>;
   nuevas: number;
   enRevision: number;
+  enProduccion: number;
+  produccionCompletada: number;
+  entregados: number;
 }
 
 export interface ArchivoSeguimiento {
@@ -362,6 +382,30 @@ export interface MensajeChat {
   creadoEn: string;
 }
 
+export interface SeguimientoEtapa {
+  id: number;
+  etapa: EtapaProduccion;
+  estado: EstadoProduccion;
+  inicio?: string | null;
+  fin?: string | null;
+  creadoEn?: string | null;
+}
+
+export interface SeguimientoPedido {
+  folio: string;
+  estado: EstadoPedido;
+  fechaDeseada?: string | null;
+  fechaEntrega?: string | null;
+  notaEntrega?: string | null;
+  confirmadoEn?: string | null;
+  entregaConfirmadaEn?: string | null;
+  entregaConfirmadaPor?: string | null;
+  actualizadoEn?: string | null;
+  etapaActual?: EtapaProduccion | null;
+  estadoProduccion?: EstadoProduccion | null;
+  historialEtapas: SeguimientoEtapa[];
+}
+
 export interface SeguimientoSolicitud {
   folio: string;
   estado: EstadoSolicitud;
@@ -374,6 +418,7 @@ export interface SeguimientoSolicitud {
   archivos: ArchivoSeguimiento[];
   mensajes: MensajeChat[];
   cotizacion: { folio: string; estado: EstadoCotizacion; total: number } | null;
+  pedido?: SeguimientoPedido | null;
   actualizadoEn: string;
 }
 
@@ -430,6 +475,7 @@ export interface Cotizacion {
   usuario?: string;
   estado: EstadoCotizacion;
   fechaEmision: string;
+  fechaDeseada?: string | null;
   vigenciaDias: number;
   subtotal: number;
   impuestos: number;
@@ -677,11 +723,16 @@ export interface PedidoApi {
   prioridad: PrioridadPedido;
   fechaPedido: string;
   fechaEntrega?: string | null;
+  notaEntrega?: string | null;
+  entregaConfirmadaEn?: string | null;
+  entregaConfirmadaPor?: string | null;
+  entregaConfirmadaPorId?: number | null;
   subtotal: number;
   impuestos: number;
   total: number;
   anticipo: number;
   saldo: number;
+  pagado?: number;
   notas?: string | null;
   items?: PedidoItemApi[];
   pagos?: PagoApi[];

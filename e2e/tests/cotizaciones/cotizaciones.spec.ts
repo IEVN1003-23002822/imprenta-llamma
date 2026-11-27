@@ -47,11 +47,12 @@ test.describe('Cotizaciones', () => {
     const cotizacion = await bandeja.convertirEnCotizacion(solicitud.folio);
 
     expect(cotizacion.folio).toMatch(/^COT-\d{4}-\d{3}$/);
-    expect(cotizacion.subtotal).toBe(440);
-    expect(cotizacion.impuestos).toBe(70.4);
-    expect(cotizacion.total).toBe(510.4);
-    expect(cotizacion.anticipo).toBe(255.2);
-    expect(cotizacion.saldo).toBe(255.2);
+    // Lona 2 m²: $220 + $120 = $340; el estimado de la solicitud se conserva.
+    expect(cotizacion.subtotal).toBe(340);
+    expect(cotizacion.impuestos).toBe(54.4);
+    expect(cotizacion.total).toBe(394.4);
+    expect(cotizacion.anticipo).toBe(197.2);
+    expect(cotizacion.saldo).toBe(197.2);
 
     const actualizada = await obtenerSolicitud(api, solicitud.solicitud.id);
     expect(actualizada.estado).toBe('cotizada');
@@ -60,11 +61,11 @@ test.describe('Cotizaciones', () => {
     await bandeja.abrirEnCotizador();
     const captura = new CapturaPage(page);
     await captura.expectTotales({
-      subtotal: 440,
-      iva: 70.4,
-      total: 510.4,
-      anticipo: 255.2,
-      saldo: 255.2,
+      subtotal: 340,
+      iva: 54.4,
+      total: 394.4,
+      anticipo: 197.2,
+      saldo: 197.2,
     });
     consola.assertLimpia();
   });
@@ -105,9 +106,10 @@ test.describe('Cotizaciones', () => {
 
     const casos = [
       {
+        // 10 × $100 = $1000; mayoreo 10 × $20 = $200; subtotal $800.
         items: [{ productoId: lona!.id, cantidad: 10, precioUnitario: 100 }],
-        subtotal: 1000,
-        total: 1160,
+        subtotal: 800,
+        total: 928,
       },
       {
         items: [{ productoId: lona!.id, cantidad: 2 }],

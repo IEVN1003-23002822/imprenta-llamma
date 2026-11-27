@@ -494,6 +494,94 @@
                     </div>
                   </li>
                 </ul>
+
+                @if (orden.entregaConfirmadaEn || orden.notaEntrega) {
+                  <div
+                    class="mt-4 rounded-[0.7rem] border border-[rgba(var(--llamma-cyan-rgb),0.24)] bg-[rgba(var(--llamma-cyan-rgb),0.06)] px-[0.8rem] py-[0.65rem] text-[0.72rem] leading-[1.5] text-[var(--llamma-muted)]"
+                    data-testid="entrega-confirmada"
+                  >
+                    @if (orden.entregaConfirmadaEn) {
+                      <p class="m-0">
+                        <i class="bi bi-check2-circle"></i>
+                        Confirmada el {{ fechaHora(orden.entregaConfirmadaEn) }}
+                        @if (orden.entregaConfirmadaPor) {
+                          por {{ orden.entregaConfirmadaPor }}
+                        }
+                      </p>
+                    }
+                    @if (orden.notaEntrega) {
+                      <p class="m-0 mt-1 text-[var(--llamma-carbon)]">{{ orden.notaEntrega }}</p>
+                    }
+                  </div>
+                }
+
+                @if (puedeGestionar()) {
+                  <form
+                    class="mt-4 border-t border-[var(--llamma-line)] pt-4"
+                    [formGroup]="entregaForm"
+                    (ngSubmit)="actualizarEntrega()"
+                    novalidate
+                  >
+                    <span
+                      class="mb-2 block text-[0.65rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                      >Confirmar o reprogramar entrega</span
+                    >
+                    <div class="grid grid-cols-12 gap-3">
+                      <div class="col-span-12 md:col-span-5">
+                        <label
+                          class="mb-1 block text-[0.7rem] font-semibold text-[var(--llamma-carbon)]"
+                          for="entrega-fecha"
+                          >Fecha comprometida</label
+                        >
+                        <input
+                          id="entrega-fecha"
+                          type="date"
+                          class="block min-h-[2.6rem] w-full rounded-[0.6rem] border border-[var(--llamma-line)] bg-white px-3 py-2 text-sm text-[var(--llamma-carbon)] outline-none transition focus:border-[var(--llamma-cyan)] focus:ring-4 focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)]"
+                          formControlName="fechaEntrega"
+                          [min]="fechaMinimaEntrega"
+                          aria-describedby="entrega-fecha-ayuda"
+                        />
+                        <small
+                          id="entrega-fecha-ayuda"
+                          class="mt-1 block text-[0.66rem] leading-[1.45] text-[var(--llamma-muted)]"
+                        >
+                          Mínimo 2 días hábiles. El cliente verá esta fecha en su seguimiento.
+                        </small>
+                      </div>
+                      <div class="col-span-12 md:col-span-7">
+                        <label
+                          class="mb-1 block text-[0.7rem] font-semibold text-[var(--llamma-carbon)]"
+                          for="entrega-nota"
+                          >Nota para el cliente (opcional)</label
+                        >
+                        <input
+                          id="entrega-nota"
+                          type="text"
+                          class="block min-h-[2.6rem] w-full rounded-[0.6rem] border border-[var(--llamma-line)] bg-white px-3 py-2 text-sm text-[var(--llamma-carbon)] outline-none transition focus:border-[var(--llamma-cyan)] focus:ring-4 focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)]"
+                          formControlName="notaEntrega"
+                          maxlength="240"
+                          placeholder="Ej. Ajustamos la entrega por capacidad de producción."
+                        />
+                      </div>
+                    </div>
+                    @if (errorEntrega()) {
+                      <p class="mt-2 text-[0.7rem] font-medium text-[#b42318]" role="alert">
+                        {{ errorEntrega() }}
+                      </p>
+                    }
+                    <button
+                      class="mt-3 inline-flex items-center gap-2 rounded-[0.65rem] border border-[var(--llamma-carbon)] bg-[var(--llamma-carbon)] px-[0.9rem] py-[0.5rem] text-[0.76rem] font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+                      type="submit"
+                      [disabled]="guardandoEntrega()"
+                    >
+                      @if (guardandoEntrega()) {
+                        <i class="bi bi-hourglass-split"></i> Guardando...
+                      } @else {
+                        <i class="bi bi-calendar-check"></i> Confirmar entrega
+                      }
+                    </button>
+                  </form>
+                }
               }
             </section>
 
@@ -599,12 +687,18 @@
                 <span>Total</span><strong>{{ moneda(orden.total) }}</strong>
               </div>
               <div>
-                <span>Anticipo recibido</span><strong>{{ moneda(orden.anticipo) }}</strong>
+                <span>Anticipo pactado (50%)</span><strong>{{ moneda(orden.anticipo) }}</strong>
+              </div>
+              <div>
+                <span>Pagado</span><strong>{{ moneda(pagado()) }}</strong>
               </div>
               <div>
                 <span>Saldo pendiente</span><strong>{{ moneda(orden.saldo) }}</strong>
               </div>
             </div>
+            <p class="text-llamma-muted small mb-0 mt-2">
+              El anticipo es una referencia del 50%. Solo los pagos confirmados reducen el saldo.
+            </p>
 
             <div class="payment-state" [class.payment-state-alerta]="!estadoPago().ok">
               <span
@@ -648,6 +742,7 @@
                         id="pago-tipo"
                         class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef] cursor-pointer"
                         formControlName="tipo"
+                        (change)="alCambiarTipoPago()"
                       >
                         <option value="anticipo">Anticipo</option>
                         <option value="abono">Abono</option>
@@ -681,12 +776,18 @@
                         id="pago-monto"
                         class="block min-h-[2.8rem] w-full rounded-[0.72rem] border border-[var(--llamma-line)] bg-[#fbfaf7] px-[0.82rem] py-[0.62rem] text-[0.88rem] font-normal leading-normal text-[var(--llamma-carbon)] transition-[border-color,box-shadow] placeholder:text-[#9b9b9f] focus:border-[var(--llamma-cyan)] focus:bg-white focus:outline-none focus:ring-[0.22rem] focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)] disabled:bg-[#e9ecef] read-only:bg-[#e9ecef]"
                         type="number"
-                        min="1"
+                        min="0.01"
                         step="0.01"
                         formControlName="monto"
                       />
                       @if (pagoForm.controls.monto.invalid && pagoForm.controls.monto.touched) {
-                        <small class="text-red-600">Indica un monto mayor a cero.</small>
+                        <small class="text-red-600">
+                          @if (pagoForm.controls.monto.hasError('max')) {
+                            El monto no puede superar el saldo pendiente.
+                          } @else {
+                            Indica un monto mayor a cero.
+                          }
+                        </small>
                       }
                     </div>
                     <div class="col-span-6">

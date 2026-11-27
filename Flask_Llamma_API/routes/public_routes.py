@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import base64
 import json
+import math
 from datetime import date, datetime
 from io import BytesIO
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -15,7 +16,10 @@ from sqlalchemy.orm import joinedload, selectinload
 from extensions import db
 from models import (
     Cliente,
+    Cotizacion,
     MensajeChat,
+    OrdenProduccion,
+    Pedido,
     Producto,
     SolicitudArchivo,
     SolicitudCotizacion,
@@ -23,6 +27,11 @@ from models import (
     utcnow,
 )
 from ratelimit import cliente_ip, demasiadas_peticiones, excedido
+from precios import (
+    es_lona_vinil,
+    precio_base_lona_vinil,
+    precio_linea_mayoreo,
+)
 from routes.helpers import (
     MAX_MENSAJE_CHAT,
     campo,
@@ -39,6 +48,7 @@ from utils import (
     guardar_archivo,
     parse_decimal,
     parse_fecha,
+    parse_int,
 )
 
 public_bp = Blueprint("public", __name__)
@@ -50,7 +60,14 @@ def _solicitud_por_credenciales(folio: str, correo: str) -> SolicitudCotizacion 
         SolicitudCotizacion.query.options(
             selectinload(SolicitudCotizacion.items),
             selectinload(SolicitudCotizacion.archivos),
-            selectinload(SolicitudCotizacion.cotizaciones),
+            selectinload(SolicitudCotizacion.cotizaciones).options(
+                selectinload(Cotizacion.pedidos).options(
+                    joinedload(Pedido.confirmador_entrega),
+                    selectinload(Pedido.orden_produccion).selectinload(
+                        OrdenProduccion.etapas
+                    ),
+                )
+            ),
             selectinload(SolicitudCotizacion.mensajes).joinedload(MensajeChat.usuario),
         )
         .filter_by(folio=folio.strip().upper())
@@ -105,6 +122,46 @@ def _limitar_consultas(folio: str):
     if espera is None:
         return None
     return demasiadas_peticiones(espera, "Demasiadas consultas. Espera un momento.")
+
+
+def _iso(valor) -> str | None:
+    return valor.isoformat(timespec="seconds") if valor else None
+
+
+def _pedido_publico(pedido: Pedido, fecha_deseada) -> dict:
+    """Resumen del pedido apto para el seguimiento del cliente."""
+    orden = pedido.orden_produccion
+    historial = []
+    if orden:
+        historial = [
+            {
+                "id": etapa.id,
+                "etapa": etapa.etapa,
+                "estado": etapa.estado,
+                "inicio": _iso(etapa.inicio),
+                "fin": _iso(etapa.fin),
+                "creadoEn": _iso(etapa.creado_en),
+            }
+            for etapa in orden.etapas
+        ]
+
+    return {
+        "folio": pedido.folio,
+        "estado": pedido.estado,
+        "fechaDeseada": fecha_deseada.isoformat() if fecha_deseada else None,
+        "fechaEntrega": pedido.fecha_entrega.isoformat() if pedido.fecha_entrega else None,
+        "notaEntrega": pedido.nota_entrega,
+        "confirmadoEn": _iso(pedido.creado_en),
+        "entregaConfirmadaEn": _iso(pedido.entrega_confirmada_en)
+        or (_iso(pedido.creado_en) if pedido.fecha_entrega else None),
+        "entregaConfirmadaPor": (
+            pedido.confirmador_entrega.nombre if pedido.confirmador_entrega else None
+        ),
+        "actualizadoEn": _iso(pedido.actualizado_en),
+        "etapaActual": orden.etapa if orden else None,
+        "estadoProduccion": orden.estado if orden else None,
+        "historialEtapas": historial,
+    }
 
 
 @public_bp.get("/health")
@@ -203,12 +260,93 @@ def crear_solicitud():
         return error("El nombre del contacto es obligatorio")
     if not correo_valido(correo):
         return error("El correo electrónico no es válido")
-    if not mensaje and not lista_items(data):
-        return error("Cuéntanos qué necesitas: agrega productos o escribe tu proyecto")
     if fecha_deseada and fecha_deseada < calcular_fecha_minima_entrega(date.today()):
         return error(MENSAJE_FECHA_MINIMA, 400, "fecha_invalida")
 
     items_brutos = lista_items(data)
+    if not items_brutos:
+        return error(
+            "Agrega al menos un producto con cantidad y precio mayor a cero "
+            "para solicitar tu cotización.",
+            400,
+            "sin_partidas",
+        )
+
+    items_preparados: list[SolicitudItem] = []
+    for bruto in items_brutos:
+        if not isinstance(bruto, dict):
+            return error(
+                "Cada partida debe ser un producto válido.",
+                400,
+                "partida_invalida",
+            )
+
+        producto = None
+        producto_id = parse_int(campo(bruto, "productoId", "producto_id"))
+        if producto_id is not None:
+            producto = Producto.query.filter_by(id=producto_id, activo=True).first()
+            if not producto:
+                return error(
+                    "Una de las partidas ya no está disponible.",
+                    400,
+                    "producto_invalido",
+                )
+
+        cantidad = parse_decimal(campo(bruto, "cantidad", default=0), 0)
+        if not math.isfinite(cantidad) or cantidad <= 0:
+            return error(
+                "Cada partida debe tener una cantidad mayor a cero.",
+                400,
+                "cantidad_invalida",
+            )
+
+        nombre_producto = str(
+            campo(bruto, "nombreProducto", "nombre_producto", "nombre", default="")
+            or (producto.nombre if producto else "")
+        ).strip()
+        if not nombre_producto:
+            return error(
+                "Cada partida debe indicar un producto.",
+                400,
+                "partida_invalida",
+            )
+
+        precio_base = float(producto.precio_base or 0) if producto else 0
+        especificaciones = (
+            str(campo(bruto, "especificaciones", "detalle", default="") or "")[:240] or None
+        )
+        if producto and es_lona_vinil(producto):
+            base_linea = precio_base_lona_vinil(
+                cantidad, nombre_producto, especificaciones
+            )
+            estimado, descuento = precio_linea_mayoreo(cantidad, base_linea)
+        elif producto and precio_base > 0:
+            base_linea = round(precio_base * cantidad, 2)
+            estimado, descuento = precio_linea_mayoreo(cantidad, base_linea)
+        else:
+            bruto_estimado = campo(bruto, "precioEstimado", "precio_estimado")
+            estimado = (
+                parse_decimal(bruto_estimado, 0) if bruto_estimado is not None else 0
+            )
+            descuento = 0.0
+
+        if not math.isfinite(estimado) or estimado <= 0:
+            return error(
+                "Cada partida debe tener un precio estimado mayor a cero.",
+                400,
+                "precio_invalido",
+            )
+
+        items_preparados.append(
+            SolicitudItem(
+                producto_id=producto.id if producto else None,
+                nombre_producto=nombre_producto[:160],
+                especificaciones=especificaciones,
+                cantidad=cantidad,
+                precio_estimado=round(estimado, 2),
+                descuento_mayoreo=round(descuento, 2),
+            )
+        )
 
     solicitud = SolicitudCotizacion(
         folio=generar_folio("SOL", SolicitudCotizacion),
@@ -223,39 +361,7 @@ def crear_solicitud():
         estado="nueva",
         origen=str(campo(data, "origen", default="web"))[:40],
     )
-
-    for bruto in items_brutos:
-        if not isinstance(bruto, dict):
-            continue
-        producto = None
-        producto_id = campo(bruto, "productoId", "producto_id")
-        if producto_id:
-            producto = Producto.query.filter_by(id=int(producto_id), activo=True).first()
-
-        cantidad = max(parse_decimal(campo(bruto, "cantidad", default=1), 1), 0.01)
-        nombre_producto = str(
-            campo(bruto, "nombreProducto", "nombre_producto", "nombre", default="")
-            or (producto.nombre if producto else "Producto")
-        ).strip()
-
-        if producto and producto.precio_base:
-            estimado = round(max(float(producto.precio_base), 0) * cantidad, 2)
-        else:
-            estimado = campo(bruto, "precioEstimado", "precio_estimado")
-            estimado = parse_decimal(estimado, 0) if estimado is not None else None
-
-        solicitud.items.append(
-            SolicitudItem(
-                producto_id=producto.id if producto else None,
-                nombre_producto=nombre_producto[:160],
-                especificaciones=str(
-                    campo(bruto, "especificaciones", "detalle", default="") or ""
-                )[:240]
-                or None,
-                cantidad=cantidad,
-                precio_estimado=estimado,
-            )
-        )
+    solicitud.items = items_preparados
 
     # Guarda adjuntos (multipart). En JSON solo se aceptan nombres referenciales.
     mockups = _mockups_por_archivo(data)
@@ -327,6 +433,12 @@ def consultar_solicitud(folio: str):
         return no_encontrado("Solicitud")
 
     cotizacion = solicitud.cotizaciones[0] if solicitud.cotizaciones else None
+    pedido = None
+    for registro in solicitud.cotizaciones:
+        for candidato in registro.pedidos:
+            if pedido is None or (candidato.id or 0) > (pedido.id or 0):
+                pedido = candidato
+
     return jsonify(
         {
             "folio": solicitud.folio,
@@ -355,6 +467,7 @@ def consultar_solicitud(folio: str):
                 if cotizacion
                 else None
             ),
+            "pedido": _pedido_publico(pedido, solicitud.fecha_deseada) if pedido else None,
             "actualizadoEn": solicitud.actualizado_en.isoformat(timespec="seconds"),
         }
     )

@@ -26,6 +26,11 @@
     <div>
       <span class="panel-kicker">Estimado referencial</span>
       <strong>{{ moneda(totalConIva()) }} <small>IVA incluido</small></strong>
+      @if (descuentoMayoreo() > 0) {
+        <small class="mt-1 block text-[0.66rem] text-[#0f7a4d]">
+          Incluye descuento de mayoreo: −{{ moneda(descuentoMayoreo()) }}
+        </small>
+      }
     </div>
     <div>
       <span class="panel-kicker">Fecha deseada</span>
@@ -50,6 +55,12 @@
                 {{ item.cantidad }} ×
                 {{ item.especificaciones || 'Especificaciones por confirmar' }}
               </small>
+              @if ((item.descuentoMayoreo ?? 0) > 0) {
+                <small class="text-[#0f7a4d]">
+                  <i class="bi bi-tags"></i> Mayoreo 6+ · ahorro
+                  {{ moneda(item.descuentoMayoreo ?? 0) }}
+                </small>
+              }
             </div>
             @if (item.precioEstimado !== null && item.precioEstimado !== undefined) {
               <strong class="cart-amount">{{ moneda(item.precioEstimado) }}</strong>
@@ -65,6 +76,13 @@
     }
     @if (solicitud()?.mensaje) {
       <p class="success-message">{{ solicitud()?.mensaje }}</p>
+    }
+    @if (capturas().length) {
+      <p class="success-message">
+        <i class="bi bi-images"></i>
+        El comprobante incluirá {{ capturas().length }}
+        {{ capturas().length === 1 ? 'vista' : 'vistas' }} del diseño que adjuntaste.
+      </p>
     }
   </div>
 

@@ -49,6 +49,11 @@ class Cotizacion(TimestampMixin, db.Model):
             "usuario": self.usuario.nombre if self.usuario else None,
             "estado": self.estado,
             "fechaEmision": self.fecha_emision.isoformat() if self.fecha_emision else None,
+            "fechaDeseada": (
+                self.solicitud.fecha_deseada.isoformat()
+                if self.solicitud and self.solicitud.fecha_deseada
+                else None
+            ),
             "vigenciaDias": self.vigencia_dias,
             "subtotal": float(self.subtotal or 0),
             "impuestos": float(self.impuestos or 0),
@@ -106,6 +111,9 @@ class Pedido(TimestampMixin, db.Model):
         db.Date, default=date.today, nullable=False, index=True
     )
     fecha_entrega = db.Column(db.Date)
+    nota_entrega = db.Column(db.String(240))
+    entrega_confirmada_en = db.Column(db.DateTime)
+    entrega_confirmada_por = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
     subtotal = db.Column(db.Numeric(12, 2), default=0, nullable=False)
     impuestos = db.Column(db.Numeric(12, 2), default=0, nullable=False)
     total = db.Column(db.Numeric(12, 2), default=0, nullable=False)
@@ -123,6 +131,9 @@ class Pedido(TimestampMixin, db.Model):
     cotizacion = db.relationship("Cotizacion", back_populates="pedidos")
     cliente = db.relationship("Cliente", back_populates="pedidos")
     creador = db.relationship("Usuario", foreign_keys=[creado_por])
+    confirmador_entrega = db.relationship(
+        "Usuario", foreign_keys=[entrega_confirmada_por]
+    )
     items = db.relationship("PedidoItem", back_populates="pedido", cascade="all, delete-orphan")
     pagos = db.relationship("Pago", back_populates="pedido", cascade="all, delete-orphan")
     orden_produccion = db.relationship(
@@ -140,6 +151,9 @@ class Pedido(TimestampMixin, db.Model):
             "prioridad": self.prioridad,
             "fechaPedido": self.fecha_pedido.isoformat() if self.fecha_pedido else None,
             "fechaEntrega": self.fecha_entrega.isoformat() if self.fecha_entrega else None,
+            "notaEntrega": self.nota_entrega,
+            "entregaConfirmadaEn": iso(self.entrega_confirmada_en),
+            "entregaConfirmadaPorId": self.entrega_confirmada_por,
             "subtotal": float(self.subtotal or 0),
             "impuestos": float(self.impuestos or 0),
             "total": float(self.total or 0),
@@ -151,6 +165,12 @@ class Pedido(TimestampMixin, db.Model):
         if incluir_detalle:
             data["items"] = [item.to_dict() for item in self.items]
             data["pagos"] = [pago.to_dict() for pago in self.pagos]
+            data["entregaConfirmadaPor"] = (
+                self.confirmador_entrega.nombre if self.confirmador_entrega else None
+            )
+            data["pagado"] = round(
+                sum(float(pago.monto or 0) for pago in self.pagos if pago.confirmado), 2
+            )
             data["ordenProduccion"] = (
                 self.orden_produccion.to_dict() if self.orden_produccion else None
             )

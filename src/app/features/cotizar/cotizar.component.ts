@@ -4,6 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  OnDestroy,
   computed,
   inject,
   signal,
@@ -17,10 +18,12 @@ import {
   calcularFechaMinimaEntrega,
   esFechaEntregaValida,
 } from '../../core/utils/fechas';
+import { precioLineaMayoreo, redondearMoneda } from '../../core/utils/precios';
 import { EXTENSIONES_ARCHIVO, MAX_BYTES_ARCHIVO } from '../../core/models/estados';
 import { LlammaService } from '../../core/services/llamma.service';
 import { ModalAccesibleDirective } from '../../shared/modal-accesible.directive';
 import { CotizarComprobanteComponent } from './cotizar-comprobante/cotizar-comprobante.component';
+import type { CapturaDiseno } from './cotizar-comprobante/cotizar-comprobante.component';
 import { CotizarPasosComponent } from './cotizar-pasos/cotizar-pasos.component';
 import { CotizarResumenComponent } from './cotizar-resumen/cotizar-resumen.component';
 import {
@@ -254,10 +257,12 @@ MOCKUPS_CATALOGO['Lona Frontlit impresa'] = MOCKUPS_CATALOGO['Lona/Vinil'];
   styleUrl: './cotizar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CotizarComponent implements OnInit {
+export class CotizarComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(LlammaService);
   private readonly route = inject(ActivatedRoute);
+  private miniaturas = new WeakMap<File, string>();
+  private readonly urlsMiniaturas = new Set<string>();
 
   readonly productos = signal<ProductoPublico[]>([]);
   readonly carrito = signal<ItemSolicitud[]>([]);
@@ -320,7 +325,18 @@ export class CotizarComponent implements OnInit {
     return Math.round(area * 100) / 100;
   });
 
-  readonly estimadoLinea = computed(() => {
+  /** Unidades de la línea: m² para área, cantidad para piezas. */
+  readonly lineaCantidad = computed(() => {
+    const producto = this.productoActual();
+    if (!producto) return 0;
+    if (this.esLonaFrontlit()) {
+      return Math.round(this.anchoMetros() * this.altoMetros() * 100) / 100;
+    }
+    return producto.unidadVenta === 'm2' ? this.areaTotalM2() : this.cantidad();
+  });
+
+  /** Importe antes de mayoreo para la línea que se está configurando. */
+  readonly lineaBase = computed(() => {
     const producto = this.productoActual();
     if (!producto) return 0;
     if (this.esLonaFrontlit()) {
@@ -329,8 +345,32 @@ export class CotizarComponent implements OnInit {
     const factor = producto.unidadVenta === 'm2' ? this.areaTotalM2() : this.cantidad();
     return Math.round(producto.precioBase * factor * 100) / 100;
   });
+
+  readonly lineaMayoreo = computed(() =>
+    precioLineaMayoreo(this.lineaCantidad(), this.lineaBase()),
+  );
+
+  readonly descuentoLinea = computed(() => this.lineaMayoreo().descuento);
+
+  readonly estimadoLinea = computed(() => this.lineaMayoreo().total);
+
+  readonly precioUnitarioLinea = computed(() => {
+    const unidades = this.lineaCantidad();
+    return unidades > 0 ? redondearMoneda(this.estimadoLinea() / unidades) : 0;
+  });
+
   readonly totalEstimado = computed(() =>
     this.carrito().reduce((total, item) => total + (item.precioEstimado ?? 0), 0),
+  );
+
+  readonly totalDescuentoMayoreo = computed(() =>
+    redondearMoneda(
+      this.carrito().reduce((total, item) => total + Number(item.descuentoMayoreo ?? 0), 0),
+    ),
+  );
+
+  readonly subtotalSinMayoreo = computed(() =>
+    redondearMoneda(this.totalEstimado() + this.totalDescuentoMayoreo()),
   );
 
   readonly totalPiezas = computed(
@@ -347,6 +387,19 @@ export class CotizarComponent implements OnInit {
     const items = this.solicitudCreada()?.itemsSolicitados;
     return items && items.length ? items : this.carrito();
   });
+
+  /**
+   * Capturas 2D/3D del previsualizador que siguen en memoria al mostrar el
+   * comprobante. Se emparejan por nombre con `mockups` para excluir otros adjuntos.
+   */
+  readonly capturasDiseno = computed<CapturaDiseno[]>(() =>
+    this.mockups()
+      .map((mockup) => ({
+        datos: mockup.datos,
+        archivo: this.archivos().find((archivo) => archivo.name === mockup.nombre),
+      }))
+      .filter((captura): captura is CapturaDiseno => Boolean(captura.archivo)),
+  );
 
   /* ------------------------------- Mockups -------------------------------- */
 
@@ -370,7 +423,12 @@ export class CotizarComponent implements OnInit {
   }
 
   adjuntarCaptura3d(evento: { archivo: File; datos: MockupDisenoData }): void {
-    this.archivos.update((actuales) => [...actuales, evento.archivo]);
+    const anterior = this.archivos().find((archivo) => archivo.name === evento.archivo.name);
+    if (anterior) this.revocarMiniatura(anterior);
+    this.archivos.update((actuales) => [
+      ...actuales.filter((archivo) => archivo.name !== evento.archivo.name),
+      evento.archivo,
+    ]);
     this.mockups.update((actuales) => [
       ...actuales.filter((mockup) => mockup.nombre !== evento.archivo.name),
       { nombre: evento.archivo.name, datos: evento.datos },
@@ -614,6 +672,10 @@ export class CotizarComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.revocarMiniaturas();
+  }
+
   irAPaso(destino: number): void {
     const objetivo = Math.min(Math.max(destino, 1), 3);
     if (objetivo > this.paso() && this.contactoInvalido()) {
@@ -647,6 +709,7 @@ export class CotizarComponent implements OnInit {
     this.archivosPendientes.set([]);
     this.carrito.set([]);
     this.archivos.set([]);
+    this.revocarMiniaturas();
     this.mockups.set([]);
     this.paso.set(1);
     this.reiniciarFormulario();
@@ -870,16 +933,16 @@ export class CotizarComponent implements OnInit {
 
     const nombreProducto =
       esLona && this.material() === 'vinil' ? `${producto.nombre} (Vinil)` : producto.nombre;
-    const precioEstimado = esLona
-      ? this.precioMaterial(cantidadFinal)
-      : Math.round(producto.precioBase * cantidadFinal * 100) / 100;
+    const precioEstimado = this.estimadoLinea();
+    const descuentoMayoreo = this.descuentoLinea();
 
     const item: ItemSolicitud = {
       productoId: producto.id,
       nombreProducto,
       especificaciones: especificacionesFinal,
       cantidad: cantidadFinal,
-      precioEstimado: Math.round(precioEstimado * 100) / 100,
+      precioEstimado: redondearMoneda(precioEstimado),
+      descuentoMayoreo: redondearMoneda(descuentoMayoreo),
     };
 
     this.carrito.update((items) => [...items, item]);
@@ -931,6 +994,7 @@ export class CotizarComponent implements OnInit {
     const eliminado = this.archivos()[indice];
     this.archivos.update((archivos) => archivos.filter((_, posicion) => posicion !== indice));
     if (eliminado) {
+      this.revocarMiniatura(eliminado);
       this.mockups.update((mockups) =>
         mockups.filter((mockup) => mockup.nombre !== eliminado.name),
       );
@@ -954,10 +1018,17 @@ export class CotizarComponent implements OnInit {
       setTimeout(() => this.enfocarPrimerError());
       return;
     }
-    if (!this.carrito().length && this.form.controls.mensaje.value.trim().length < 20) {
-      this.paso.set(3);
-      this.error.set('Agrega al menos un producto o describe tu proyecto con más detalle.');
-      setTimeout(() => this.enfocarPrimerError());
+
+    const items = this.carrito();
+    const partidasValidas =
+      items.length > 0 &&
+      items.every((item) => Number(item.cantidad) > 0 && Number(item.precioEstimado ?? 0) > 0);
+    if (!partidasValidas || this.totalEstimado() <= 0 || this.totalConIva() <= 0) {
+      this.paso.set(2);
+      this.error.set(
+        'Agrega al menos un producto con cantidad y precio mayor a cero antes de enviar tu solicitud.',
+      );
+      this.enfocarPaso(2);
       return;
     }
 
@@ -1002,6 +1073,7 @@ export class CotizarComponent implements OnInit {
     this.solicitudCreada.set(null);
     this.carrito.set([]);
     this.archivos.set([]);
+    this.revocarMiniaturas();
     this.mockups.set([]);
     this.copiado.set(false);
     this.paso.set(1);
@@ -1167,5 +1239,45 @@ export class CotizarComponent implements OnInit {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  /** Miniatura para adjuntos de imagen; cachea el object URL por archivo. */
+  miniatura(archivo: File): string | null {
+    if (!archivo.type.startsWith('image/')) return null;
+    const existente = this.miniaturas.get(archivo);
+    if (existente) return existente;
+    if (typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') return null;
+    try {
+      const url = URL.createObjectURL(archivo);
+      this.miniaturas.set(archivo, url);
+      this.urlsMiniaturas.add(url);
+      return url;
+    } catch {
+      return null;
+    }
+  }
+
+  private revocarMiniatura(archivo: File): void {
+    const url = this.miniaturas.get(archivo);
+    if (!url) return;
+    this.miniaturas.delete(archivo);
+    this.urlsMiniaturas.delete(url);
+    try {
+      URL.revokeObjectURL(url);
+    } catch {
+      /* El navegador ya pudo liberarla. */
+    }
+  }
+
+  private revocarMiniaturas(): void {
+    for (const url of this.urlsMiniaturas) {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {
+        /* La URL ya no es válida. */
+      }
+    }
+    this.urlsMiniaturas.clear();
+    this.miniaturas = new WeakMap<File, string>();
   }
 }

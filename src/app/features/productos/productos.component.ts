@@ -1,13 +1,15 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -37,6 +39,48 @@ const LINEAS: { valor: LineaProduccion | ''; etiqueta: string }[] = [
 
 const UNIDAD_CORTA = mapaCortas(UNIDADES);
 
+/**
+ * Alias aceptados en `?linea=` para tolerar enlaces antiguos, nombres largos,
+ * mayúsculas y tildes sin romper el filtro.
+ */
+const ALIAS_LINEA: Record<string, LineaProduccion | ''> = {
+  'gran-formato': 'gran-formato',
+  'gran-formato-y-displays': 'gran-formato',
+  'gran-formato-displays': 'gran-formato',
+  'gran-formato-y-display': 'gran-formato',
+  display: 'gran-formato',
+  senaletica: 'gran-formato',
+  rotulacion: 'gran-formato',
+  bastidor: 'gran-formato',
+  textil: 'textil',
+  'linea-textil': 'textil',
+  'sublimacion-dtf': 'textil',
+  'sublimacion-y-dtf': 'textil',
+  promocionales: 'promocionales',
+  promocional: 'promocionales',
+  'articulos-promocionales': 'promocionales',
+  'sublimacion-3d': 'promocionales',
+  papeleria: 'papeleria',
+  'papeleria-creativa': 'papeleria',
+  'acabados-especiales': 'papeleria',
+  todas: '',
+  'todas-las-lineas': '',
+  all: '',
+  '': '',
+};
+
+function normalizarLinea(valor: string | null | undefined): LineaProduccion | '' {
+  if (!valor) return '';
+  const clave = valor
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return ALIAS_LINEA[clave] ?? '';
+}
+
 /** Catálogo público con gestión interna para admin y ventas. */
 @Component({
   selector: 'app-productos',
@@ -51,6 +95,8 @@ export class ProductosComponent implements OnInit {
   private readonly confirmacion = inject(ConfirmacionService);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   readonly auth = inject(AuthService);
 
   readonly productos = signal<ProductoPublico[]>([]);
@@ -125,6 +171,12 @@ export class ProductosComponent implements OnInit {
   ngOnInit(): void {
     const termino = this.route.snapshot.queryParamMap.get('q');
     if (termino) this.busqueda.set(termino);
+
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const solicitada = params.get('linea') ?? params.get('categoria');
+      this.linea.set(normalizarLinea(solicitada));
+    });
+
     this.cargarPublico();
   }
 
@@ -145,6 +197,11 @@ export class ProductosComponent implements OnInit {
 
   filtrarPor(linea: LineaProduccion | ''): void {
     this.linea.set(linea);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { linea: linea || null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   actualizarBusqueda(evento: Event): void {

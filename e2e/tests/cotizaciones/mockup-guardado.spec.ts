@@ -121,9 +121,15 @@ test.describe('Guardado de mockups en la solicitud', () => {
 
     const cotizar = new CotizarPage(page);
     await cotizar.continuar();
-    await expect(
-      page.locator('.file-chip-name').filter({ hasText: 'diseno-tote-bag-de-manta-3d.jpg' }),
-    ).toBeVisible();
+    const chip3d = page.locator('.file-chip').filter({
+      hasText: 'diseno-tote-bag-de-manta-3d.jpg',
+    });
+    await expect(chip3d).toBeVisible();
+    const miniatura3d = chip3d.locator('.file-chip-thumb');
+    await expect(miniatura3d).toBeVisible();
+    await expect
+      .poll(() => miniatura3d.evaluate((imagen) => (imagen as HTMLImageElement).naturalWidth))
+      .toBeGreaterThan(0);
 
     const respuesta = await cotizar.enviar('Así quiero la bolsa, adjunto la vista 3D');
     expect(respuesta.folio).toMatch(/^SOL-/);

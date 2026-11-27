@@ -157,7 +157,11 @@
                 <li><i class="bi bi-check2"></i> Señalética y stands</li>
                 <li><i class="bi bi-check2"></i> Pendones y lonas</li>
               </ul>
-              <a class="line-link" routerLink="/productos">
+              <a
+                class="line-link"
+                routerLink="/productos"
+                [queryParams]="{ linea: 'gran-formato' }"
+              >
                 Explorar línea <i class="bi bi-arrow-right"></i>
               </a>
             </div>
@@ -182,7 +186,7 @@
                 <li><i class="bi bi-check2"></i> Delantales de cocina</li>
                 <li><i class="bi bi-check2"></i> Tote bags de manta</li>
               </ul>
-              <a class="line-link" routerLink="/productos">
+              <a class="line-link" routerLink="/productos" [queryParams]="{ linea: 'textil' }">
                 Explorar línea <i class="bi bi-arrow-right"></i>
               </a>
             </div>
@@ -207,7 +211,11 @@
                 <li><i class="bi bi-check2"></i> Mousepads</li>
                 <li><i class="bi bi-check2"></i> Llaveros MDF / acrílico</li>
               </ul>
-              <a class="line-link" routerLink="/productos">
+              <a
+                class="line-link"
+                routerLink="/productos"
+                [queryParams]="{ linea: 'promocionales' }"
+              >
                 Explorar línea <i class="bi bi-arrow-right"></i>
               </a>
             </div>
@@ -232,7 +240,7 @@
                 <li><i class="bi bi-check2"></i> Tarjetas de presentación</li>
                 <li><i class="bi bi-check2"></i> Flyers corporativos</li>
               </ul>
-              <a class="line-link" routerLink="/productos">
+              <a class="line-link" routerLink="/productos" [queryParams]="{ linea: 'papeleria' }">
                 Explorar línea <i class="bi bi-arrow-right"></i>
               </a>
             </div>

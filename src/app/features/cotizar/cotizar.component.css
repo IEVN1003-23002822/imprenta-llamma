@@ -60,6 +60,19 @@
   color: var(--llamma-carbon);
 }
 
+.line-estimate.line-estimate-mayoreo,
+.line-estimate.line-estimate-mayoreo strong {
+  color: #0f7a4d;
+}
+
+.cart-mayoreo {
+  display: block;
+  margin-top: 0.15rem;
+  color: #0f7a4d;
+  font-size: 0.64rem;
+  font-weight: 600;
+}
+
 .cart-empty {
   display: flex;
   align-items: center;
@@ -826,6 +839,21 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 1.1rem;
+}
+
+.file-chip-con-imagen {
+  padding: 0.28rem 0.55rem 0.28rem 0.28rem;
+  border-radius: 0.85rem;
+}
+
+.file-chip-thumb {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: none;
+  border: 1px solid var(--llamma-line);
+  border-radius: 0.62rem;
+  background: var(--llamma-paper);
+  object-fit: cover;
 }
 
 @media (max-width: 640px) {

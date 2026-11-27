@@ -38,6 +38,7 @@
         [totalPiezas]="totalPiezas()"
         [totalConIva]="totalConIva()"
         [correo]="form.controls.correo.value"
+        [capturas]="capturasDiseno()"
         [copiado]="copiado()"
         (copiar)="copiarFolio()"
         (nueva)="nuevaSolicitud()"
@@ -370,6 +371,17 @@
                     Estimado de esta línea: <strong>{{ moneda(estimadoLinea()) }}</strong> + IVA ·
                     sujeto a revisión de diseño.
                   </p>
+                  @if (descuentoLinea() > 0) {
+                    <p class="line-estimate line-estimate-mayoreo">
+                      <i class="bi bi-tags"></i>
+                      @if (esPorM2()) {
+                        Mayoreo 6+: −$20 por m² ·
+                      } @else {
+                        Mayoreo 6+: {{ moneda(precioUnitarioLinea()) }} por unidad ·
+                      }
+                      ahorro <strong>{{ moneda(descuentoLinea()) }}</strong> + IVA.
+                    </p>
+                  }
                 }
 
                 @if (carrito().length) {
@@ -380,6 +392,12 @@
                         <div class="grow min-w-0">
                           <strong>{{ item.nombreProducto }}</strong>
                           <small>{{ item.cantidad }} × {{ item.especificaciones }}</small>
+                          @if ((item.descuentoMayoreo ?? 0) > 0) {
+                            <small class="cart-mayoreo">
+                              <i class="bi bi-tags"></i> Mayoreo 6+ · ahorro
+                              {{ moneda(item.descuentoMayoreo ?? 0) }}
+                            </small>
+                          }
                         </div>
                         <strong class="cart-amount">{{ moneda(item.precioEstimado ?? 0) }}</strong>
                         <button
@@ -478,8 +496,21 @@
                 @if (archivos().length) {
                   <div class="file-chips">
                     @for (archivo of archivos(); track $index) {
-                      <span class="file-chip">
-                        <i class="bi bi-paperclip"></i>
+                      <span
+                        class="file-chip"
+                        [class.file-chip-con-imagen]="miniatura(archivo) !== null"
+                      >
+                        @if (miniatura(archivo); as vista) {
+                          <img
+                            class="file-chip-thumb"
+                            [src]="vista"
+                            [alt]="'Vista previa de ' + archivo.name"
+                            width="40"
+                            height="40"
+                          />
+                        } @else {
+                          <i class="bi bi-paperclip"></i>
+                        }
                         <span class="file-chip-name">{{ archivo.name }}</span>
                         <small>{{ tamano(archivo.size) }}</small>
                         <button

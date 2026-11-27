@@ -23,6 +23,11 @@ import {
 import { ClienteApi, PedidoApi, PagoApi } from '../../core/models/llamma.models';
 import { LlammaService } from '../../core/services/llamma.service';
 import { UiService } from '../../core/services/ui.service';
+import {
+  MENSAJE_FECHA_MINIMA,
+  calcularFechaMinimaEntrega,
+  esFechaEntregaValida,
+} from '../../core/utils/fechas';
 
 /** Preferencia local de paneles desplegados; no contiene datos del pedido. */
 const CLAVE_SECCIONES = 'llamma.detalle.secciones.v1';
@@ -59,17 +64,25 @@ export class DetalleComponent implements OnInit {
   readonly cargandoDetalle = signal(false);
   readonly guardandoEstado = signal(false);
   readonly registrandoPago = signal(false);
+  readonly guardandoEntrega = signal(false);
+  readonly errorEntrega = signal<string | null>(null);
   readonly error = signal<string | null>(null);
   readonly mostrarPago = signal(false);
   readonly secciones = signal(this.leerSecciones());
 
   readonly estados = ESTADOS_PEDIDO;
   readonly puedeGestionar = computed(() => this.auth.tieneRol('admin', 'ventas'));
+  readonly fechaMinimaEntrega = calcularFechaMinimaEntrega();
+
+  readonly entregaForm = this.fb.nonNullable.group({
+    fechaEntrega: ['', [Validators.required]],
+    notaEntrega: ['', [Validators.maxLength(240)]],
+  });
 
   readonly pagoForm = this.fb.nonNullable.group({
     tipo: ['abono', [Validators.required]],
     metodo: ['transferencia', [Validators.required]],
-    monto: [0, [Validators.required, Validators.min(1)]],
+    monto: [0, [Validators.required, Validators.min(0.01)]],
     referencia: [''],
   });
 
@@ -176,7 +189,12 @@ export class DetalleComponent implements OnInit {
       .subscribe({
         next: (pedido) => {
           this.pedido.set(pedido);
-          this.pagoForm.patchValue({ monto: Math.max(1, Math.round(pedido.saldo)) });
+          this.pagoForm.patchValue({ monto: 0 });
+          this.entregaForm.reset({
+            fechaEntrega: pedido.fechaEntrega ?? '',
+            notaEntrega: pedido.notaEntrega ?? '',
+          });
+          this.errorEntrega.set(null);
           this.cargarCliente(pedido.clienteId);
           void this.router.navigate([], {
             relativeTo: this.route,
@@ -225,15 +243,75 @@ export class DetalleComponent implements OnInit {
       });
   }
 
+  actualizarEntrega(): void {
+    const pedido = this.pedido();
+    if (!pedido || this.guardandoEntrega()) return;
+
+    this.entregaForm.markAllAsTouched();
+    const { fechaEntrega, notaEntrega } = this.entregaForm.getRawValue();
+    if (this.entregaForm.controls.fechaEntrega.invalid || !esFechaEntregaValida(fechaEntrega)) {
+      this.errorEntrega.set(
+        fechaEntrega ? MENSAJE_FECHA_MINIMA : 'Indica la fecha de entrega comprometida.',
+      );
+      return;
+    }
+
+    this.guardandoEntrega.set(true);
+    this.errorEntrega.set(null);
+    this.service
+      .actualizarEntregaPedido(pedido.id, {
+        fechaEntrega,
+        notaEntrega: notaEntrega.trim() || null,
+      })
+      .pipe(finalize(() => this.guardandoEntrega.set(false)))
+      .subscribe({
+        next: (actualizado) => {
+          this.pedido.set(actualizado);
+          this.entregaForm.reset({
+            fechaEntrega: actualizado.fechaEntrega ?? '',
+            notaEntrega: actualizado.notaEntrega ?? '',
+          });
+          this.pedidos.update((lista) =>
+            lista.map((fila) =>
+              fila.id === actualizado.id
+                ? { ...fila, fechaEntrega: actualizado.fechaEntrega }
+                : fila,
+            ),
+          );
+          this.ui.exito(`Entrega confirmada para el ${this.fechaCorta(actualizado.fechaEntrega)}.`);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.errorEntrega.set(
+            error.error?.mensaje ||
+              error.error?.error ||
+              this.ui.mensajeDeError(error, 'No pudimos actualizar la fecha de entrega.'),
+          );
+        },
+      });
+  }
+
   abrirPago(): void {
-    const saldo = this.pedido()?.saldo ?? 0;
+    const saldo = this.redondear(this.pedido()?.saldo ?? 0);
     this.pagoForm.reset({
-      tipo: saldo > 0 ? 'abono' : 'saldo',
+      tipo: 'abono',
       metodo: 'transferencia',
-      monto: Math.max(1, Math.round(saldo)),
+      monto: Math.max(0.01, saldo),
       referencia: '',
     });
+    this.pagoForm.controls.monto.setValidators([
+      Validators.required,
+      Validators.min(0.01),
+      Validators.max(Math.max(0.01, saldo)),
+    ]);
+    this.pagoForm.controls.monto.updateValueAndValidity();
     this.mostrarPago.set(true);
+  }
+
+  /** Liquidación = saldo exacto; abono/anticipo quedan editables. */
+  alCambiarTipoPago(): void {
+    if (this.pagoForm.controls.tipo.value !== 'saldo') return;
+    const saldo = this.redondear(this.pedido()?.saldo ?? 0);
+    this.pagoForm.controls.monto.setValue(Math.max(0.01, saldo));
   }
 
   registrarPago(): void {
@@ -241,6 +319,17 @@ export class DetalleComponent implements OnInit {
     if (!pedido) return;
     if (this.pagoForm.invalid) {
       this.pagoForm.markAllAsTouched();
+      return;
+    }
+
+    const saldo = this.redondear(pedido.saldo);
+    const monto = this.redondear(Number(this.pagoForm.controls.monto.value));
+    if (monto <= 0) {
+      this.ui.error('El monto del pago debe ser mayor a cero.');
+      return;
+    }
+    if (monto > saldo + 0.001) {
+      this.ui.error(`El monto no puede superar el saldo pendiente (${this.moneda(saldo)}).`);
       return;
     }
 
@@ -254,7 +343,12 @@ export class DetalleComponent implements OnInit {
           this.pedidos.update((lista) =>
             lista.map((fila) =>
               fila.id === pedido.id
-                ? { ...fila, anticipo: respuesta.pedido.anticipo, saldo: respuesta.pedido.saldo }
+                ? {
+                    ...fila,
+                    estado: respuesta.pedido.estado,
+                    anticipo: respuesta.pedido.anticipo,
+                    saldo: respuesta.pedido.saldo,
+                  }
                 : fila,
             ),
           );
@@ -329,6 +423,10 @@ export class DetalleComponent implements OnInit {
     }).format(Number(valor ?? 0));
   }
 
+  private redondear(valor: number): number {
+    return Math.round((Number(valor) + Number.EPSILON) * 100) / 100;
+  }
+
   private aFecha(valor: string | null | undefined): Date | null {
     if (!valor) return null;
     const fecha = new Date(valor.length > 10 ? valor : `${valor}T00:00:00`);
@@ -389,23 +487,28 @@ export class DetalleComponent implements OnInit {
   estadoPago(): { titulo: string; detalle: string; ok: boolean } {
     const pedido = this.pedido();
     if (!pedido) return { titulo: 'Sin información', detalle: 'Selecciona una orden', ok: false };
-    if (pedido.saldo <= 0.01) {
+    const pagado = this.redondear(this.pagado());
+    const saldo = this.redondear(pedido.saldo);
+    if (saldo <= 0.01) {
       return {
         titulo: 'Pedido liquidado',
-        detalle: `Pagado ${this.moneda(this.pagado())}`,
+        detalle: `Pagado ${this.moneda(pagado)} de ${this.moneda(pedido.total)}`,
         ok: true,
       };
     }
-    if (this.pagado() > 0) {
+    if (pagado > 0) {
+      const tieneAnticipo = this.pagos().some(
+        (pago) => pago.tipo === 'anticipo' && pago.confirmado,
+      );
       return {
-        titulo: 'Anticipo confirmado',
-        detalle: `Pagado ${this.moneda(this.pagado())} de ${this.moneda(pedido.total)}`,
+        titulo: tieneAnticipo ? 'Anticipo confirmado' : 'Pago parcial',
+        detalle: `Pagado ${this.moneda(pagado)} de ${this.moneda(pedido.total)} · faltan ${this.moneda(saldo)}`,
         ok: true,
       };
     }
     return {
       titulo: 'Sin pagos registrados',
-      detalle: `Saldo pendiente ${this.moneda(pedido.saldo)}`,
+      detalle: `Saldo pendiente ${this.moneda(saldo)}`,
       ok: false,
     };
   }

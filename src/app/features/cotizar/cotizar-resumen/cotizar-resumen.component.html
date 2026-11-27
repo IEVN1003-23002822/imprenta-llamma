@@ -15,8 +15,10 @@
     </div>
   } @else {
     <div class="summary-empty">
-      <i class="bi bi-file-earmark-text"></i>
-      <p>Tu solicitud se puede enviar solo con el mensaje descriptivo.</p>
+      <i class="bi bi-cart-plus"></i>
+      <p>
+        Agrega al menos un producto con cantidad y precio mayor a cero para enviar tu solicitud.
+      </p>
     </div>
   }
 
@@ -24,6 +26,15 @@
     <div>
       <span>Piezas / unidades</span><strong>{{ totalPiezas() }}</strong>
     </div>
+    @if (descuentoMayoreo() > 0) {
+      <div>
+        <span>Subtotal sin mayoreo</span><strong>{{ moneda(subtotalSinMayoreo()) }}</strong>
+      </div>
+      <div class="summary-discount">
+        <span>Descuento mayoreo (6+)</span>
+        <strong>−{{ moneda(descuentoMayoreo()) }}</strong>
+      </div>
+    }
     <div>
       <span>Estimado referencial</span><strong>{{ moneda(totalEstimado()) }}</strong>
     </div>
@@ -34,6 +45,13 @@
       <span>Total estimado</span><strong>{{ moneda(totalConIva()) }}</strong>
     </div>
   </div>
+
+  @if (carrito().length && totalConIva() <= 0) {
+    <div class="request-error" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>Cada partida debe tener una cantidad y un precio mayor a cero.</span>
+    </div>
+  }
 
   <div class="request-note">
     <i class="bi bi-info-circle"></i>
@@ -50,7 +68,12 @@
     </div>
   }
 
-  <button class="btn btn-brand w-full" type="submit" form="solicitudForm" [disabled]="enviando()">
+  <button
+    class="btn btn-brand w-full"
+    type="submit"
+    form="solicitudForm"
+    [disabled]="enviando() || !carrito().length || totalConIva() <= 0"
+  >
     @if (enviando()) {
       <i class="bi bi-hourglass-split"></i> Enviando solicitud...
     } @else {

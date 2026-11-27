@@ -39,6 +39,32 @@ class SolicitudCotizacion(TimestampMixin, db.Model):
     )
     cotizaciones = db.relationship("Cotizacion", back_populates="solicitud")
 
+    def _pedido_resumen(self) -> dict | None:
+        """Último pedido vinculado y su estado de producción, si existe."""
+        pedido = None
+        for cotizacion in self.cotizaciones:
+            for candidato in cotizacion.pedidos:
+                if pedido is None or (candidato.id or 0) > (pedido.id or 0):
+                    pedido = candidato
+        if pedido is None:
+            return None
+        orden = pedido.orden_produccion
+        return {
+            "id": pedido.id,
+            "folio": pedido.folio,
+            "estado": pedido.estado,
+            "fechaEntrega": pedido.fecha_entrega.isoformat() if pedido.fecha_entrega else None,
+            "produccion": (
+                {
+                    "estado": orden.estado,
+                    "etapa": orden.etapa,
+                    "fechaFin": iso(orden.fecha_fin),
+                }
+                if orden
+                else None
+            ),
+        }
+
     def to_dict(self, incluir_detalle: bool = True, incluir_mensajes: bool = False) -> dict:
         data = {
             "id": self.id,
@@ -56,6 +82,7 @@ class SolicitudCotizacion(TimestampMixin, db.Model):
             "fechaCreacion": iso(self.creado_en),
             "totalItems": len(self.items),
             "totalArchivos": len(self.archivos),
+            "pedido": self._pedido_resumen(),
         }
         if incluir_detalle:
             data["itemsSolicitados"] = [item.to_dict() for item in self.items]
@@ -81,6 +108,7 @@ class SolicitudItem(db.Model):
     especificaciones = db.Column(db.String(240))
     cantidad = db.Column(db.Numeric(12, 2), default=1, nullable=False)
     precio_estimado = db.Column(db.Numeric(12, 2))
+    descuento_mayoreo = db.Column(db.Numeric(12, 2), default=0, nullable=False)
 
     solicitud = db.relationship("SolicitudCotizacion", back_populates="items")
     producto = db.relationship("Producto", back_populates="solicitud_items")
@@ -93,6 +121,7 @@ class SolicitudItem(db.Model):
             "especificaciones": self.especificaciones,
             "cantidad": float(self.cantidad or 0),
             "precioEstimado": float(self.precio_estimado) if self.precio_estimado is not None else None,
+            "descuentoMayoreo": float(self.descuento_mayoreo or 0),
         }
 
 

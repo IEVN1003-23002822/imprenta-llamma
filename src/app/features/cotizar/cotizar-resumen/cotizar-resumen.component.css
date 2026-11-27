@@ -21,6 +21,11 @@
   line-height: 1.45;
 }
 
+.request-summary .summary-discount span,
+.request-summary .summary-discount strong {
+  color: #0f7a4d;
+}
+
 .request-note {
   display: flex;
   align-items: flex-start;

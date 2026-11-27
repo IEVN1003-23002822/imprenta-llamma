@@ -515,7 +515,12 @@
                       <button
                         class="inline-block cursor-pointer select-none rounded-[0.72rem] px-[1.05rem] py-[0.62rem] text-center align-middle text-base font-semibold leading-normal no-underline transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--llamma-cyan-rgb),0.28)] disabled:pointer-events-none disabled:opacity-65 border border-[rgba(26,26,26,0.22)] bg-transparent text-[var(--llamma-carbon)] hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
                         type="button"
-                        [disabled]="guardando()"
+                        [disabled]="guardando() || !puedeCompletar()"
+                        [attr.title]="
+                          puedeCompletar()
+                            ? 'Cerrar la orden y dejar el pedido listo para entrega'
+                            : 'Avanza hasta la última etapa para completar la orden'
+                        "
                         (click)="completar(orden)"
                       >
                         <i class="bi bi-flag"></i> Completar orden

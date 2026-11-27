@@ -170,12 +170,16 @@ export class LlammaService {
 
   listarSolicitudes(filtros: {
     estado?: string;
+    produccion?: string;
+    entrega?: string;
     q?: string;
     page?: number;
     perPage?: number;
   }): Observable<RespuestaPaginada<SolicitudCotizacion>> {
     let params = new HttpParams();
     if (filtros.estado) params = params.set('estado', filtros.estado);
+    if (filtros.produccion) params = params.set('produccion', filtros.produccion);
+    if (filtros.entrega) params = params.set('entrega', filtros.entrega);
     if (filtros.q) params = params.set('q', filtros.q);
     if (filtros.page) params = params.set('page', filtros.page);
     if (filtros.perPage) params = params.set('perPage', filtros.perPage);
@@ -299,6 +303,7 @@ export class LlammaService {
     id: number,
     body: {
       fechaEntrega?: string;
+      notaEntrega?: string;
       prioridad?: string;
       anticipoPagado?: boolean;
       metodoPago?: string;
@@ -424,6 +429,13 @@ export class LlammaService {
   }
   cambiarEstadoPedido(id: number, estado: string): Observable<PedidoApi> {
     return this.http.patch<PedidoApi>(`${this.apiUrl}/pedidos/${id}/estado`, { estado });
+  }
+
+  actualizarEntregaPedido(
+    id: number,
+    body: { fechaEntrega: string; notaEntrega?: string | null },
+  ): Observable<PedidoApi> {
+    return this.http.patch<PedidoApi>(`${this.apiUrl}/pedidos/${id}/entrega`, body);
   }
 
   registrarPago(

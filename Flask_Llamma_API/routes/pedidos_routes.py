@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import math
 from datetime import date
+from decimal import Decimal
 
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import func, or_
@@ -74,6 +76,7 @@ def detalle_pedido(pedido_id: int):
     pedido = (
         Pedido.query.options(
             joinedload(Pedido.cliente),
+            joinedload(Pedido.confirmador_entrega),
             selectinload(Pedido.items),
             selectinload(Pedido.pagos),
             selectinload(Pedido.orden_produccion).options(
@@ -250,15 +253,23 @@ def crear_pedido():
     if fecha_entrega and fecha_entrega < calcular_fecha_minima_entrega(date.today()):
         return error(MENSAJE_FECHA_MINIMA, 400, "fecha_invalida")
 
+    desglose = totales(subtotal)
+    # El anticipo es una referencia del 50%; sin pagos registrados se debe todo.
+    desglose["saldo"] = desglose["total"]
+
     pedido = Pedido(
         folio=generar_folio("LLM", Pedido, con_anio=False, relleno=4, inicio=1040),
         cliente_id=cliente.id,
         estado=str(campo(data, "estado", default="confirmado")),
         prioridad=str(campo(data, "prioridad", default="media")),
         fecha_entrega=fecha_entrega,
+        nota_entrega=str(campo(data, "notaEntrega", "nota_entrega", default="") or "")[:240]
+        or None,
+        entrega_confirmada_en=utcnow() if fecha_entrega else None,
+        entrega_confirmada_por=g.usuario.id if fecha_entrega else None,
         notas=str(campo(data, "notas", default="") or "") or None,
         creado_por=g.usuario.id,
-        **totales(subtotal),
+        **desglose,
     )
     pedido.items = [
         PedidoItem(
@@ -306,6 +317,42 @@ def crear_pedido():
     return jsonify(data), 201
 
 
+@pedidos_bp.patch("/pedidos/<int:pedido_id>/entrega")
+@role_required("admin", "ventas")
+def actualizar_entrega_pedido(pedido_id: int):
+    """Confirma o reprograma la fecha de entrega comprometida con el cliente."""
+    pedido = Pedido.query.get(pedido_id)
+    if not pedido:
+        return no_encontrado("Pedido")
+
+    data = payload()
+    fecha_entrega = parse_fecha(campo(data, "fechaEntrega", "fecha_entrega"))
+    if not fecha_entrega:
+        return error(
+            "Indica la fecha de entrega comprometida (AAAA-MM-DD).",
+            400,
+            "fecha_invalida",
+        )
+    if fecha_entrega < calcular_fecha_minima_entrega(date.today()):
+        return error(MENSAJE_FECHA_MINIMA, 400, "fecha_invalida")
+
+    if "notaEntrega" in data or "nota_entrega" in data:
+        nota = str(campo(data, "notaEntrega", "nota_entrega", default="") or "").strip()
+        if len(nota) > 240:
+            return error(
+                "La nota de entrega no puede exceder 240 caracteres.",
+                400,
+                "nota_invalida",
+            )
+        pedido.nota_entrega = nota or None
+
+    pedido.fecha_entrega = fecha_entrega
+    pedido.entrega_confirmada_en = utcnow()
+    pedido.entrega_confirmada_por = g.usuario.id
+    db.session.commit()
+    return jsonify(pedido.to_dict())
+
+
 @pedidos_bp.patch("/pedidos/<int:pedido_id>/estado")
 @role_required("admin", "ventas", "produccion")
 def cambiar_estado_pedido(pedido_id: int):
@@ -334,20 +381,25 @@ def registrar_pago(pedido_id: int):
         return error("Tipo de pago inválido. Usa anticipo, saldo o abono")
 
     monto = parse_decimal(campo(data, "monto"), 0)
-    if monto <= 0:
+    if not math.isfinite(monto) or monto <= 0:
         return error("El monto del pago debe ser mayor a cero")
 
-    # El saldo del pedido ya descuenta el anticipo pactado al crearlo. Se usa
-    # ese saldo como tope: comparar contra `total - pagado` permitía cobrar de
-    # más cuando el anticipo aún no estaba registrado como pago.
-    saldo_actual = round(float(pedido.saldo or 0), 2)
-    if monto > saldo_actual + 0.01:
+    # El saldo se calcula desde los pagos confirmados; el anticipo del pedido
+    # es solo una referencia del 50% y no se descuenta hasta que se registra.
+    total = Decimal(str(pedido.total or 0)).quantize(Decimal("0.01"))
+    pagado = sum(
+        (Decimal(str(pago.monto or 0)).quantize(Decimal("0.01")) for pago in pedido.pagos if pago.confirmado),
+        Decimal("0.00"),
+    )
+    saldo_actual = max(total - pagado, Decimal("0.00"))
+    monto_decimal = Decimal(str(monto)).quantize(Decimal("0.01"))
+    if monto_decimal > saldo_actual:
         return error("El pago excede el saldo pendiente del pedido")
 
     pago = Pago(
         tipo=tipo,
         metodo=str(campo(data, "metodo", default="transferencia"))[:30],
-        monto=round(monto, 2),
+        monto=float(monto_decimal),
         referencia=str(campo(data, "referencia", default="") or "")[:120] or None,
         confirmado=bool(campo(data, "confirmado", default=True)),
         registrado_por=g.usuario.id,
@@ -357,7 +409,9 @@ def registrar_pago(pedido_id: int):
     db.session.flush()
 
     if pago.confirmado:
-        pedido.saldo = round(max(saldo_actual - monto, 0), 2)
+        pedido.saldo = float(max(total - (pagado + monto_decimal), Decimal("0.00")))
+    else:
+        pedido.saldo = float(saldo_actual)
     if pedido.saldo <= 0 and pedido.estado == "confirmado":
         pedido.estado = "en-produccion"
 

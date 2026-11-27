@@ -47,7 +47,9 @@ cotizaciones_bp = Blueprint("cotizaciones", __name__)
 @role_required("admin", "ventas", "produccion")
 def listar_cotizaciones():
     query = Cotizacion.query.options(
-        joinedload(Cotizacion.cliente), joinedload(Cotizacion.usuario)
+        joinedload(Cotizacion.cliente),
+        joinedload(Cotizacion.usuario),
+        joinedload(Cotizacion.solicitud),
     )
     estado = request.args.get("estado")
     if estado:
@@ -77,6 +79,7 @@ def detalle_cotizacion(cotizacion_id: int):
             selectinload(Cotizacion.items),
             joinedload(Cotizacion.cliente),
             joinedload(Cotizacion.usuario),
+            joinedload(Cotizacion.solicitud),
         )
         .filter_by(id=cotizacion_id)
         .first()
@@ -195,11 +198,15 @@ def convertir_cotizacion(cotizacion_id: int):
         estado="confirmado",
         prioridad=str(campo(data, "prioridad", default="media")),
         fecha_entrega=fecha_entrega,
+        nota_entrega=str(campo(data, "notaEntrega", "nota_entrega", default="") or "")[:240]
+        or None,
+        entrega_confirmada_en=utcnow(),
+        entrega_confirmada_por=g.usuario.id,
         subtotal=cotizacion.subtotal,
         impuestos=cotizacion.impuestos,
         total=cotizacion.total,
         anticipo=cotizacion.anticipo,
-        saldo=cotizacion.saldo,
+        saldo=cotizacion.total,
         notas=cotizacion.notas,
         creado_por=g.usuario.id,
     )
@@ -228,8 +235,8 @@ def convertir_cotizacion(cotizacion_id: int):
                 registrado_por=g.usuario.id,
             )
         )
-        saldo_actual = Decimal(str(pedido.saldo or 0))
-        pedido.saldo = float(max(saldo_actual - anticipo, Decimal("0.00")))
+        total = Decimal(str(pedido.total or 0)).quantize(Decimal("0.01"))
+        pedido.saldo = float(max(total - anticipo, Decimal("0.00")))
         if pedido.saldo <= 0 and pedido.estado == "confirmado":
             pedido.estado = "en-produccion"
 

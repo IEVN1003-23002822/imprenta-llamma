@@ -22,6 +22,7 @@ from models import (
     Usuario,
 )
 from routes.helpers import campo, correo_valido, lista_items
+from precios import precio_linea_mayoreo
 from utils import generar_folio, parse_decimal, parse_int
 
 
@@ -93,14 +94,32 @@ def partidas_a_cotizacion(items: list, data: dict) -> tuple[list[CotizacionItem]
             producto = Producto.query.get(parse_int(producto_id))
 
         cantidad = max(parse_decimal(campo(bruto, "cantidad", default=1), 1), 0.01)
-        precio = campo(bruto, "precioUnitario", "precio_unitario")
-        if precio is None:
-            if producto:
-                precio = float(producto.precio_base or 0)
-            else:
-                precio = campo(bruto, "precioEstimado", "precio_estimado", default=0)
-        precio = max(parse_decimal(precio, 0), 0)
-        importe = round(precio * cantidad, 2)
+        precio_unitario_bruto = campo(bruto, "precioUnitario", "precio_unitario")
+        precio_estimado_bruto = campo(bruto, "precioEstimado", "precio_estimado")
+        precio_es_importe = campo(
+            bruto, "precioEsImporte", "precio_es_importe", default=False
+        ) in (True, 1, "1", "true", "True")
+
+        if precio_unitario_bruto is not None:
+            # Precio capturado por el equipo: se aplica la regla de mayoreo.
+            precio_base = max(parse_decimal(precio_unitario_bruto, 0), 0)
+            base_linea = round(precio_base * cantidad, 2)
+            importe, _descuento = precio_linea_mayoreo(cantidad, base_linea)
+        elif precio_estimado_bruto is not None and precio_es_importe:
+            # Importe final de una solicitud: ya incluye el mayoreo aplicado.
+            importe = max(parse_decimal(precio_estimado_bruto, 0), 0)
+        elif precio_estimado_bruto is not None:
+            # Contrato interno: `precioEstimado` se captura como precio unitario.
+            precio_base = max(parse_decimal(precio_estimado_bruto, 0), 0)
+            base_linea = round(precio_base * cantidad, 2)
+            importe, _descuento = precio_linea_mayoreo(cantidad, base_linea)
+        else:
+            precio_base = float(producto.precio_base or 0) if producto else 0
+            base_linea = round(precio_base * cantidad, 2)
+            importe, _descuento = precio_linea_mayoreo(cantidad, base_linea)
+
+        importe = round(importe, 2)
+        precio_unitario = round(importe / cantidad, 2) if cantidad > 0 else 0
 
         descripcion = str(
             campo(bruto, "descripcion", "nombreProducto", "nombre_producto", default="")
@@ -115,7 +134,7 @@ def partidas_a_cotizacion(items: list, data: dict) -> tuple[list[CotizacionItem]
                     str(campo(bruto, "especificaciones", "detalle", default="") or "")[:240] or None
                 ),
                 cantidad=cantidad,
-                precio_unitario=precio,
+                precio_unitario=precio_unitario,
                 importe=importe,
             )
         )
@@ -145,16 +164,21 @@ def crear_cotizacion(
             rfc=campo(data, "rfc"),
             direccion=campo(data, "direccion"),
         )
-        items_brutos = lista_items(data) or [
-            {
-                "productoId": item.producto_id,
-                "descripcion": item.nombre_producto,
-                "especificaciones": item.especificaciones,
-                "cantidad": float(item.cantidad),
-                "precioEstimado": float(item.precio_estimado or 0),
-            }
-            for item in solicitud.items
-        ]
+        items_brutos = lista_items(data)
+        if not items_brutos:
+            items_brutos = []
+            for item in solicitud.items:
+                bruto = {
+                    "productoId": item.producto_id,
+                    "descripcion": item.nombre_producto,
+                    "especificaciones": item.especificaciones,
+                    "cantidad": float(item.cantidad),
+                }
+                if item.precio_estimado is not None:
+                    bruto["precioEstimado"] = float(item.precio_estimado)
+                    bruto["precioEsImporte"] = True
+                    bruto["descuentoMayoreo"] = float(item.descuento_mayoreo or 0)
+                items_brutos.append(bruto)
     else:
         cliente_id = parse_int(campo(data, "clienteId", "cliente_id"))
         cliente = Cliente.query.get(cliente_id) if cliente_id else None

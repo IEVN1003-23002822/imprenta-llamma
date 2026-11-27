@@ -110,10 +110,21 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `.venv\Scripts\python.exe migrations\inventario_descontado.py` (idempotente) en bases existentes.
   Las medidas de recetas (sticker 5×5) se actualizan con
   `.venv\Scripts\python.exe migrations\recetas_medidas.py`.
+- La confirmación y la nota pública de entrega de pedidos se aplican con
+  `.venv\Scripts\python.exe migrations\entrega_confirmada_pedidos.py` (idempotente). El pedido
+  conserva `fecha_entrega` y suma `nota_entrega`, `entrega_confirmada_en` y
+  `entrega_confirmada_por`; el respaldo histórico usa `actualizado_en` y `creado_por`.
 - Los precios oficiales del catálogo se actualizan con
   `.venv\Scripts\python.exe migrations\precios_productos.py` (idempotente): Lona `$220` por
   `1 m²` + `$120` por m² adicional, playera `$220` (29 × 29 cm) / `$200` (menor) y taza `$85`.
-  El cálculo de lona en el cotizador aplica la misma regla base + adicionales.
+  El cálculo de lona aplica la misma regla base + adicionales en el cotizador y en
+  `precios.py` (backend).
+- La regla de mayoreo vive en `Flask_Llamma_API/precios.py` y
+  `src/app/core/utils/precios.ts`: desde **6 unidades** se descuentan **$20 por unidad**; si el
+  promedio unitario es `<= $20` no se aplica para no dejar la partida en cero. Se usa en
+  `crear_solicitud`, `partidas_a_cotizacion` y el cotizador público. La columna
+  `solicitud_items.descuento_mayoreo` se crea con
+  `.venv\Scripts\python.exe migrations\descuento_mayoreo_solicitudes.py` (idempotente).
 - Las fotos del catálogo se asignan con
   `.venv\Scripts\python.exe migrations\imagenes_catalogo.py` (idempotente); `seed.py` ya incluye
   `imagen` para cada producto. Si renombras una playera, actualiza también el alias de
@@ -121,6 +132,11 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - El producto «Lona/Vinil» se actualiza en bases existentes con
   `.venv\Scripts\python.exe migrations\renombrar_lona_vinil.py` (idempotente). Renombra el catálogo,
   las partidas históricas exactas y la receta; si ya existe el nombre nuevo no fusiona registros.
+- Los saldos de pedidos se recalculan desde los pagos confirmados con
+  `.venv\Scripts\python.exe migrations\recalcular_saldos_pedidos.py` (idempotente). Úsalo al
+  corregir pagos históricos o al migrar datos creados con la regla anterior del anticipo.
+- Las líneas de Tote bag (textil) y Sticker (papelería) se alinean con las tarjetas del inicio con
+  `.venv\Scripts\python.exe migrations\reclasificar_lineas_catalogo.py` (idempotente).
 - El dump `llamma_laragon.sql` **no** se regenera automáticamente tras cambios de datos
   (precios/fotos): aplica las migraciones sobre `llamma_db` o vuelve a generarlo antes de usarlo como
   fuente de verdad.
@@ -157,11 +173,35 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   `src/app/core/models/estados.ts` con el campo `valor` y las ayudas `etiquetaDe`/`badgeDe`/`iconoDe`.
   Un estado nuevo exige tocar la unión de `llamma.models.ts`, ese catálogo y el backend; no
   reintroduzcas mapas de etiqueta o badge locales en los componentes.
+- `GET /api/solicitudes` incluye `pedido` (folio, estado, entrega y
+  `produccion.estado/etapa/fechaFin`) cuando la solicitud ya tiene pedido. La solicitud conserva su
+  estado histórico (`convertida`); el avance de producción se muestra como dato derivado. La
+  bandeja acepta `produccion=activa|completada`, `entrega=entregado` y
+  `/api/solicitudes/resumen` devuelve `enProduccion`, `produccionCompletada` y `entregados`.
+- En el detalle de `/solicitudes`, el botón **Marcar entregado** usa
+  `PATCH /api/pedidos/<id>/estado` con `estado=entregado`. Solo se habilita cuando el pedido está
+  `listo` (producción completada); si ya está entregado muestra el estado y no repite la acción. El
+  endpoint genérico de estados sigue aceptando los estados válidos para no romper flujos manuales.
+- El diálogo global de confirmación (`app-confirmacion-dialog`) debe quedar por encima del panel
+  móvil de solicitudes (`z-index` 1100 sobre 1080) para que sus botones sean clicables.
+- `PATCH /api/produccion/ordenes/<id>` solo permite `estado=completada` cuando la orden está en la
+  última etapa y las anteriores están completadas (`400 etapa_incompleta`/`etapas_pendientes`). Al
+  completar marca todas las etapas, deja el pedido `listo` (salvo `entregado`/`cancelado`) y la
+  orden sale del tablero (`completada`/`rechazada`).
 - Los listados devuelven `{ items, total }`. `GET /api/pedidos` omite `items`: usa
   `GET /api/pedidos/<id>` para el detalle (producción lo carga aparte y lo cachea por pedido).
   Las consultas de listado cargan relaciones con `joinedload` (many-to-one) y `selectinload`
   (colecciones) para que `to_dict()` no dispare N+1; no agregues un `to_dict()` que toque una
   relación sin su opción de carga.
+- `POST /api/pedidos/<id>/pagos` acepta `anticipo`, `abono` y `saldo`. Solo los pagos
+  **confirmados** reducen el saldo: `saldo = total - suma(pagos confirmados)`. `Pedido.anticipo`
+  es la referencia del 50% y **no** se descuenta hasta que exista un pago; el monto debe ser
+  positivo, con centavos y nunca mayor al saldo. Tras cambiar pagos históricos, ejecuta
+  `migrations/recalcular_saldos_pedidos.py` (idempotente).
+- `POST /api/public/solicitudes` exige al menos una partida con `cantidad > 0` y un importe
+  estimado `> 0`; rechaza solicitudes solo con mensaje, solo con archivos o con partidas en cero
+  (`400 sin_partidas`, `cantidad_invalida` o `precio_invalido`). El botón de envío también se
+  deshabilita en el resumen cuando no hay partidas o el total es cero.
 - El chat por solicitud vive en `mensajes_chat` y se serializa como `mensajes`. El cliente entra
   solo con folio + correo exactos (`/api/public/solicitudes/<folio>/mensajes`); el interno exige
   rol `admin` o `ventas` (`/api/solicitudes/<id>/mensajes`). `GET /api/solicitudes/<id>` ya incluye
@@ -197,6 +237,15 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   deben respetar **2 días hábiles**. La regla vive en `utils.calcular_fecha_minima_entrega()`,
   los festivos en `config.DIAS_FESTIVOS` y la API responde `400` con
   `MENSAJE_FECHA_MINIMA`. Ver `REGLAS-ENTREGA.md` para actualizar cierres cada año.
+- `PATCH /api/pedidos/<id>/entrega` (solo `admin`/`ventas`) confirma o reprograma la fecha
+  comprometida: valida el margen mínimo, guarda `nota_entrega` opcional y registra
+  `entrega_confirmada_en`/`entrega_confirmada_por`. La conversión y el alta directa también
+  sellan esa confirmación. Aplica `migrations/entrega_confirmada_pedidos.py` en bases existentes.
+- `GET /api/public/solicitudes/<folio>?correo=...` incluye `pedido` con `fechaDeseada` (solicitud),
+  `fechaEntrega` (comprometida), `notaEntrega`, `estado`, `etapaActual`, `estadoProduccion` y
+  `historialEtapas`; el seguimiento del cliente muestra la fecha confirmada y el avance real.
+  Iniciar producción (`PATCH /api/produccion/ordenes/<id>` con `en-proceso`) mueve un pedido
+  `confirmado` a `en-produccion`; completar la orden lo deja `listo`.
 - `GET /api/productos/insumos` devuelve los productos activos con `receta` y sus componentes
   (`nombreMateriaPrima`, `stockActual`, `bajoStock`). Usa `joinedload`/`selectinload` para evitar
   N+1; un producto sin receta viaja con `receta: null`.
@@ -248,11 +297,18 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
   como `cantidad`; «Lona/Vinil» añade selector Lona/Vinil y oculta «Lonas». Los
   productos por pieza conservan la cantidad capturada. Fórmulas: lona `$220 + $120/m² adicional`;
   vinil `$180 + $90/m² adicional`. La aprobación bloquea si falta stock y devuelve `descuento`.
+- **Mayoreo:** desde 6 unidades se descuentan **$20 por unidad**. El cálculo se centraliza en
+  `src/app/core/utils/precios.ts` y `precios.py`; el resumen y el comprobante muestran el subtotal
+  sin mayoreo, el descuento y el total. Al convertir una solicitud, `precioEsImporte` indica que
+  `precioEstimado` ya es el importe final y no debe volver a multiplicarse ni descontarse.
 - La previsualización de mockups de `/cotizar` vive en `cotizar.component.*`: catálogo
   `MOCKUPS_CATALOGO` indexado por nombre de producto, imágenes en
   `src/assets/images/mockups/*.webp` y área de impresión en
   porcentajes. El calibrador interno solo se habilita con `/cotizar?calibrar=1`. Si un producto
   no tiene entrada en `MOCKUPS_CATALOGO`, el modal 2D muestra «Previsualización no disponible».
+- En el Paso 3 del cotizador, los adjuntos de imagen muestran una miniatura real mediante
+  `URL.createObjectURL`, cacheada por archivo y revocada al quitarla, reiniciar o destruir el
+  componente. Las capturas 2D/3D reemplazan el archivo del mismo nombre para no duplicar chips.
 - «Adjuntar diseño 2D» y «Adjuntar vista 3D» exportan la escena a JPEG (`canvas.toBlob`) y la suman
   a `archivos()`; `mockups()` guarda la metadata por nombre de archivo y `crearSolicitud` la envía en
   el campo `mockups`. El backend la persiste en `solicitud_archivos.mockup_data` (JSON). El panel
@@ -289,6 +345,10 @@ Llamma es un portal público + ERP interno: SPA Angular 22 en la raíz y API Fla
 - La foto de producto es `productos.imagen_url` (`imagenUrl` en la API y en los tipos TS). Debe ser
   una ruta local o del mismo dominio: la CSP solo permite `img-src 'self' data: blob:`. Si la imagen
   falla, la tarjeta vuelve al icono.
+- Las tarjetas de las cuatro líneas del inicio enlazan a `/productos?linea=<slug>`; el catálogo
+  normaliza alias, tildes y nombres largos, sincroniza el filtro con la URL (recarga y atrás/adelante)
+  y usa `Todas las líneas` para limpiar el parámetro. Slugs: `gran-formato`, `textil`,
+  `promocionales`, `papeleria`.
 - Las secciones bajas de la portada viven en `HomeDetalleComponent` y se cargan con
   `@defer (on viewport)`. Mantén ahí su HTML y CSS para que el chunk de la portada no crezca.
 - El borrador del cotizador se guarda en `localStorage` con la clave

@@ -734,6 +734,9 @@ class FlujosApiTest(unittest.TestCase):
                 "nombre": "Cliente Adjunto",
                 "correo": "adjunto@example.com",
                 "mensaje": "Adjunto inválido",
+                "items": json.dumps(
+                    [{"productoId": self.producto.id, "cantidad": 1}]
+                ),
                 "archivo": (io.BytesIO(b"binario"), "malware.exe"),
             },
             content_type="multipart/form-data",
@@ -746,6 +749,9 @@ class FlujosApiTest(unittest.TestCase):
                 "nombre": "Cliente Adjunto",
                 "correo": "adjunto@example.com",
                 "mensaje": "Adjunto válido",
+                "items": json.dumps(
+                    [{"productoId": self.producto.id, "cantidad": 1}]
+                ),
                 "archivo": (io.BytesIO(b"%PDF-1.4\n"), "brief.pdf"),
             },
             content_type="multipart/form-data",
@@ -780,6 +786,9 @@ class FlujosApiTest(unittest.TestCase):
                 "nombre": "Cliente Mockup",
                 "correo": "mockup@example.com",
                 "mensaje": "Adjunto la vista del diseño",
+                "items": json.dumps(
+                    [{"productoId": self.producto.id, "cantidad": 1}]
+                ),
                 "archivos": (io.BytesIO(b"imagen"), "diseno-playera-2d.jpg"),
                 "mockups": json.dumps(
                     [{"nombre": "diseno-playera-2d.jpg", "datos": metadatos}]
@@ -830,6 +839,79 @@ class FlujosApiTest(unittest.TestCase):
             f"/api/productos/{producto_id}", headers=self._auth(self._token())
         )
         self.assertEqual(self._json(detalle)["precioBase"], 0)
+
+    def test_05d_rechaza_solicitud_sin_partidas_o_con_importe_cero(self) -> None:
+        """No se crean solicitudes vacías ni con partidas en cero."""
+        base = {
+            "nombre": "Cliente Sin Partidas",
+            "correo": "sin-partidas@example.com",
+            "mensaje": "Necesito una cotización con este mensaje suficientemente largo.",
+        }
+
+        sin_items = self.client.post("/api/public/solicitudes", json=base)
+        self.assertEqual(sin_items.status_code, 400, sin_items.get_data(as_text=True))
+        self.assertEqual(self._json(sin_items)["codigo"], "sin_partidas")
+
+        cero = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                **base,
+                "correo": "cantidad-cero@example.com",
+                "items": [{"productoId": self.producto.id, "cantidad": 0}],
+            },
+        )
+        self.assertEqual(cero.status_code, 400, cero.get_data(as_text=True))
+        self.assertEqual(self._json(cero)["codigo"], "cantidad_invalida")
+
+        negativo = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                **base,
+                "correo": "cantidad-negativa@example.com",
+                "items": [{"productoId": self.producto.id, "cantidad": -2}],
+            },
+        )
+        self.assertEqual(negativo.status_code, 400, negativo.get_data(as_text=True))
+        self.assertEqual(self._json(negativo)["codigo"], "cantidad_invalida")
+
+        precio_cero = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                **base,
+                "correo": "precio-cero@example.com",
+                "items": [
+                    {
+                        "productoId": None,
+                        "nombreProducto": "Diseño especial",
+                        "cantidad": 1,
+                        "precioEstimado": 0,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(precio_cero.status_code, 400, precio_cero.get_data(as_text=True))
+        self.assertEqual(self._json(precio_cero)["codigo"], "precio_invalido")
+
+        valida = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                **base,
+                "correo": "precio-valido@example.com",
+                "items": [
+                    {
+                        "productoId": None,
+                        "nombreProducto": "Diseño especial",
+                        "cantidad": 1,
+                        "precioEstimado": 250,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(valida.status_code, 201, valida.get_data(as_text=True))
+        self.assertEqual(self._json(valida)["solicitud"]["itemsSolicitados"][0]["cantidad"], 1)
+        self.assertEqual(
+            self._json(valida)["solicitud"]["itemsSolicitados"][0]["precioEstimado"], 250
+        )
 
     def test_06_cotizacion_calcula_iva_y_anticipo(self) -> None:
         solicitud = self._solicitud("cotizacion@example.com")
@@ -927,14 +1009,24 @@ class FlujosApiTest(unittest.TestCase):
         self.assertEqual(creado.status_code, 201, creado.get_data(as_text=True))
         pedido = self._json(creado)
         self.assertEqual(pedido["total"], 116.0)
-        self.assertEqual(pedido["saldo"], 58.0)
+        # Sin pagos, se debe el total; el anticipo es solo una referencia del 50%.
+        self.assertEqual(pedido["saldo"], 116.0)
 
         excedido = self.client.post(
             f"/api/pedidos/{pedido['id']}/pagos",
             headers=self._auth(self._token()),
-            json={"tipo": "abono", "monto": 100},
+            json={"tipo": "abono", "monto": 117},
         )
         self.assertEqual(excedido.status_code, 400)
+
+        parcial = self.client.post(
+            f"/api/pedidos/{pedido['id']}/pagos",
+            headers=self._auth(self._token()),
+            json={"tipo": "abono", "monto": 58},
+        )
+        self.assertEqual(parcial.status_code, 201, parcial.get_data(as_text=True))
+        self.assertEqual(self._json(parcial)["pedido"]["saldo"], 58.0)
+        self.assertEqual(self._json(parcial)["pedido"]["pagado"], 58.0)
 
         liquidado = self.client.post(
             f"/api/pedidos/{pedido['id']}/pagos",
@@ -942,8 +1034,44 @@ class FlujosApiTest(unittest.TestCase):
             json={"tipo": "saldo", "monto": 58},
         )
         self.assertEqual(liquidado.status_code, 201, liquidado.get_data(as_text=True))
-        self.assertEqual(self._json(liquidado)["pedido"]["saldo"], 0.0)
-        self.assertEqual(self._json(liquidado)["pedido"]["estado"], "en-produccion")
+        pedido_final = self._json(liquidado)["pedido"]
+        self.assertEqual(pedido_final["saldo"], 0.0)
+        self.assertEqual(pedido_final["pagado"], 116.0)
+        self.assertEqual(pedido_final["estado"], "en-produccion")
+
+    def test_09b_saldo_usa_solo_pagos_confirmados(self) -> None:
+        """El anticipo pactado no reduce el saldo hasta que se registra como pago."""
+        creado = self.client.post(
+            "/api/pedidos",
+            headers=self._auth(self._token()),
+            json={
+                "clienteId": self.cliente.id,
+                "items": [{"productoId": self.producto_sin_receta.id, "cantidad": 3}],
+            },
+        )
+        self.assertEqual(creado.status_code, 201, creado.get_data(as_text=True))
+        pedido = self._json(creado)
+        # 3 × 100 = 300 + IVA = 348; el anticipo sugerido es 174.
+        self.assertEqual(pedido["total"], 348.0)
+        self.assertEqual(pedido["anticipo"], 174.0)
+        self.assertEqual(pedido["saldo"], 348.0)
+
+        pago = self.client.post(
+            f"/api/pedidos/{pedido['id']}/pagos",
+            headers=self._auth(self._token()),
+            json={"tipo": "abono", "monto": 100},
+        )
+        self.assertEqual(pago.status_code, 201, pago.get_data(as_text=True))
+        actualizado = self._json(pago)["pedido"]
+        self.assertEqual(actualizado["saldo"], 248.0)
+        self.assertEqual(actualizado["pagado"], 100.0)
+
+        excedido = self.client.post(
+            f"/api/pedidos/{pedido['id']}/pagos",
+            headers=self._auth(self._token()),
+            json={"tipo": "saldo", "monto": 248.01},
+        )
+        self.assertEqual(excedido.status_code, 400)
 
     def test_10_orden_compra_recibida_suma_stock(self) -> None:
         antes = float(MateriaPrima.query.get(self.lona.id).stock_actual)
@@ -997,8 +1125,8 @@ class FlujosApiTest(unittest.TestCase):
                     f"{nombre}: el frontend no declara '{valor}'",
                 )
 
-    def test_13_anticipo_pagado_reduce_saldo(self) -> None:
-        """H-12: el pago del anticipo debe liquidar el saldo del pedido."""
+    def test_13_anticipo_pagado_registra_pago_y_saldo(self) -> None:
+        """El anticipo marcado como pagado se registra y deja el saldo restante."""
         creada = self.client.post(
             "/api/cotizaciones",
             headers=self._auth(self._token()),
@@ -1022,8 +1150,10 @@ class FlujosApiTest(unittest.TestCase):
         pedido = self._json(convertida)
         self.assertEqual(len(pedido["pagos"]), 1)
         self.assertAlmostEqual(float(pedido["pagos"][0]["monto"]), 58.0, places=2)
-        self.assertEqual(pedido["saldo"], 0)
-        self.assertEqual(pedido["estado"], "en-produccion")
+        # El anticipo pagado es un pago real: queda pendiente el otro 50%.
+        self.assertEqual(pedido["saldo"], 58.0)
+        self.assertEqual(pedido["pagado"], 58.0)
+        self.assertEqual(pedido["estado"], "confirmado")
 
     def test_14_valida_fecha_minima_de_entrega(self) -> None:
         minima = calcular_fecha_minima_entrega(date.today())
@@ -1039,6 +1169,7 @@ class FlujosApiTest(unittest.TestCase):
                 "nombre": "Cliente Fecha",
                 "correo": "fecha-invalida@example.com",
                 "mensaje": "Quiero entrega urgente",
+                "items": [{"productoId": self.producto.id, "cantidad": 1}],
                 "fechaDeseada": invalida.isoformat(),
             },
         )
@@ -1051,6 +1182,7 @@ class FlujosApiTest(unittest.TestCase):
                 "nombre": "Cliente Fecha",
                 "correo": "fecha-valida@example.com",
                 "mensaje": "Quiero entrega en la fecha mínima",
+                "items": [{"productoId": self.producto.id, "cantidad": 1}],
                 "fechaDeseada": minima.isoformat(),
             },
         )
@@ -1282,6 +1414,417 @@ class FlujosApiTest(unittest.TestCase):
         self.assertEqual(salida.mode, "RGBA")
         alfa = salida.getchannel("A")
         self.assertEqual(alfa.getextrema(), (0, 255))
+
+
+    def test_22_confirmacion_de_entrega_en_seguimiento(self) -> None:
+        """La fecha comprometida y el avance se reflejan en el seguimiento público."""
+        headers = self._auth(self._token())
+        minima = calcular_fecha_minima_entrega(date.today())
+        deseada = minima + timedelta(days=1)
+        nueva = deseada + timedelta(days=2)
+        correo = "seguimiento-entrega@example.com"
+
+        solicitud_resp = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                "nombre": "Cliente Seguimiento",
+                "correo": correo,
+                "mensaje": "Quiero confirmar la fecha de entrega de mi pedido",
+                "fechaDeseada": deseada.isoformat(),
+                "items": [
+                    {
+                        "productoId": self.producto_sin_receta.id,
+                        "nombreProducto": self.producto_sin_receta.nombre,
+                        "cantidad": 1,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(
+            solicitud_resp.status_code, 201, solicitud_resp.get_data(as_text=True)
+        )
+        solicitud = self._json(solicitud_resp)
+
+        cotizacion_resp = self.client.post(
+            "/api/cotizaciones",
+            headers=headers,
+            json={
+                "solicitudId": solicitud["solicitud"]["id"],
+                "items": [
+                    {
+                        "productoId": self.producto_sin_receta.id,
+                        "cantidad": 1,
+                        "precioUnitario": 100,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(
+            cotizacion_resp.status_code, 201, cotizacion_resp.get_data(as_text=True)
+        )
+        cotizacion = self._json(cotizacion_resp)
+        self.assertEqual(cotizacion["fechaDeseada"], deseada.isoformat())
+
+        conversion = self.client.post(
+            f"/api/cotizaciones/{cotizacion['id']}/convertir-pedido",
+            headers=headers,
+            json={
+                "fechaEntrega": deseada.isoformat(),
+                "notaEntrega": "Confirmación inicial de entrega.",
+            },
+        )
+        self.assertEqual(conversion.status_code, 201, conversion.get_data(as_text=True))
+        pedido = self._json(conversion)
+        self.assertEqual(pedido["fechaEntrega"], deseada.isoformat())
+        self.assertEqual(pedido["notaEntrega"], "Confirmación inicial de entrega.")
+        self.assertEqual(pedido["estado"], "confirmado")
+        self.assertEqual(pedido["entregaConfirmadaPor"], "QA Admin")
+        self.assertIsNotNone(pedido["entregaConfirmadaEn"])
+
+        rechazada = self.client.patch(
+            f"/api/pedidos/{pedido['id']}/entrega",
+            headers=headers,
+            json={"fechaEntrega": date.today().isoformat()},
+        )
+        self.assertEqual(rechazada.status_code, 400, rechazada.get_data(as_text=True))
+        self.assertEqual(self._json(rechazada)["codigo"], "fecha_invalida")
+
+        produccion = self._auth(self._token_rol("produccion"))
+        sin_permiso = self.client.patch(
+            f"/api/pedidos/{pedido['id']}/entrega",
+            headers=produccion,
+            json={"fechaEntrega": nueva.isoformat()},
+        )
+        self.assertEqual(sin_permiso.status_code, 403)
+
+        actualizada = self.client.patch(
+            f"/api/pedidos/{pedido['id']}/entrega",
+            headers=headers,
+            json={
+                "fechaEntrega": nueva.isoformat(),
+                "notaEntrega": "Reprogramado por capacidad de producción.",
+            },
+        )
+        self.assertEqual(
+            actualizada.status_code, 200, actualizada.get_data(as_text=True)
+        )
+        reprogramado = self._json(actualizada)
+        self.assertEqual(reprogramado["fechaEntrega"], nueva.isoformat())
+        self.assertEqual(
+            reprogramado["notaEntrega"], "Reprogramado por capacidad de producción."
+        )
+        self.assertEqual(reprogramado["entregaConfirmadaPor"], "QA Admin")
+
+        publico = self.client.get(
+            f"/api/public/solicitudes/{solicitud['folio']}?correo={correo}"
+        )
+        self.assertEqual(publico.status_code, 200, publico.get_data(as_text=True))
+        seguimiento = self._json(publico)
+        self.assertEqual(seguimiento["fechaDeseada"], deseada.isoformat())
+        self.assertEqual(seguimiento["pedido"]["fechaEntrega"], nueva.isoformat())
+        self.assertEqual(seguimiento["pedido"]["fechaDeseada"], deseada.isoformat())
+        self.assertEqual(
+            seguimiento["pedido"]["notaEntrega"],
+            "Reprogramado por capacidad de producción.",
+        )
+        self.assertEqual(seguimiento["pedido"]["estado"], "confirmado")
+        self.assertEqual(seguimiento["pedido"]["etapaActual"], "diseno")
+        self.assertTrue(seguimiento["pedido"]["historialEtapas"])
+
+        avance = self.client.patch(
+            f"/api/produccion/ordenes/{pedido['ordenProduccion']['id']}",
+            headers=headers,
+            json={"etapa": "impresion", "estado": "en-proceso"},
+        )
+        self.assertEqual(avance.status_code, 200, avance.get_data(as_text=True))
+
+        publico_avanzado = self.client.get(
+            f"/api/public/solicitudes/{solicitud['folio']}?correo={correo}"
+        )
+        self.assertEqual(
+            publico_avanzado.status_code, 200, publico_avanzado.get_data(as_text=True)
+        )
+        pedido_publico = self._json(publico_avanzado)["pedido"]
+        self.assertEqual(pedido_publico["estado"], "en-produccion")
+        self.assertEqual(pedido_publico["etapaActual"], "impresion")
+        self.assertEqual(pedido_publico["estadoProduccion"], "en-proceso")
+        self.assertEqual(
+            [etapa["etapa"] for etapa in pedido_publico["historialEtapas"]],
+            ["diseno", "impresion", "corte", "empaquetado"],
+        )
+
+
+    def test_24_solicitud_refleja_produccion_completada(self) -> None:
+        """Completar la última etapa deja el pedido listo y visible en solicitudes."""
+        headers = self._auth(self._token())
+        correo = "produccion-solicitud@example.com"
+        solicitud_resp = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                "nombre": "Cliente Producción",
+                "correo": correo,
+                "mensaje": "Quiero seguir el avance de producción de mi pedido",
+                "items": [
+                    {
+                        "productoId": self.producto_sin_receta.id,
+                        "nombreProducto": self.producto_sin_receta.nombre,
+                        "cantidad": 1,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(
+            solicitud_resp.status_code, 201, solicitud_resp.get_data(as_text=True)
+        )
+        solicitud = self._json(solicitud_resp)
+
+        cotizacion_resp = self.client.post(
+            "/api/cotizaciones",
+            headers=headers,
+            json={
+                "solicitudId": solicitud["solicitud"]["id"],
+                "items": [
+                    {
+                        "productoId": self.producto_sin_receta.id,
+                        "cantidad": 1,
+                        "precioUnitario": 100,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(
+            cotizacion_resp.status_code, 201, cotizacion_resp.get_data(as_text=True)
+        )
+        cotizacion = self._json(cotizacion_resp)
+        conversion = self.client.post(
+            f"/api/cotizaciones/{cotizacion['id']}/convertir-pedido",
+            headers=headers,
+            json={},
+        )
+        self.assertEqual(conversion.status_code, 201, conversion.get_data(as_text=True))
+        pedido = self._json(conversion)
+        orden_id = pedido["ordenProduccion"]["id"]
+
+        # No se puede cerrar la orden desde una etapa anterior a la última.
+        prematura = self.client.patch(
+            f"/api/produccion/ordenes/{orden_id}",
+            headers=headers,
+            json={"estado": "completada"},
+        )
+        self.assertEqual(prematura.status_code, 400, prematura.get_data(as_text=True))
+        self.assertEqual(self._json(prematura)["codigo"], "etapa_incompleta")
+
+        for etapa in ("impresion", "corte", "empaquetado"):
+            avance = self.client.patch(
+                f"/api/produccion/ordenes/{orden_id}",
+                headers=headers,
+                json={"etapa": etapa, "estado": "en-proceso"},
+            )
+            self.assertEqual(avance.status_code, 200, avance.get_data(as_text=True))
+
+        completada = self.client.patch(
+            f"/api/produccion/ordenes/{orden_id}",
+            headers=headers,
+            json={"estado": "completada"},
+        )
+        self.assertEqual(
+            completada.status_code, 200, completada.get_data(as_text=True)
+        )
+        orden = self._json(completada)
+        self.assertEqual(orden["estado"], "completada")
+        self.assertEqual(orden["etapa"], "empaquetado")
+        self.assertTrue(all(etapa["estado"] == "completada" for etapa in orden["historialEtapas"]))
+
+        detalle = self.client.get(
+            f"/api/solicitudes/{solicitud['solicitud']['id']}", headers=headers
+        )
+        self.assertEqual(detalle.status_code, 200, detalle.get_data(as_text=True))
+        solicitud_actualizada = self._json(detalle)
+        self.assertEqual(solicitud_actualizada["estado"], "convertida")
+        self.assertEqual(solicitud_actualizada["pedido"]["folio"], pedido["folio"])
+        self.assertEqual(solicitud_actualizada["pedido"]["estado"], "listo")
+        self.assertEqual(
+            solicitud_actualizada["pedido"]["produccion"]["estado"], "completada"
+        )
+        self.assertEqual(
+            solicitud_actualizada["pedido"]["produccion"]["etapa"], "empaquetado"
+        )
+
+        completadas = self.client.get(
+            f"/api/solicitudes?produccion=completada&q={solicitud['folio']}",
+            headers=headers,
+        )
+        self.assertEqual(completadas.status_code, 200, completadas.get_data(as_text=True))
+        self.assertEqual(self._json(completadas)["total"], 1)
+        activas = self.client.get(
+            f"/api/solicitudes?produccion=activa&q={solicitud['folio']}",
+            headers=headers,
+        )
+        self.assertEqual(activas.status_code, 200, activas.get_data(as_text=True))
+        self.assertEqual(self._json(activas)["total"], 0)
+
+        resumen = self.client.get("/api/solicitudes/resumen", headers=headers)
+        self.assertEqual(resumen.status_code, 200, resumen.get_data(as_text=True))
+        self.assertGreaterEqual(self._json(resumen)["produccionCompletada"], 1)
+
+        entregado = self.client.patch(
+            f"/api/pedidos/{pedido['id']}/estado",
+            headers=headers,
+            json={"estado": "entregado"},
+        )
+        self.assertEqual(entregado.status_code, 200, entregado.get_data(as_text=True))
+        self.assertEqual(self._json(entregado)["estado"], "entregado")
+
+        detalle_entregado = self.client.get(
+            f"/api/solicitudes/{solicitud['solicitud']['id']}", headers=headers
+        )
+        self.assertEqual(
+            detalle_entregado.status_code, 200, detalle_entregado.get_data(as_text=True)
+        )
+        pedido_entregado = self._json(detalle_entregado)["pedido"]
+        self.assertEqual(pedido_entregado["estado"], "entregado")
+        self.assertEqual(pedido_entregado["produccion"]["estado"], "completada")
+
+        filtro_entrega = self.client.get(
+            f"/api/solicitudes?entrega=entregado&q={solicitud['folio']}",
+            headers=headers,
+        )
+        self.assertEqual(
+            filtro_entrega.status_code, 200, filtro_entrega.get_data(as_text=True)
+        )
+        self.assertEqual(self._json(filtro_entrega)["total"], 1)
+
+        resumen_entrega = self.client.get("/api/solicitudes/resumen", headers=headers)
+        self.assertGreaterEqual(self._json(resumen_entrega)["entregados"], 1)
+
+    def test_23_mayoreo_desde_seis_piezas(self) -> None:
+        """A partir de 6 unidades se rebajan $20 por unidad, sin importes negativos."""
+        headers = self._auth(self._token())
+        casos = [
+            (5, 500.0, 0.0),
+            (6, 480.0, 120.0),
+            (10, 800.0, 200.0),
+            (5, 500.0, 0.0),
+        ]
+        solicitud_seis = None
+
+        for indice, (cantidad, esperado, descuento) in enumerate(casos):
+            respuesta = self.client.post(
+                "/api/public/solicitudes",
+                json={
+                    "nombre": f"Cliente Mayoreo {indice}",
+                    "correo": f"mayoreo-{indice}@example.com",
+                    "mensaje": f"Quiero {cantidad} piezas con precio de mayoreo",
+                    "items": [
+                        {
+                            "productoId": self.producto_sin_receta.id,
+                            "cantidad": cantidad,
+                        }
+                    ],
+                },
+            )
+            self.assertEqual(respuesta.status_code, 201, respuesta.get_data(as_text=True))
+            datos = self._json(respuesta)
+            item = datos["solicitud"]["itemsSolicitados"][0]
+            self.assertEqual(item["precioEstimado"], esperado)
+            self.assertEqual(item["descuentoMayoreo"], descuento)
+            if cantidad == 6:
+                solicitud_seis = datos
+
+        self.assertIsNotNone(solicitud_seis)
+
+        # La conversión conserva el importe final y lo reparte en precio unitario.
+        cotizacion_resp = self.client.post(
+            "/api/cotizaciones",
+            headers=headers,
+            json={"solicitudId": solicitud_seis["solicitud"]["id"]},
+        )
+        self.assertEqual(
+            cotizacion_resp.status_code, 201, cotizacion_resp.get_data(as_text=True)
+        )
+        cotizacion = self._json(cotizacion_resp)
+        self.assertEqual(cotizacion["subtotal"], 480.0)
+        self.assertEqual(cotizacion["impuestos"], 76.8)
+        self.assertEqual(cotizacion["total"], 556.8)
+        self.assertEqual(cotizacion["items"][0]["precioUnitario"], 80.0)
+        self.assertEqual(cotizacion["items"][0]["importe"], 480.0)
+
+        # Una cotización capturada a mano aplica la misma regla.
+        manual = self.client.post(
+            "/api/cotizaciones",
+            headers=headers,
+            json={
+                "clienteId": self.cliente.id,
+                "items": [
+                    {
+                        "productoId": self.producto_sin_receta.id,
+                        "cantidad": 6,
+                        "precioUnitario": 100,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(manual.status_code, 201, manual.get_data(as_text=True))
+        manual_data = self._json(manual)
+        self.assertEqual(manual_data["items"][0]["precioUnitario"], 80.0)
+        self.assertEqual(manual_data["items"][0]["importe"], 480.0)
+        self.assertEqual(manual_data["total"], 556.8)
+
+        # Un producto de precio bajo no se queda en cero ni negativo.
+        bajo = Producto(
+            nombre="Producto Bajo QA",
+            categoria="otro",
+            linea_produccion="gran-formato",
+            precio_base=15,
+            unidad_venta="pieza",
+        )
+        db.session.add(bajo)
+        db.session.commit()
+        bajo_resp = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                "nombre": "Cliente Bajo",
+                "correo": "mayoreo-bajo@example.com",
+                "mensaje": "Quiero seis piezas de un producto económico",
+                "items": [{"productoId": bajo.id, "cantidad": 6}],
+            },
+        )
+        self.assertEqual(bajo_resp.status_code, 201, bajo_resp.get_data(as_text=True))
+        bajo_item = self._json(bajo_resp)["solicitud"]["itemsSolicitados"][0]
+        self.assertEqual(bajo_item["precioEstimado"], 90.0)
+        self.assertEqual(bajo_item["descuentoMayoreo"], 0.0)
+
+        # Lona/Vinil conserva su fórmula base + adicionales y aplica mayoreo.
+        lona = Producto(
+            nombre="Lona/Vinil QA",
+            categoria="gran-formato",
+            linea_produccion="gran-formato",
+            precio_base=220,
+            unidad_venta="m2",
+        )
+        db.session.add(lona)
+        db.session.commit()
+        lona_resp = self.client.post(
+            "/api/public/solicitudes",
+            json={
+                "nombre": "Cliente Lona Mayoreo",
+                "correo": "mayoreo-lona@example.com",
+                "mensaje": "Quiero seis metros cuadrados de lona",
+                "items": [
+                    {
+                        "productoId": lona.id,
+                        "nombreProducto": "Lona/Vinil QA",
+                        "cantidad": 6,
+                        "especificaciones": "Medida 1 × 6 m (6 m²)",
+                    }
+                ],
+            },
+        )
+        self.assertEqual(lona_resp.status_code, 201, lona_resp.get_data(as_text=True))
+        lona_item = self._json(lona_resp)["solicitud"]["itemsSolicitados"][0]
+        # 220 + 5 × 120 = 820; menos 6 × 20 = 700.
+        self.assertEqual(lona_item["precioEstimado"], 700.0)
+        self.assertEqual(lona_item["descuentoMayoreo"], 120.0)
 
 
 if __name__ == "__main__":

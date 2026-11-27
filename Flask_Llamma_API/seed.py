@@ -161,8 +161,8 @@ PRODUCTOS = [
     {
         "nombre": "Tote bag de manta",
         "descripcion": "Bolsa de manta 35 × 40 cm con asa reforzada y estampado DTF.",
-        "categoria": "promocional",
-        "linea": "promocionales",
+        "categoria": "textil",
+        "linea": "textil",
         "precio": 110,
         "unidad": "pieza",
         "icono": "bi-bag-heart",
@@ -183,8 +183,8 @@ PRODUCTOS = [
     {
         "nombre": "Sticker troquelado",
         "descripcion": "Vinil adhesivo brillante con corte de precisión, 5 × 5 cm.",
-        "categoria": "promocional",
-        "linea": "promocionales",
+        "categoria": "papeleria",
+        "linea": "papeleria",
         "precio": 35,
         "unidad": "pieza",
         "icono": "bi-stickies",

@@ -268,7 +268,7 @@
                 <label
                   class="mb-1 block text-[0.72rem] font-semibold text-[var(--llamma-carbon)]"
                   for="cotFechaEntrega"
-                  >Fecha deseada de entrega</label
+                  >Fecha comprometida de entrega</label
                 >
                 <input
                   id="cotFechaEntrega"
@@ -283,6 +283,9 @@
                   id="cotFechaEntregaAyuda"
                   class="mt-1 block text-[0.68rem] leading-[1.5] text-[var(--llamma-muted)]"
                 >
+                  @if (fechaDeseada()) {
+                    El cliente pidió {{ fecha(fechaDeseada()) }}. Ajusta la fecha si no es viable.
+                  }
                   ⏱️ 2 días hábiles. Sin entregas en fines de semana ni días festivos.
                 </small>
                 @if (fechaEntregaInvalida()) {
@@ -290,6 +293,23 @@
                     La fecha debe respetar el margen mínimo de 2 días hábiles.
                   </p>
                 }
+              </div>
+
+              <div class="mt-3">
+                <label
+                  class="mb-1 block text-[0.72rem] font-semibold text-[var(--llamma-carbon)]"
+                  for="cotNotaEntrega"
+                  >Nota para el cliente (opcional)</label
+                >
+                <input
+                  id="cotNotaEntrega"
+                  type="text"
+                  maxlength="240"
+                  class="w-full rounded-[0.6rem] border border-[var(--llamma-line)] bg-white px-3 py-2 text-sm text-[var(--llamma-carbon)] outline-none transition focus:border-[var(--llamma-cyan)] focus:ring-4 focus:ring-[rgba(var(--llamma-cyan-rgb),0.13)]"
+                  placeholder="Ej. Ajustamos la entrega por capacidad de producción."
+                  [value]="notaEntrega()"
+                  (input)="cambiarNotaEntrega($event)"
+                />
               </div>
 
               <div class="form-check capture-check">

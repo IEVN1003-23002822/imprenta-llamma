@@ -176,13 +176,139 @@
                 >
                 <h2 id="tituloResultado">{{ solicitud.nombreCliente }}</h2>
               </div>
-              <span
-                class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
-                [class]="claseEstado(solicitud.estado)"
-              >
-                {{ etiquetaEstado(solicitud.estado) }}
-              </span>
+              <div class="flex flex-col items-end gap-2">
+                <span
+                  class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                  [class]="claseEstado(solicitud.estado)"
+                >
+                  {{ etiquetaEstado(solicitud.estado) }}
+                </span>
+                <button
+                  class="inline-flex items-center gap-1 rounded-[0.5rem] border border-[rgba(26,26,26,0.18)] bg-white px-2 py-1 text-[0.68rem] font-semibold text-[var(--llamma-carbon)] transition hover:border-[var(--llamma-carbon)] disabled:cursor-not-allowed disabled:opacity-60"
+                  type="button"
+                  [disabled]="buscando()"
+                  (click)="refrescarEstado()"
+                >
+                  <i class="bi bi-arrow-clockwise"></i> Actualizar estado
+                </button>
+              </div>
             </div>
+
+            @if (solicitud.pedido; as pedido) {
+              <div
+                class="mt-4 rounded-[0.9rem] border border-[rgba(0,174,239,0.3)] bg-[rgba(var(--llamma-cyan-rgb),0.06)] p-[1rem]"
+                data-testid="pedido-seguimiento"
+              >
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <span
+                      class="mb-1 block text-[0.62rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                      >Entrega confirmada por el equipo</span
+                    >
+                    <strong class="block text-[1.35rem] leading-[1.15] text-[var(--llamma-carbon)]">
+                      {{ fecha(pedido.fechaEntrega) }}
+                    </strong>
+                    @if (solicitud.fechaDeseada) {
+                      <span class="mt-1 block text-[0.7rem] text-[var(--llamma-muted)]">
+                        Fecha solicitada originalmente: {{ fecha(solicitud.fechaDeseada) }}
+                      </span>
+                    }
+                  </div>
+                  <div class="flex flex-col items-end gap-1 text-right">
+                    <span
+                      class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                      [class]="claseEstadoPedido(pedido.estado)"
+                    >
+                      {{ etiquetaEstadoPedido(pedido.estado) }}
+                    </span>
+                    <span class="text-[0.68rem] text-[var(--llamma-muted)]">
+                      Pedido {{ pedido.folio }}
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  class="mt-3 grid grid-cols-2 gap-2 [&>div]:rounded-[0.6rem] [&>div]:bg-white/70 [&>div]:px-[0.65rem] [&>div]:py-[0.5rem] [&_span]:block [&_span]:text-[0.58rem] [&_span]:font-semibold [&_span]:uppercase [&_span]:tracking-[0.05em] [&_span]:text-[var(--llamma-muted)] [&_strong]:mt-[0.15rem] [&_strong]:block [&_strong]:text-[0.74rem] max-[575.98px]:grid-cols-1"
+                >
+                  <div>
+                    <span>Proceso actual</span>
+                    <strong>{{ etiquetaEtapa(pedido.etapaActual) }}</strong>
+                  </div>
+                  <div>
+                    <span>Estado del proceso</span>
+                    <strong>{{ etiquetaEstadoProduccion(pedido.estadoProduccion) }}</strong>
+                  </div>
+                  <div>
+                    <span>Confirmada el</span>
+                    <strong>{{
+                      pedido.entregaConfirmadaEn
+                        ? fechaHoraChat(pedido.entregaConfirmadaEn)
+                        : 'Por confirmar'
+                    }}</strong>
+                  </div>
+                  <div>
+                    <span>Confirmada por</span>
+                    <strong>{{ pedido.entregaConfirmadaPor || 'Equipo Llamma' }}</strong>
+                  </div>
+                </div>
+
+                @if (pedido.notaEntrega) {
+                  <p
+                    class="mb-0 mt-3 flex items-start gap-2 border-l-[3px] border-[var(--llamma-cyan)] bg-white/70 px-3 py-[0.55rem] text-[0.72rem] leading-[1.5] text-[var(--llamma-carbon)] [&_i]:mt-[0.1rem] [&_i]:text-[var(--llamma-cyan-deep)]"
+                  >
+                    <i class="bi bi-chat-left-text"></i>
+                    <span>{{ pedido.notaEntrega }}</span>
+                  </p>
+                }
+
+                @if (pedido.historialEtapas.length) {
+                  <div class="mt-3">
+                    <span
+                      class="mb-2 block text-[0.62rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                      >Avance por procesos</span
+                    >
+                    <ol class="m-0 flex list-none flex-col gap-[0.45rem] p-0">
+                      @for (etapa of pedido.historialEtapas; track etapa.id) {
+                        <li class="flex items-start gap-2">
+                          <span
+                            class="mt-[0.35rem] inline-block h-[0.55rem] w-[0.55rem] flex-none rounded-full"
+                            [class]="
+                              etapa.estado === 'completada'
+                                ? 'bg-[#0f9d58]'
+                                : etapa.estado === 'en-proceso'
+                                  ? 'bg-[var(--llamma-cyan)]'
+                                  : etapa.estado === 'rechazada'
+                                    ? 'bg-[#b42318]'
+                                    : 'bg-[rgba(26,26,26,0.18)]'
+                            "
+                          ></span>
+                          <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <strong class="text-[0.74rem]">{{
+                                etiquetaEtapa(etapa.etapa)
+                              }}</strong>
+                              <span
+                                class="inline-block whitespace-nowrap rounded-full px-[0.45rem] py-[0.2rem] text-[0.58rem] font-bold leading-none"
+                                [class]="claseEstadoProduccion(etapa.estado)"
+                              >
+                                {{ etiquetaEstadoProduccion(etapa.estado) }}
+                              </span>
+                            </div>
+                            <span class="block text-[0.66rem] text-[var(--llamma-muted)]">
+                              {{
+                                etapa.fin || etapa.inicio
+                                  ? fechaHoraChat(etapa.fin || etapa.inicio)
+                                  : 'Programado'
+                              }}
+                            </span>
+                          </div>
+                        </li>
+                      }
+                    </ol>
+                  </div>
+                }
+              </div>
+            }
 
             <div
               class="mt-4 grid grid-cols-2 gap-3 max-[575.98px]:grid-cols-1 [&>div]:rounded-[0.7rem] [&>div]:bg-[rgba(26,26,26,0.03)] [&>div]:px-[0.8rem] [&>div]:py-[0.65rem] [&_span]:block [&_span]:text-[0.6rem] [&_span]:font-semibold [&_span]:uppercase [&_span]:tracking-[0.05em] [&_span]:text-[var(--llamma-muted)] [&_strong]:mt-[0.2rem] [&_strong]:block [&_strong]:text-[0.76rem]"

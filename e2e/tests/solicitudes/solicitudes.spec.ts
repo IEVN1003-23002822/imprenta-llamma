@@ -45,6 +45,66 @@ test.describe('Solicitudes públicas', () => {
     consola.assertLimpia();
   });
 
+  test('bloquea solicitudes sin partidas o con importe cero', async ({ page }) => {
+    const cotizar = new CotizarPage(page);
+    const peticiones: string[] = [];
+    page.on('request', (peticion) => {
+      if (
+        peticion.method() === 'POST' &&
+        new URL(peticion.url()).pathname === '/api/public/solicitudes'
+      ) {
+        peticiones.push(peticion.url());
+      }
+    });
+
+    await cotizar.goto();
+    await cotizar.llenarContacto({
+      nombre: `Cliente ${unico('vacio')}`,
+      correo: correoUnico('vacio'),
+      telefono: '5551234567',
+    });
+    await cotizar.continuar();
+    await cotizar.continuar();
+    await page.locator('#cotMensaje').fill('Quiero cotizar un proyecto con un mensaje largo.');
+
+    const enviar = page.getByRole('button', { name: /Enviar solicitud de cotización/i });
+    await expect(enviar).toBeDisabled();
+    await expect(page.locator('main#contenido')).toContainText(
+      /Agrega al menos un producto con cantidad y precio mayor a cero/i,
+    );
+    expect(peticiones, 'El frontend no debe llamar a la API sin partidas').toEqual([]);
+
+    const api = await playwrightRequest.newContext({ baseURL: API_URL });
+    const sinItems = await api.post('/api/public/solicitudes', {
+      data: {
+        nombre: 'Cliente API vacío',
+        correo: correoUnico('api-vacio'),
+        mensaje: 'Mensaje suficientemente largo sin partidas',
+      },
+    });
+    expect(sinItems.status()).toBe(400);
+    expect((await sinItems.json()).codigo).toBe('sin_partidas');
+
+    const precioCero = await api.post('/api/public/solicitudes', {
+      data: {
+        nombre: 'Cliente API cero',
+        correo: correoUnico('api-cero'),
+        mensaje: 'Mensaje suficientemente largo con precio cero',
+        items: [
+          {
+            productoId: null,
+            nombreProducto: 'Diseño especial',
+            cantidad: 1,
+            precioEstimado: 0,
+          },
+        ],
+      },
+    });
+    expect(precioCero.status()).toBe(400);
+    expect((await precioCero.json()).codigo).toBe('precio_invalido');
+    await api.dispose();
+  });
+
   test('bloquea fechas menores al margen de 2 días hábiles', async ({ page }) => {
     const cotizar = new CotizarPage(page);
     const hoy = new Date();
@@ -129,6 +189,10 @@ test.describe('Solicitudes públicas', () => {
     await cotizar.agregarProducto('Lona/Vinil', 1);
     await cotizar.continuar();
     await cotizar.adjuntar('brief.pdf', '%PDF-1.4\nprueba e2e\n', 'application/pdf');
+    const chipPdf = page.locator('.file-chip').filter({ hasText: 'brief.pdf' });
+    await expect(chipPdf).toBeVisible();
+    await expect(chipPdf.locator('.file-chip-thumb')).toHaveCount(0);
+    await expect(chipPdf.locator('.bi-paperclip')).toBeVisible();
     const respuesta = await cotizar.enviar('Adjunto mi brief para revisar medidas');
 
     const api = await apiConToken(tokenDe('admin'));
@@ -142,6 +206,49 @@ test.describe('Solicitudes públicas', () => {
     await api.dispose();
   });
 
+  test('muestra miniatura de una imagen adjunta y permite quitarla', async ({ page }) => {
+    const cotizar = new CotizarPage(page);
+    await cotizar.goto();
+    await cotizar.llenarContacto({
+      nombre: `Cliente ${unico('miniatura')}`,
+      correo: correoUnico('miniatura'),
+      telefono: '5551234567',
+    });
+    await cotizar.continuar();
+    await cotizar.agregarProducto('Lona/Vinil', 1);
+    await cotizar.continuar();
+
+    const base64 = await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 80;
+      canvas.height = 80;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return '';
+      ctx.fillStyle = '#00aeef';
+      ctx.fillRect(0, 0, 80, 80);
+      ctx.fillStyle = '#ec008c';
+      ctx.fillRect(20, 20, 40, 40);
+      return canvas.toDataURL('image/png').split(',')[1];
+    });
+    await page.locator('#cotArchivos').setInputFiles({
+      name: 'referencia.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(base64, 'base64'),
+    });
+
+    const chip = page.locator('.file-chip').filter({ hasText: 'referencia.png' });
+    await expect(chip).toBeVisible();
+    const miniatura = chip.locator('.file-chip-thumb');
+    await expect(miniatura).toBeVisible();
+    await expect
+      .poll(() => miniatura.evaluate((imagen) => (imagen as HTMLImageElement).naturalWidth))
+      .toBeGreaterThan(0);
+
+    await chip.getByRole('button', { name: /Quitar referencia\.png/i }).click();
+    await expect(page.locator('.file-chip').filter({ hasText: 'referencia.png' })).toHaveCount(0);
+    await expect(page.locator('.file-chip-thumb')).toHaveCount(0);
+  });
+
   test('el seguimiento muestra la solicitud con folio y correo correctos', async ({ page }) => {
     const api = await apiConToken(tokenDe('admin'));
     const correo = correoUnico('seguimiento');
@@ -149,7 +256,14 @@ test.describe('Solicitudes públicas', () => {
       nombre: `Cliente ${unico('e2e')}`,
       correo,
       mensaje: 'Seguimiento E2E',
-      items: [{ productoId: null, nombreProducto: 'Lona especial', cantidad: 3 }],
+      items: [
+        {
+          productoId: null,
+          nombreProducto: 'Lona especial',
+          cantidad: 3,
+          precioEstimado: 300,
+        },
+      ],
     });
     await api.dispose();
 
@@ -170,6 +284,14 @@ test.describe('Solicitudes públicas', () => {
       nombre: `Cliente ${unico('e2e')}`,
       correo,
       mensaje: 'No debe filtrarse',
+      items: [
+        {
+          productoId: null,
+          nombreProducto: 'Consulta privada',
+          cantidad: 1,
+          precioEstimado: 100,
+        },
+      ],
     });
     await api.dispose();
 

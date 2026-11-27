@@ -14,6 +14,9 @@ const RESUMEN_INICIAL: ResumenSolicitudes = {
   },
   nuevas: 0,
   enRevision: 0,
+  enProduccion: 0,
+  produccionCompletada: 0,
+  entregados: 0,
 };
 
 /** Contador compartido de solicitudes para el badge de la barra interna. */

@@ -45,7 +45,7 @@
     </header>
 
     <div class="grid grid-cols-12 gap-4 mb-6">
-      <div class="col-span-6 xl:col-span-3">
+      <div class="col-span-6 xl:col-span-2">
         <div class="inbox-stat inbox-stat-cyan">
           <span class="icon-tile icon-tile-cyan"><i class="bi bi-inbox"></i></span>
           <div>
@@ -54,7 +54,7 @@
           </div>
         </div>
       </div>
-      <div class="col-span-6 xl:col-span-3">
+      <div class="col-span-6 xl:col-span-2">
         <div class="inbox-stat">
           <span class="icon-tile icon-tile-warning"><i class="bi bi-hourglass-split"></i></span>
           <div>
@@ -63,7 +63,7 @@
           </div>
         </div>
       </div>
-      <div class="col-span-6 xl:col-span-3">
+      <div class="col-span-6 xl:col-span-2">
         <div class="inbox-stat">
           <span class="icon-tile icon-tile-magenta"><i class="bi bi-file-earmark-text"></i></span>
           <div>
@@ -72,7 +72,30 @@
           </div>
         </div>
       </div>
-      <div class="col-span-6 xl:col-span-3">
+      <div class="col-span-6 xl:col-span-2">
+        <div class="inbox-stat">
+          <span class="icon-tile icon-tile-cyan"><i class="bi bi-gear-wide-connected"></i></span>
+          <div>
+            <strong>{{ store.resumen().enProduccion }}</strong>
+            <span>En producción</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-span-6 xl:col-span-2">
+        <div class="inbox-stat">
+          <span class="icon-tile icon-tile-success"><i class="bi bi-check2-circle"></i></span>
+          <div>
+            <strong>{{ store.resumen().produccionCompletada }}</strong>
+            <span>Producción completada</span>
+            @if (store.resumen().entregados > 0) {
+              <small class="mt-0.5 block text-[0.6rem] font-semibold text-[#0f7a4d]">
+                {{ store.resumen().entregados }} entregados
+              </small>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="col-span-6 xl:col-span-2">
         <div class="inbox-stat">
           <span class="icon-tile icon-tile-ink"><i class="bi bi-collection"></i></span>
           <div>
@@ -198,6 +221,17 @@
                       >
                         {{ etiquetaEstado(solicitud.estado) }}
                       </span>
+                      @if (solicitud.pedido; as pedido) {
+                        <span
+                          class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                          [class]="claseBadgePedido(pedido)"
+                        >
+                          @if (pedido.estado === 'entregado') {
+                            <i class="bi bi-check2-circle"></i>
+                          }
+                          {{ etiquetaBadgePedido(pedido) }}
+                        </span>
+                      }
                     </span>
                     <span class="request-company">
                       {{ solicitud.empresa || 'Cliente particular' }} · {{ solicitud.folio }}
@@ -214,6 +248,15 @@
                         ><i class="bi bi-paperclip"></i>
                         {{ solicitud.totalArchivos ?? 0 }} archivos</span
                       >
+                      @if (solicitud.pedido; as pedido) {
+                        <span><i class="bi bi-receipt"></i> Pedido {{ pedido.folio }}</span>
+                        @if (pedido.produccion; as produccion) {
+                          <span
+                            ><i class="bi bi-gear"></i> {{ etiquetaEtapa(produccion.etapa) }} ·
+                            {{ etiquetaEstadoProduccion(produccion.estado) }}</span
+                          >
+                        }
+                      }
                       <span
                         ><i class="bi bi-calendar3"></i>
                         {{ fechaHora(solicitud.fechaCreacion) }}</span
@@ -319,6 +362,100 @@
                 </select>
               }
             </div>
+
+            @if (solicitud.pedido; as pedido) {
+              <div
+                class="mt-4 rounded-[0.7rem] border border-[var(--llamma-line)] bg-[#fbfaf7] p-3"
+                data-testid="detalle-produccion"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span
+                      class="mb-1 block text-[0.62rem] font-bold uppercase leading-[1.6] tracking-[0.12em] text-[var(--llamma-muted)]"
+                      >Pedido / producción</span
+                    >
+                    <strong class="text-[0.85rem]">{{ pedido.folio }}</strong>
+                  </div>
+                  <span
+                    class="inline-block whitespace-nowrap rounded-full px-[0.65rem] py-[0.42rem] text-center align-baseline text-[0.68rem] font-bold leading-none tracking-[0.02em]"
+                    [class]="claseBadgePedido(pedido)"
+                  >
+                    @if (pedido.estado === 'entregado') {
+                      <i class="bi bi-check2-circle"></i>
+                    }
+                    {{ etiquetaBadgePedido(pedido) }}
+                  </span>
+                </div>
+
+                <div
+                  class="mt-3 grid grid-cols-2 gap-2 text-[0.7rem] [&>div]:rounded-[0.55rem] [&>div]:bg-white/70 [&>div]:px-2 [&>div]:py-1.5 [&_span]:block [&_span]:text-[0.58rem] [&_span]:font-semibold [&_span]:uppercase [&_span]:tracking-[0.05em] [&_span]:text-[var(--llamma-muted)] [&_strong]:mt-0.5 [&_strong]:block"
+                >
+                  <div>
+                    <span>Estado del pedido</span>
+                    <strong>{{ etiquetaEstadoPedido(pedido.estado) }}</strong>
+                  </div>
+                  <div>
+                    <span>Entrega</span>
+                    <strong>{{ fecha(pedido.fechaEntrega) }}</strong>
+                  </div>
+                  @if (pedido.produccion; as produccion) {
+                    <div>
+                      <span>Etapa actual</span>
+                      <strong>{{ etiquetaEtapa(produccion.etapa) }}</strong>
+                    </div>
+                    <div>
+                      <span>Producción</span>
+                      <strong>{{ etiquetaEstadoProduccion(produccion.estado) }}</strong>
+                    </div>
+                  }
+                </div>
+
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <a
+                    class="inline-flex items-center gap-1 rounded-[0.55rem] border border-[rgba(26,26,26,0.22)] px-2 py-1 text-[0.7rem] font-semibold text-[var(--llamma-carbon)] transition hover:border-[var(--llamma-carbon)] hover:bg-[var(--llamma-carbon)] hover:text-white"
+                    [routerLink]="['/detalle']"
+                    [queryParams]="{ pedido: pedido.id }"
+                  >
+                    <i class="bi bi-box-arrow-up-right"></i> Ver pedido
+                  </a>
+
+                  @if (puedeGestionar()) {
+                    @if (pedido.estado === 'entregado') {
+                      <button
+                        class="inline-flex items-center gap-1 rounded-[0.55rem] border border-[#0f7a4d] bg-white px-2 py-1 text-[0.7rem] font-semibold text-[#0f7a4d]"
+                        type="button"
+                        disabled
+                        data-testid="btn-entregar-pedido"
+                      >
+                        <i class="bi bi-check2-circle"></i> Entregado
+                      </button>
+                    } @else {
+                      <button
+                        class="inline-flex items-center gap-1 rounded-[0.55rem] border border-[#0f7a4d] bg-[#0f7a4d] px-2 py-1 text-[0.7rem] font-semibold text-white transition hover:bg-[#0b5f3b] disabled:cursor-not-allowed disabled:opacity-60"
+                        type="button"
+                        [disabled]="entregando() || !puedeMarcarEntregado(pedido)"
+                        [attr.title]="
+                          puedeMarcarEntregado(pedido)
+                            ? 'Registrar que el cliente ya recibió su pedido'
+                            : 'Disponible cuando el pedido esté listo'
+                        "
+                        data-testid="btn-entregar-pedido"
+                        (click)="marcarEntregado(pedido)"
+                      >
+                        <i class="bi bi-box-arrow-up"></i>
+                        {{ entregando() ? 'Marcando…' : 'Marcar entregado' }}
+                      </button>
+                    }
+                  }
+                </div>
+                @if (pedido.estado !== 'listo' && pedido.estado !== 'entregado') {
+                  <span class="mt-1 block text-[0.64rem] text-[var(--llamma-muted)]">
+                    La entrega se habilita cuando producción esté completada y el pedido quede
+                    listo.
+                  </span>
+                }
+              </div>
+            }
 
             <div class="detail-contact">
               <div>
